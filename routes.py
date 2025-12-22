@@ -1,30 +1,28 @@
 
 # Dans ton fichier principal
-from admin_routes import admin_bp
-
-app.register_blueprint(admin_bp)
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import re
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from data import (
     ajouter_parieur,
-    recuperer_utilisateur_par_email,
-    recuperer_utilisateur_par_username,
+    get_user_by_email,
+    get_user_by_username,
     ajouter_match,
-    recuperer_matchs_complets,
-    recuperer_matchs_en_cours,
-    recuperer_programmes,
+    get_matchs_complets,
+    get_matchs_en_cours,
+    get_programmes,
     placer_pari,
     obtenir_cotes_par_ids,
 )
 # Dans ton fichier principal
-from admin_routes import admin_bp
+from admin_routes import admin_bp, users_bp
 
-app.register_blueprint(admin_bp)
 
 
 app = Flask(__name__)
+app.register_blueprint(admin_bp)
+app.register_blueprint(users_bp)
 
 app.secret_key = "61e5e0e3df16e86a4957e6c22bc45190fc83bfae9516b771b7241baf55d"
 
@@ -65,9 +63,9 @@ def traitementLogin():
     email_username = donnees.get("email_username")
     mdp = donnees.get("mdp")
 
-    utilisateur = recuperer_utilisateur_par_email(
+    utilisateur = get_user_by_email(
         email_username
-    ) or recuperer_utilisateur_par_username(email_username)
+    ) or get_user_by_username(email_username)
     if utilisateur and check_password_hash(utilisateur["mdp"], mdp):
         session["username"] = utilisateur["username"]
         return redirect(url_for("home"))
@@ -109,12 +107,12 @@ def traitementRegister():
         mdpError = "Les mots de passe ne correspondent pas !"
         return render_template("auth.html", error=mdpError)
 
-    utilisateur = recuperer_utilisateur_par_email(email)
+    utilisateur = get_user_by_email(email)
     if utilisateur and utilisateur["email"] == email:
         emailError = "Cet email est déjà utilisé !"
         return render_template("auth.html", error=emailError)
 
-    utilisateur = recuperer_utilisateur_par_username(username)
+    utilisateur = get_user_by_username(username)
     if utilisateur:
         usernameError = "Ce nom d'utilisateurest déjà pris !"
         return render_template("auth.html", error=usernameError)
@@ -153,7 +151,7 @@ def traitementRegister():
 # def est_admin():
 #     if "username" not in session:
 #         return False
-#     user = recuperer_utilisateur_par_username(session["username"])
+#     user = get_utilisateur_par_username(session["username"])
 #     # On autorise tous les rôles administratifs
 #     return user and user["role"] in ["super_admin", "admin", "statisticien"]
 
@@ -175,8 +173,8 @@ def about():
 @app.route("/home")
 def home():
     if "username" in session:
-        user = recuperer_utilisateur_par_username(session["username"])
-        programmes = recuperer_programmes()
+        user = get_user_by_username(session["username"])
+        programmes = get_programmes()
         return render_template("home.html", user=user, programmes=programmes)
     else:
         return redirect(url_for("index"))
@@ -188,7 +186,7 @@ def details_match(match_id):
     if "username" not in session:
         return redirect(url_for("login"))
 
-    programmes = recuperer_programmes()
+    programmes = get_programmes()
     match_trouve = next(
         (
             match
@@ -197,7 +195,7 @@ def details_match(match_id):
         ),
         None,
     )
-    user = recuperer_utilisateur_par_username(session["username"])
+    user = get_user_by_username(session["username"])
 
     if not match_trouve:
         flash("Match introuvable !", "error")
@@ -240,7 +238,7 @@ def creer_fiche():
         return redirect(url_for("home"))
 
     try:
-        user = recuperer_utilisateur_par_username(session["username"])
+        user = get_user_by_username(session["username"])
         date_pari = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Calcule du gain

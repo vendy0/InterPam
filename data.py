@@ -69,6 +69,84 @@ def initialiser_bdd():
         print(f"Erreur lors de l'initialisation : {e}")
 
 
+
+"""
+---------------------------------------
+RÉCUPÉRATION DE PARIEUR................
+---------------------------------------
+"""
+
+# Récupération par Nom
+def get_user_by_name(nom):
+    """Récupère un utilisateur par son nom."""
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM parieurs WHERE prenom LIKE ? OR nom LIKE ?", (nom, nom))
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération (nom) : {e}")
+        return None
+        
+# Récupération par Age
+def get_user_by_age(age):
+    """Récupère un utilisateur par son age."""
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM parieurs WHERE age = ?", (age,))
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération (age) : {e}")
+        return None
+        
+# Récupération par Email
+def get_user_by_email(email):
+    """Récupère un utilisateur par son email (Tabulation 4)."""
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM parieurs WHERE email = ?", (email,))
+            return cur.fetchone()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération (email) : {e}")
+        return None
+
+# Récupération par Username
+def get_user_by_username(username):
+    """Récupère un utilisateur par son username."""
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM parieurs WHERE username = ?", (username,))
+            return cur.fetchone()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération (username) : {e}")
+        return None
+        
+# Récupération par classe
+def get_user_by_grade(classe):
+    """Récupère un utilisateur par sa classe."""
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM parieurs WHERE classe = ?", (classe,))
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération (username) : {e}")
+        return None
+        
+        
+        
+        
+        
+        
+
 # Ajouter parieur
 def ajouter_parieur(user_data):
     """Ajoute un parieur avec gestion d'exception et tabulation."""
@@ -93,34 +171,6 @@ def ajouter_parieur(user_data):
             print(f"Utilisateur {user_data['username']} ajouté.")
     except sqlite3.Error as e:
         print(f"Erreur SQL lors de l'ajout du parieur : {e}")
-
-
-# Récupération par Email
-def recuperer_utilisateur_par_email(email):
-    """Récupère un utilisateur par son email (Tabulation 4)."""
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            conn.row_factory = sqlite3.Row
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM parieurs WHERE email = ?", (email,))
-            return cur.fetchone()
-    except sqlite3.Error as e:
-        print(f"Erreur lors de la récupération (email) : {e}")
-        return None
-
-
-# Récupération par Username
-def recuperer_utilisateur_par_username(username):
-    """Récupère un utilisateur par son username (Tabulation 4)."""
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            conn.row_factory = sqlite3.Row
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM parieurs WHERE username = ?", (username,))
-            return cur.fetchone()
-    except sqlite3.Error as e:
-        print(f"Erreur lors de la récupération (username) : {e}")
-        return None
 
 
 # Ajouter Match
@@ -160,7 +210,7 @@ def ajouter_option(libelle, cote, categorie, match_id):
 
 
 # Récupération des Matchs au complet avec des matchs dupliqués
-def recuperer_matchs_complets():
+def get_matchs_complets():
     try:
         with sqlite3.connect(DB_NAME) as conn:
             conn.row_factory = sqlite3.Row
@@ -176,7 +226,7 @@ def recuperer_matchs_complets():
 
 
 # Récupération des Matchs en cours seulement avec des matchs dupliqués
-def recuperer_matchs_en_cours():
+def get_matchs_en_cours():
     try:
         with sqlite3.connect(DB_NAME) as conn:
             conn.row_factory = sqlite3.Row
@@ -192,10 +242,10 @@ def recuperer_matchs_en_cours():
         print(f"Une erreur s'est produite lors de la récupération : {e}")
 
 
-# Récupération des Matchs en cours avec les options liés grace à recuperer_matchs_en_cours
-def recuperer_programmes():
+# Récupération des Matchs en cours avec les options liés grace à get_matchs_en_cours
+def get_programmes():
     donnees = (
-        recuperer_matchs_en_cours()
+        get_matchs_en_cours()
     )  # Assure-toi que cette fonction utilise des alias SQL (AS match_id, etc.)
     programme = {}
 
