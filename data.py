@@ -69,12 +69,12 @@ def initialiser_bdd():
         print(f"Erreur lors de l'initialisation : {e}")
 
 
-
 """
 ---------------------------------------
 RÉCUPÉRATION DE PARIEUR................
 ---------------------------------------
 """
+
 
 # Récupération par Nom
 def get_user_by_name(nom):
@@ -83,12 +83,15 @@ def get_user_by_name(nom):
         with sqlite3.connect(DB_NAME) as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
-            cur.execute("SELECT * FROM parieurs WHERE prenom LIKE ? OR nom LIKE ?", (nom, nom))
+            cur.execute(
+                "SELECT * FROM parieurs WHERE prenom LIKE ? OR nom LIKE ?", (nom, nom)
+            )
             return cur.fetchall()
     except sqlite3.Error as e:
         print(f"Erreur lors de la récupération (nom) : {e}")
         return None
-        
+
+
 # Récupération par Age
 def get_user_by_age(age):
     """Récupère un utilisateur par son age."""
@@ -101,7 +104,8 @@ def get_user_by_age(age):
     except sqlite3.Error as e:
         print(f"Erreur lors de la récupération (age) : {e}")
         return None
-        
+
+
 # Récupération par Email
 def get_user_by_email(email):
     """Récupère un utilisateur par son email (Tabulation 4)."""
@@ -115,6 +119,7 @@ def get_user_by_email(email):
         print(f"Erreur lors de la récupération (email) : {e}")
         return None
 
+
 # Récupération par Username
 def get_user_by_username(username):
     """Récupère un utilisateur par son username."""
@@ -127,7 +132,8 @@ def get_user_by_username(username):
     except sqlite3.Error as e:
         print(f"Erreur lors de la récupération (username) : {e}")
         return None
-        
+
+
 # Récupération par classe
 def get_user_by_grade(classe):
     """Récupère un utilisateur par sa classe."""
@@ -141,6 +147,7 @@ def get_user_by_grade(classe):
         print(f"Erreur lors de la récupération (username) : {e}")
         return None
 
+
 def filtrer_users_admin(criteres):
     """
     Recherche des utilisateurs correspondant à TOUS les critères fournis.
@@ -150,27 +157,27 @@ def filtrer_users_admin(criteres):
         with sqlite3.connect(DB_NAME) as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
-            
+
             # On ne garde que les champs qui ont une valeur
             filtres = {k: v for k, v in criteres.items() if v and v.strip() != ""}
-            
+
             if not filtres:
                 return []
 
             # Construction de la clause WHERE dynamique
             clauses = []
             parametres = []
-            
+
             for col, val in filtres.items():
-                if col in ["nom", "prenom"]: # Recherche floue pour les noms
+                if col in ["nom", "prenom"]:  # Recherche floue pour les noms
                     clauses.append(f"{col} LIKE ?")
                     parametres.append(f"%{val}%")
-                else: # Recherche exacte pour le reste (email, username, age, classe)
+                else:  # Recherche exacte pour le reste (email, username, age, classe)
                     clauses.append(f"{col} = ?")
                     parametres.append(val)
 
             sql = f"SELECT * FROM parieurs WHERE {' AND '.join(clauses)}"
-            
+
             cur.execute(sql, parametres)
             return cur.fetchall()
     except sqlite3.Error as e:
@@ -178,27 +185,47 @@ def filtrer_users_admin(criteres):
         return []
 
 
-
 """
 ---------------------------------------
 ...
 ---------------------------------------
 """
+
+
+def get_fiches(parieur_id):
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM paris WHERE parieur_id = ? ORDER BY date_pari DESC", (parieur_id,))
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération (age) : {e}")
+        return None
+
+
 def credit(username, solde):
-	user = get_user_by_username(username)
-	if not user:
-		return False, "Utilisateur non trouvé !"
-	new_solde = user["solde"] + solde
-	try:
-		with sqlite3.connect(DB_NAME) as conn:
-			cur = conn.cursor()
-			cur.execute("PRAGMA foreign_keys = ON")
-			cur.execute("UPDATE parieurs SET solde = ? WHERE username = ?", (new_solde, username))
-			print(f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}")
-			return True, f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}"
-	except sqlite3.Error as e:
-			print(f"Erreur SQL lors de l'ajout du parieur : {e}")
-	 
+    user = get_user_by_username(username)
+    if not user:
+        return False, "Utilisateur non trouvé !"
+    new_solde = user["solde"] + solde
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON")
+            cur.execute(
+                "UPDATE parieurs SET solde = ? WHERE username = ?",
+                (new_solde, username),
+            )
+            print(
+                f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}"
+            )
+            return (
+                True,
+                f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}",
+            )
+    except sqlite3.Error as e:
+        print(f"Erreur SQL lors de l'ajout du parieur : {e}")
 
 
 # Ajouter parieur
@@ -385,7 +412,8 @@ def obtenir_cotes_par_ids(liste_ids):
     except sqlite3Error as e:
         print(f"Erreur SQL : {e}")
         return []
-        
+
+
 # Dans data.py
 # from werkzeug.security import generate_password_hash
 # from datetime import datetime
@@ -396,12 +424,12 @@ def obtenir_cotes_par_ids(liste_ids):
 #             cur = conn.cursor()
 #             hash_mdp = generate_password_hash(mdp)
 #             created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            
+
 #             cur.execute("""
 #                 INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, role, solde)
 #                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 #             """, (prenom, nom, username, email, 99, "Direction", hash_mdp, created_at, 'super_admin', 0.0))
-            
+
 #             conn.commit()
 #             return True, "Le Super Admin a été créé avec succès !"
 #     except sqlite3.Error as e:

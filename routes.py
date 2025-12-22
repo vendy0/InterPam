@@ -1,4 +1,3 @@
-
 # Dans ton fichier principal
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import re
@@ -15,16 +14,24 @@ from data import (
     placer_pari,
     obtenir_cotes_par_ids,
 )
-# Dans ton fichier principal
 from admin_routes import admin_bp, users_bp
-
-
 
 app = Flask(__name__)
 app.register_blueprint(admin_bp)
 app.register_blueprint(users_bp)
 
 app.secret_key = "61e5e0e3df16e86a4957e6c22bc45190fc83bfae9516b771b7241baf55d"
+
+
+def set_date(date):
+    datetime = datetime.now()
+    today = datetime.strftime("%Y-%m-%d")
+    if date.startswith(datetime):
+        return "Aujourd'hui"
+    elif date:
+        return "Hier"
+    else:
+        return date
 
 
 @app.route("/")
@@ -63,9 +70,9 @@ def traitementLogin():
     email_username = donnees.get("email_username")
     mdp = donnees.get("mdp")
 
-    utilisateur = get_user_by_email(
+    utilisateur = get_user_by_email(email_username) or get_user_by_username(
         email_username
-    ) or get_user_by_username(email_username)
+    )
     if utilisateur and check_password_hash(utilisateur["mdp"], mdp):
         session["username"] = utilisateur["username"]
         return redirect(url_for("home"))
@@ -283,3 +290,10 @@ def creer_fiche():
 
     except:
         return redirect(request.referrer)
+
+
+@app.route("/fiches")
+def fiches():
+    if "username" not in session:
+        flash("Veuillez vous connecter !")
+        return redirect(url_for("login"))
