@@ -34,7 +34,7 @@
 			<thead style="background-color: #1e3a8a; color: white;">
 				<tr>
 					<th>Nom Complet</th>
-					<th>Username</th>
+					<th class="username_col">Username</th>
 					<th>Email</th>
 					<th>Classe</th>
 					<th>Solde</th>
@@ -50,6 +50,10 @@
 					<td>{{ user['classe'] }}</td>
 					<td>{{ user['solde'] }} HTG</td>
 					<td>{{ user['role'] }}</td>
+					<td>
+        <a href="#form-credit" onclick="preRemplirCredit('{{ user['username'] }}')" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer;">
+            Créditer
+        </a></td>
 				</tr>
 				{% endfor %}
 			</tbody>
@@ -60,10 +64,24 @@
 	<hr />
 	<h3>Créditer</h3>
 	<!-- <li><a href="{{ url_for('admin_users.credit_user') }}">Créditer</a></li> -->
-	<form action="{{ url_for('admin_users.credit_user') }}" method="POST">
+	<form id="form-credit" action="{{ url_for('admin_users.credit_user') }}" method="POST">
 		<input type="text" name="username_credit" id="username_credit" placeholder="Username"/>
-		<input type="number" name="solde" id="solde" step="any" placeholder="solde"/>
-		<button type="submit">Créditer</button>
+		<input type="number" name="solde" id="solde" step="any" placeholder="Somme à ajouter"/>
+		<button type="submit">Valider le crédit</button>
 	</form>
 </ul>
+
+<script>
+function preRemplirCredit(username) {
+    // On récupère le champ username du formulaire de crédit
+    const inputCredit = document.getElementById('username_credit');
+    const inputSomme = document.getElementById('solde');
+    
+    if (inputCredit) {
+        inputCredit.value = username; // On injecte le nom
+        inputSomme.focus(); // On place directement le curseur sur le montant pour gagner du temps
+    }
+}
+</script>
+
 {%endblock%}
