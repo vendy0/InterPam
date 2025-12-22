@@ -140,12 +140,66 @@ def get_user_by_grade(classe):
     except sqlite3.Error as e:
         print(f"Erreur lors de la récupération (username) : {e}")
         return None
-        
-        
-        
-        
-        
-        
+
+def filtrer_users_admin(criteres):
+    """
+    Recherche des utilisateurs correspondant à TOUS les critères fournis.
+    'criteres' est un dictionnaire {colonne: valeur}
+    """
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            
+            # On ne garde que les champs qui ont une valeur
+            filtres = {k: v for k, v in criteres.items() if v and v.strip() != ""}
+            
+            if not filtres:
+                return []
+
+            # Construction de la clause WHERE dynamique
+            clauses = []
+            parametres = []
+            
+            for col, val in filtres.items():
+                if col in ["nom", "prenom"]: # Recherche floue pour les noms
+                    clauses.append(f"{col} LIKE ?")
+                    parametres.append(f"%{val}%")
+                else: # Recherche exacte pour le reste (email, username, age, classe)
+                    clauses.append(f"{col} = ?")
+                    parametres.append(val)
+
+            sql = f"SELECT * FROM parieurs WHERE {' AND '.join(clauses)}"
+            
+            cur.execute(sql, parametres)
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur recherche dynamique : {e}")
+        return []
+
+
+
+"""
+---------------------------------------
+...
+---------------------------------------
+"""
+def credit(username, solde):
+	user = get_user_by_username(username)
+	if not user:
+		return False, "Utilisateur non trouvé !"
+	new_solde = user["solde"] + solde
+	try:
+		with sqlite3.connect(DB_NAME) as conn:
+			cur = conn.cursor()
+			cur.execute("PRAGMA foreign_keys = ON")
+			cur.execute("UPDATE parieurs SET solde = ? WHERE username = ?", (new_solde, username))
+			print(f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}")
+			return True, f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}"
+	except sqlite3.Error as e:
+			print(f"Erreur SQL lors de l'ajout du parieur : {e}")
+	 
+
 
 # Ajouter parieur
 def ajouter_parieur(user_data):

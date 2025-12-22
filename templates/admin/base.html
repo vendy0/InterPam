@@ -9,6 +9,13 @@
 		<title>Document</title>
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/base.css') }}" type="text/css" media="all" />
 		{% block css %}{% endblock %}
+		<style type="text/css" media="all">
+			svg{
+				width: 22px;
+				height: 22px;
+			}
+			
+		</style>
 	</head>
 	<body>
 		{% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}

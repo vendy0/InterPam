@@ -3,6 +3,67 @@
 {% extends 'admin/base.html' %} {% block contents %}
 
 <ul>
-	<li><a href="{{ url_for('admin_users.find_user') }}">Trouver un utilisateur</a></li>
+	<h3>Rechercher</h3>
+	<!-- <li><a href="{{ url_for('admin_users.find_user') }}">Trouver un utilisateur</a></li> -->
+	<form action="{{ url_for('admin_users.find_user') }}" method="POST">
+		<input type="text" name="nom" id="name" placeholder="Récupérer utilisateur par nom" value="{{ request.form.nom }}" />
+		<input type="text" name="username_finding" id="username_finding" placeholder="Récupérer utilisateur par username" value="{{ request.form.username_finding }}" />
+		<input type="text" name="email" id="email" placeholder="Récupérer utilisateur par email" value="{{ request.form.email }}" />
+		<input type="number" name="age" id="age" placeholder="Récupérer utilisateur par age" value="{{ request.form.age }}" />
+		<select class="classe_input" name="classe">
+			<option value="" selected="selected" disabled="disabled">Niveau scolaire</option>
+			<option value="septieme" {% if request.form.classe=="septieme" %} selected="selected" {% endif %}>7e A.F.</option>
+			<option value="huitieme" {% if request.form.classe=="huitieme" %} selected="selected" {%endif%}>8e A.F.</option>
+			<option value="neuvieme" {% if request.form.classe=="neuvieme" %} selected="selected" {%endif%}>9e A.F.</option>
+			<option value="secondaire 1" {% if request.form.classe=="secondaire 1" %} selected="selected" {%endif%}>NS1</option>
+			<option value="secondaire 2" {% if request.form.classe=="secondaire 2" %} selected="selected" {%endif%}>NS2</option>
+			<option value="secondaire 3" {% if request.form.classe=="secondaire 3" %} selected="selected" {%endif%}>NS3</option>
+			<option value="secondaire 4" {% if request.form.classe=="secondaire 4" %} selected="selected" {%endif%}>NS4</option>
+		</select>
+		<button type="submit">Rechercher</button>
+	</form>
+
+	<hr />
+	{% if no_users %}
+	<h3>Aucun utilisateur ne correspond à la recherche</h3>
+	{% elif users %}
+
+	<h3>Résultats trouvés ({{ users|length }})</h3>
+	<div class="results-table" style="background: white; padding: 20px; border-radius: 8px;">
+		<table border="1" style="width: 100%; border-collapse: collapse;">
+			<thead style="background-color: #1e3a8a; color: white;">
+				<tr>
+					<th>Nom Complet</th>
+					<th>Username</th>
+					<th>Email</th>
+					<th>Classe</th>
+					<th>Solde</th>
+					<th>Rôle</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for user in users %}
+				<tr>
+					<td>{{ user['prenom'] }} {{ user['nom'] }}</td>
+					<td><strong>@{{ user['username'] }}</strong></td>
+					<td>{{ user['email'] }}</td>
+					<td>{{ user['classe'] }}</td>
+					<td>{{ user['solde'] }} HTG</td>
+					<td>{{ user['role'] }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	{% endif %}
+
+	<hr />
+	<h3>Créditer</h3>
+	<!-- <li><a href="{{ url_for('admin_users.credit_user') }}">Créditer</a></li> -->
+	<form action="{{ url_for('admin_users.credit_user') }}" method="POST">
+		<input type="text" name="username_credit" id="username_credit" placeholder="Username"/>
+		<input type="number" name="solde" id="solde" step="any" placeholder="solde"/>
+		<button type="submit">Créditer</button>
+	</form>
 </ul>
 {%endblock%}
