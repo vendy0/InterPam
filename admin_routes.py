@@ -65,11 +65,12 @@ def credit_user():
 	username = donnees.get("username_credit")
 	try:
 		solde = float(donnees.get("solde"))
+		solde_centime = int(round(solde * 100))
 	except:
 		flash("Vous devez entrer un nombre !")
 		return render_template("admin/users.html")
 		
-	succes, message = credit(username, solde)
+	succes, message = credit(username, solde_centime)
 	if succes:
 		flash(message)
 		return render_template('admin/users.html')

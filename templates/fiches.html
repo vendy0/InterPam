@@ -1,0 +1,190 @@
+<!-- @format -->
+
+{% extends 'base.html' %} {% block css %}
+<style>
+						.fiches-container {
+						    max-width: 800px;
+						    margin: 20px auto;
+						    padding: 0 15px;
+						}
+						/* --- ÉTAT FERMÉ (Par défaut) --- */
+			.pari-card {
+			    background: #ffffff;
+			    border: 1px solid #e0e0e0;
+			    border-radius: 10px;
+			    margin-bottom: 15px;
+			    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			    transition: open 2s ease;
+			}
+
+			summary {
+			    list-style: none;
+			    padding: 18px;
+			    cursor: pointer;
+			    display: flex;
+			    justify-content: space-between;
+			    align-items: center;
+			    font-weight: 500;
+			}
+						summary::-webkit-details-marker {
+						    display: none;
+						}
+
+					/* ÉTAT DÉROULÉ (QUAND ON CLIQUE) */
+
+
+		/* --- ÉTAT OUVERT (Visible au clic) --- */
+
+		/* 1. Changement de la bordure et de l'ombre de la carte entière */
+		.pari-card[open] {
+		    border-color: #2c3e50; /* Couleur sombre du thème */
+		    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+		    transform: translateY(-2px); /* Petit effet de levée */
+		}
+
+		/* 2. L'en-tête devient sombre (Bleu nuit / Anthracite) */
+		.pari-card[open] summary {
+		    background-color: #2c3e50; /* Couleur foncée */
+		    color: #ffffff;            /* Texte en blanc pour le contraste */
+		    border-radius: 8px 8px 0 0; /* Garder les coins arrondis en haut uniquement */
+		}
+
+		/* 3. Le contenu des détails (Le fond de la liste des matchs) */
+		.pari-card[open] .details-content {
+		    background-color: #f8f9fa; /* Gris très clair pour bien lire les matchs */
+		    padding: 20px;
+		    border-top: 1px solid #eee;
+		}/* 4. Petite flèche qui change de couleur et tourne */
+	summary::after {
+	    content: '→';
+	    transition: all 0.3s;
+	    font-weight: bold;
+	}
+
+	.pari-card[open] summary::after {
+	    transform: rotate(90deg);
+	    color: #ffffff; /* La flèche devient blanche sur fond sombre */
+	}
+
+	/* 5. Ajustement des textes secondaires quand l'en-tête est sombre */
+	.pari-card[open] .ticket-date, .pari-card[open] .ticket-id {
+	    color: #bdc3c7; /* Gris clair pour que la date reste lisible sur le bleu nuit */
+	}
+
+
+						/* Infos de base sur le ticket */
+						.ticket-info {
+						    display: flex;
+						    flex-direction: column;
+						    gap: 4px;
+						}
+						.ticket-id {
+						    font-weight: bold;
+						    color: #333;
+						}
+						.ticket-date {
+						    font-size: 0.85em;
+						    color: #777;
+						}
+
+						/* Badges de Statut */
+						.status-badge {
+						    padding: 4px 10px;
+						    border-radius: 20px;
+						    font-size: 0.8em;
+						    font-weight: bold;
+						    text-transform: uppercase;
+						    color: #fff;
+						}
+						.status-en-attente { background-color: #f1c40f; } /* Jaune */
+						.status-gagne { background-color: #27ae60; }      /* Vert */
+						.status-perdu { background-color: #e74c3c; }      /* Rouge */
+
+						.selection-item {
+						    padding: 10px 0;
+						    border-bottom: 1px solid #f1f1f1;
+						}
+						.selection-item:last-child {
+						    border-bottom: none;
+						}
+						.match-name {
+						    font-weight: 600;
+						    display: block;
+						    margin-bottom: 4px;
+						}
+						.option-details {
+						    font-size: 0.9em;
+						    color: #555;
+						}
+						.cote-badge {
+						    background: #eee;
+						    padding: 2px 6px;
+						    border-radius: 4px;
+						    font-weight: bold;
+						}
+
+						/* Totaux en bas de la fiche */
+						.fiche-totals {
+						    margin-top: 15px;
+						    padding-top: 10px;
+						    border-top: 2px solid #eee;
+						}
+						.total-row {
+						    display: flex;
+						    justify-content: space-between;
+						    margin-bottom: 5px;
+						}
+						.gain-potentiel {
+						    color: #27ae60;
+						    font-weight: bold;
+						}
+</style>
+{% endblock %} {% block content %}
+<div class="fiches-container">
+	<h2 class="section-title">Mes Paris</h2>
+
+	{% if not fiches %}
+	<div style="text-align: center; margin-top: 50px;">
+		<p>Vous n'avez pas encore placé de paris.</p>
+		<a href="{{ url_for('home') }}" class="btn-parier" style="display:inline-block; margin-top:15px; padding:10px 20px; background:#007bff; color:white; border-radius:5px; text-decoration:none;">Commencer à parier</a>
+	</div>
+	{% else %}
+	<div class="fiches-list">
+		{# On boucle sur le dictionnaire 'fiches' (regroupé par ID) #} {% for id_pari, info in fiches.items() %}
+		<details class="pari-card">
+			<summary>
+				<div class="ticket-info">
+					<span class="ticket-id">Ticket #{{ id_pari }}</span>
+					<span class="ticket-date">{{ set_date(info.date) }}</span>
+				</div>
+
+				{# Détermination automatique de la classe du badge selon le statut #} {% set status_class = 'status-en-attente' %} {% if info.statut == 'gagné' %}{% set status_class = 'status-gagne' %} {% elif info.statut == 'perdu' %}{% set status_class = 'status-perdu' %}{% endif %}
+
+				<span class="status-badge {{ status_class }}"> {{ info.statut if info.statut else 'En attente' }} </span>
+			</summary>
+
+			<div class="details-content">
+				{# Liste des sélections (matchs) dans ce ticket #} {% for sel in info.selections %}
+				<div class="selection-item">
+					<span class="match-name">{{ sel.equipe_a }} vs {{ sel.equipe_b }}</span>
+					<div class="option-details">Pronostic : <strong>{{ sel.option }}</strong> | Cote : <span class="cote-badge">{{ sel.cote }}</span></div>
+				</div>
+				{% endfor %}
+
+				<div class="fiche-totals">
+					<div class="total-row">
+						<span>Mise totale :</span>
+						<strong>{{ info.mise | devise }}</strong>
+					</div>
+					<div class="total-row">
+						<span>Gain potentiel :</span>
+						<span class="gain-potentiel">{{ info.gain | devise }}</span>
+					</div>
+				</div>
+			</div>
+		</details>
+		{% endfor %}
+	</div>
+	{% endif %}
+</div>
+{% endblock %}

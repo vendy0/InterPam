@@ -1,7 +1,7 @@
 # Dans ton fichier principal
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import re
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from data import (
     ajouter_parieur,
@@ -13,6 +13,8 @@ from data import (
     get_programmes,
     placer_pari,
     obtenir_cotes_par_ids,
+    get_fiches,
+    get_fiches_detaillees
 )
 from admin_routes import admin_bp, users_bp
 
@@ -22,17 +24,43 @@ app.register_blueprint(users_bp)
 
 app.secret_key = "61e5e0e3df16e86a4957e6c22bc45190fc83bfae9516b771b7241baf55d"
 
+def set_date(date_a_tester):
+    # On sépare la date et l'heure (format attendu : "YYYY-MM-DD HH:MM:SS")
+    # partie_date aura "YYYY-MM-DD" et partie_heure aura "HH:MM:SS"
+    try:
+        partie_date, partie_heure = date_a_tester.split(' ')
+        heure_formatee = partie_heure[:5] # On garde juste "HH:MM"
+    except ValueError:
+        return date_a_tester # Retourne la date brute si le split échoue
 
-def set_date(date):
-    datetime = datetime.now()
-    today = datetime.strftime("%Y-%m-%d")
-    if date.startswith(datetime):
-        return "Aujourd'hui"
-    elif date:
-        return "Hier"
+    aujourdhui = date.today().isoformat()
+    hier = (date.today() - timedelta(days=1)).isoformat()
+    demain = (date.today() + timedelta(days=1)).isoformat()
+
+    if partie_date == aujourdhui:
+        return f"Aujourd'hui à {heure_formatee}"
+    elif partie_date == hier:
+        return f"Hier à {heure_formatee}"
+    elif partie_date == demain:
+        return f"Demain à {heure_formatee}"
     else:
-        return date
+        # Pour les autres jours, on peut retourner "DD/MM à HH:MM" 
+        # ou laisser la date telle quelle
+        return f"{partie_date} à {heure_formatee}"
 
+
+@app.context_processor
+def inject_user():
+    user = None
+    if 'username' in session:
+        user = get_user_by_username(session['username'])
+    return dict(current_user=user)
+
+app.jinja_env.globals.update(set_date=set_date)
+
+@app.template_filter('devise')
+def format_devise(valeur_centimes):
+    return "{:,.2f} HTG".format(valeur_centimes / 100)
 
 @app.route("/")
 def index():
@@ -147,7 +175,7 @@ def traitementRegister():
         "classe": classe,
         "mdp": hashed_passeword,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "solde": 0,
+        "solde": 100000,
     }
     ajouter_parieur(user)
     flash("Votre compte a été créé avec succès.", "succes")
@@ -180,9 +208,8 @@ def about():
 @app.route("/home")
 def home():
     if "username" in session:
-        user = get_user_by_username(session["username"])
         programmes = get_programmes()
-        return render_template("home.html", user=user, programmes=programmes)
+        return render_template("home.html", programmes=programmes)
     else:
         return redirect(url_for("index"))
 
@@ -232,7 +259,8 @@ def creer_fiche():
     donnees = request.form
     try:
         match_id = int(donnees.get("match_id"))
-        mise = float(donnees.get("mise", 0))
+        mise_float = float(donnees.get("mise", 0))
+        mise_centime = int(round(mise_float * 100))
         options_choisies = []
 
         # On parcourt toutes les clés envoyées par le formulaire
@@ -247,13 +275,16 @@ def creer_fiche():
     try:
         user = get_user_by_username(session["username"])
         date_pari = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if user["solde"] < mise_centime:
+        	flash("Vous solde est insuffisant !", "error")
+        	return redirect(request.referrer)
 
         # Calcule du gain
         # gain_potentiel = mise
 
         # 1. On récupère les IDs proprement
         options_ids = [
-            valeur
+            int(valeur)
             for cle, valeur in request.form.items()
             if cle not in ["match_id", "mise"]
         ]
@@ -269,31 +300,37 @@ def creer_fiche():
         for c in cotes:
             cote_totale *= c
 
-        gain_potentiel = mise * cote_totale
+        gain_potentiel_centime = int(round(mise_centime * cote_totale))
 
         # Dans routes.py, à la fin de la route creer_fiche :
         succes, message = placer_pari(
             user["id"],
             match_id,
-            mise,
-            gain_potentiel,
+            mise_centime,
+            gain_potentiel_centime,
             date_pari,
             options_ids,  # <-- On ajoute l'argument ici
         )
 
         if succes:
-            flash(f"{message} {mise} HGT a été déduit de votre compte.", "succes")
+            flash(f"{message} {mise_float} HGT a été déduit de votre compte.", "succes")
             return redirect(url_for("home"))
         else:
             flash(message, "error")
             return redirect(request.referrer)
 
     except:
-        return redirect(request.referrer)
-
+    	flash("Il y a eu une erreur lors de la récupération des fiches !")
+    	return redirect(request.referrer)
 
 @app.route("/fiches")
 def fiches():
     if "username" not in session:
         flash("Veuillez vous connecter !")
         return redirect(url_for("login"))
+    user = get_user_by_username(session['username'])
+    # On utilise la nouvelle fonction de regroupement
+    mes_fiches = get_fiches_detaillees(user["id"])
+    return render_template('fiches.html', fiches=mes_fiches)
+
+

@@ -2,7 +2,11 @@ import sqlite3
 
 DB_NAME = "interpam.db"
 
-
+"""
+========================================
+1. CONFIGURATION------------------------
+========================================
+"""
 def initialiser_bdd():
     """Initialise les tables de la base de données."""
     try:
@@ -21,16 +25,17 @@ def initialiser_bdd():
 					classe TEXT NOT NULL,
 					mdp TEXT NOT NULL,
 					created_at TEXT NOT NULL,
-					solde REAL DEFAULT 1000.0,
+					solde INTEGER DEFAULT 100000,
 					role TEXT DEFAULT 'parieur'
 				)""")
 
             # Table Paris
             cur.execute("""CREATE TABLE IF NOT EXISTS paris (
 					id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-					mise REAL NOT NULL,
-					gain_potentiel REAL NOT NULL,
+					mise INTEGER NOT NULL,
+					gain_potentiel INTEGER NOT NULL,
 					date_pari TEXT NOT NULL,
+					statut TEXT DEFAULT 'En attente',
 					parieur_id INTEGER,
 					FOREIGN KEY (parieur_id) REFERENCES parieurs(id) ON DELETE CASCADE
 				)""")
@@ -40,7 +45,7 @@ def initialiser_bdd():
 					id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 					equipe_a TEXT NOT NULL,
 					equipe_b TEXT NOT NULL,
-					date_match TEXT NOT NULL UNIQUE,
+					date_match TEXT NOT NULL,
 					statut TEXT DEFAULT 'ouvert'
 				)""")
 
@@ -70,11 +75,35 @@ def initialiser_bdd():
 
 
 """
----------------------------------------
-RÉCUPÉRATION DE PARIEUR................
----------------------------------------
+=======================================
+2. GESTION DES UTILISATEURS (CRUD)-----
+=======================================
 """
 
+# Ajouter parieur
+def ajouter_parieur(user_data):
+    """Ajoute un parieur avec gestion d'exception et tabulation."""
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            cur.execute("PRAGMA foreign_keys = ON")
+            cur.execute(
+                "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, solde) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    user_data["prenom"],
+                    user_data["nom"],
+                    user_data["username"],
+                    user_data["email"],
+                    user_data["age"],
+                    user_data["classe"],
+                    user_data["mdp"],
+                    user_data["created_at"],
+                    user_data["solde"],
+                ),
+            )
+            print(f"Utilisateur {user_data['username']} ajouté.")
+    except sqlite3.Error as e:
+        print(f"Erreur SQL lors de l'ajout du parieur : {e}")
 
 # Récupération par Nom
 def get_user_by_name(nom):
@@ -108,7 +137,7 @@ def get_user_by_age(age):
 
 # Récupération par Email
 def get_user_by_email(email):
-    """Récupère un utilisateur par son email (Tabulation 4)."""
+    """Récupère un utilisateur par son email."""
     try:
         with sqlite3.connect(DB_NAME) as conn:
             conn.row_factory = sqlite3.Row
@@ -149,10 +178,7 @@ def get_user_by_grade(classe):
 
 
 def filtrer_users_admin(criteres):
-    """
-    Recherche des utilisateurs correspondant à TOUS les critères fournis.
-    'criteres' est un dictionnaire {colonne: valeur}
-    """
+    """Recherche des utilisateurs correspondant à TOUS les critères fournis. 'criteres' est un dictionnaire {colonne: valeur}"""
     try:
         with sqlite3.connect(DB_NAME) as conn:
             conn.row_factory = sqlite3.Row
@@ -184,75 +210,30 @@ def filtrer_users_admin(criteres):
         print(f"Erreur recherche dynamique : {e}")
         return []
 
-
-"""
----------------------------------------
-...
----------------------------------------
-"""
-
-
-def get_fiches(parieur_id):
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            conn.row_factory = sqlite3.Row
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM paris WHERE parieur_id = ? ORDER BY date_pari DESC", (parieur_id,))
-            return cur.fetchall()
-    except sqlite3.Error as e:
-        print(f"Erreur lors de la récupération (age) : {e}")
-        return None
-
-
 def credit(username, solde):
-    user = get_user_by_username(username)
-    if not user:
-        return False, "Utilisateur non trouvé !"
-    new_solde = user["solde"] + solde
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            cur = conn.cursor()
-            cur.execute("PRAGMA foreign_keys = ON")
-            cur.execute(
-                "UPDATE parieurs SET solde = ? WHERE username = ?",
-                (new_solde, username),
-            )
-            print(
-                f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}"
-            )
-            return (
-                True,
-                f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}",
-            )
-    except sqlite3.Error as e:
-        print(f"Erreur SQL lors de l'ajout du parieur : {e}")
-
-
-# Ajouter parieur
-def ajouter_parieur(user_data):
-    """Ajoute un parieur avec gestion d'exception et tabulation."""
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            cur = conn.cursor()
-            cur.execute("PRAGMA foreign_keys = ON")
-            cur.execute(
-                "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, solde) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    user_data["prenom"],
-                    user_data["nom"],
-                    user_data["username"],
-                    user_data["email"],
-                    user_data["age"],
-                    user_data["classe"],
-                    user_data["mdp"],
-                    user_data["created_at"],
-                    user_data["solde"],
-                ),
-            )
-            print(f"Utilisateur {user_data['username']} ajouté.")
-    except sqlite3.Error as e:
-        print(f"Erreur SQL lors de l'ajout du parieur : {e}")
-
+	"""Créditer un utilisateur. """
+	user = get_user_by_username(username)
+	if not user:
+		return False, "Utilisateur non trouvé !"
+		new_solde = user["solde"] + solde
+	try:
+		with sqlite3.connect(DB_NAME) as conn:
+			cur = conn.cursor()
+			cur.execute("PRAGMA foreign_keys = ON")
+			cur.execute(
+				"UPDATE parieurs SET solde = ? WHERE username = ?",
+				(new_solde, username),
+				)
+			print(f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}")
+			return (True, f"Utilisateur {username} crédité de {solde} HTG. Nouveau solde : {new_solde}",)
+	except sqlite3.Error as e:
+		print(f"Erreur SQL lors de l'ajout du parieur : {e}")
+        
+"""
+========================================
+3. GESTION DES MATCHS-------------------
+========================================
+"""
 
 # Ajouter Match
 def ajouter_match(equipe_a, equipe_b, date_match):
@@ -272,24 +253,7 @@ def ajouter_match(equipe_a, equipe_b, date_match):
             return id_match
     except sqlite3.Error as e:
         print(f"Erreur lors de l'ajout du match : {e}")
-
-
-# Ajouter Option
-def ajouter_option(libelle, cote, categorie, match_id):
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            cur = conn.cursor()
-            cur.execute(
-                "INSERT INTO options(libelle, cote, categorie, match_id) VALUES (?, ?, ?, ?)",
-                (libelle, cote, categorie, match_id),
-            )
-            print(
-                f"Option {libelle} x {cote} de la catégorie {categorie} créé avec succès."
-            )
-    except sqlite3.Error as e:
-        print(f"Erreur lors de l'ajout : {e}")
-
-
+        
 # Récupération des Matchs au complet avec des matchs dupliqués
 def get_matchs_complets():
     try:
@@ -304,7 +268,6 @@ def get_matchs_complets():
             return cur.fetchall()
     except sqlite3.Error as e:
         print(f"Une erreur s'est produite lors de la récupération : {e}")
-
 
 # Récupération des Matchs en cours seulement avec des matchs dupliqués
 def get_matchs_en_cours():
@@ -321,7 +284,6 @@ def get_matchs_en_cours():
             return cur.fetchall()
     except sqlite3.Error as e:
         print(f"Une erreur s'est produite lors de la récupération : {e}")
-
 
 # Récupération des Matchs en cours avec les options liés grace à get_matchs_en_cours
 def get_programmes():
@@ -353,16 +315,67 @@ def get_programmes():
             }
 
             programme[m_id]["options"].append(nouvelle_option)
-
     return programme
+        
+"""
+========================================
+4. GESTION DES OPTIONS DE PARIS---------
+========================================
+"""
 
+# Ajouter Option
+def ajouter_option(libelle, cote, categorie, match_id):
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO options(libelle, cote, categorie, match_id) VALUES (?, ?, ?, ?)",
+                (libelle, cote, categorie, match_id),
+            )
+            print(
+                f"Option {libelle} x {cote} de la catégorie {categorie} créé avec succès."
+            )
+    except sqlite3.Error as e:
+        print(f"Erreur lors de l'ajout : {e}")
+        
+def obtenir_cotes_par_ids(liste_ids):
+    """Retourne la liste des cotes pour les IDs fournis."""
+    if not liste_ids:
+        return []
+
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            # On prépare les points d'interrogation pour le IN (?, ?, ?)
+            placeholders = ",".join(["?"] * len(liste_ids))
+            requete = f"SELECT cote FROM options WHERE id IN ({placeholders})"
+
+            cur.execute(requete, liste_ids)
+            resultats = cur.fetchall()  # Retourne une liste de tuples [(1.5,), (2.0,)]
+
+            return [r[0] for r in resultats]
+    except sqlite3Error as e:
+        print(f"Erreur SQL : {e}")
+        return []
+
+"""
+========================================
+5. SYSTÈME DE PARIS---------------------
+========================================
+"""
 
 def placer_pari(parieur_id, match_id, mise, gain_potentiel, date_pari, options_ids):
     try:
         with sqlite3.connect(DB_NAME) as conn:
             cur = conn.cursor()
             cur.execute("BEGIN TRANSACTION")
-
+            
+            cur.execute("SELECT solde FROM parieurs WHERE id = ?", (parieur_id,))
+            res = cur.fetchone()
+            if res and res[0] < mise:
+            	cur.execute("ROLLBACK TRANSACTION")
+            	return False, "Veiller recharger votre compte !"
+			
             # 1. On crée la fiche de pari principale
             cur.execute(
                 """INSERT INTO paris(parieur_id, mise, gain_potentiel, date_pari)
@@ -392,29 +405,85 @@ def placer_pari(parieur_id, match_id, mise, gain_potentiel, date_pari, options_i
         print(f"Erreur SQL : {e}")
         return False, f"Erreur lors du pari : {e}"
 
-
-def obtenir_cotes_par_ids(liste_ids):
-    """Retourne la liste des cotes pour les IDs fournis."""
-    if not liste_ids:
-        return []
-
+def get_fiches(parieur_id):
     try:
         with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
             cur = conn.cursor()
-            # On prépare les points d'interrogation pour le IN (?, ?, ?)
-            placeholders = ",".join(["?"] * len(liste_ids))
-            requete = f"SELECT cote FROM options WHERE id IN ({placeholders})"
+            cur.execute("SELECT * FROM paris WHERE parieur_id = ? ORDER BY date_pari DESC", (parieur_id,))
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération des paris : {e}")
+        return None
 
-            cur.execute(requete, liste_ids)
-            resultats = cur.fetchall()  # Retourne une liste de tuples [(1.5,), (2.0,)]
+def get_fiches_detaillees(parieur_id):
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            # Cette requête récupère le pari ET les détails des matchs associés via matchs_paris
+            query = """
+                SELECT 
+                    p.id AS pari_id, p.mise, p.gain_potentiel, p.date_pari,
+                    m.equipe_a, m.equipe_b, m.date_match,
+                    o.libelle AS option_nom, o.cote
+                FROM paris p
+                JOIN matchs_paris mp ON p.id = mp.paris_id
+                JOIN matchs m ON mp.matchs_id = m.id
+                JOIN options o ON mp.option_id = o.id
+                WHERE p.parieur_id = ?
+                ORDER BY p.date_pari DESC
+            """
+            cur.execute(query, (parieur_id,))
+            lignes = cur.fetchall()
+            
+            # On regroupe par pari_id car un pari peut contenir plusieurs matchs (combiné)
+            fiches = {}
+            for ligne in lignes:
+                p_id = ligne['pari_id']
+                if p_id not in fiches:
+                    fiches[p_id] = {
+                        'mise': ligne['mise'],
+                        'gain': ligne['gain_potentiel'],
+                        'date': ligne['date_pari'],
+                        'selections': []
+                    }
+                fiches[p_id]['selections'].append({
+                    'equipe_a': ligne['equipe_a'],
+                    'equipe_b': ligne['equipe_b'],
+                    'option': ligne['option_nom'],
+                    'cote': ligne['cote']
+                })
+            return fiches
+    except sqlite3.Error as e:
+        print(f"Erreur SQL fiches détaillées : {e}")
+        return {}
 
-            return [r[0] for r in resultats]
-    except sqlite3Error as e:
-        print(f"Erreur SQL : {e}")
-        return []
+"""
+========================================
+6. RÉSOLUTION ET GAINS------------------
+========================================
+"""
 
 
-# Dans data.py
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+========================================
+ADMINISTRATION ET STATISTIQUES----------
+========================================
+"""
 # from werkzeug.security import generate_password_hash
 # from datetime import datetime
 
@@ -434,3 +503,5 @@ def obtenir_cotes_par_ids(liste_ids):
 #             return True, "Le Super Admin a été créé avec succès !"
 #     except sqlite3.Error as e:
 #         return False, f"Erreur lors de la création : {e}"
+
+

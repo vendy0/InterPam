@@ -95,8 +95,7 @@ __
 - Vérifier le type (basket ou foot ?)
 - Ajouter mon email comme adm
 - Insérer ReCaptcha
-- Finir la fonction date, hier, aujourd'hui...
-
+- Ajouter Update cote
 
 
 
