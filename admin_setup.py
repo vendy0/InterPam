@@ -8,11 +8,11 @@ def main():
     initialiser_bdd()
     
     # Remplace par tes vraies infos
-    prenom = "Andy V."
-    nom = "Descarted"
+    prenom = "Admin Test"
+    nom = "Testing"
     username = "Anonymous"
-    email = "klyrolly0@gmail.com"
-    mdp = "Vendy_317" # Change-le !
+    email = "test@gmail.com"
+    mdp = "genetique" # Change-le !
 
     succes, message = creer_super_admin(prenom, nom, username, email, mdp)
     

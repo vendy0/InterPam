@@ -1,0 +1,64 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="container" style="padding: 20px; max-width: 800px; margin: auto; background: #f4f4f4; border-radius: 8px;">
+    <h2>Configuration de Match Avancée</h2>
+    
+    <form method="POST" id="match-form">
+        <div style="background: white; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <h3>Infos Match</h3>
+            <input type="text" name="equipe_a" placeholder="Équipe Domicile" required style="width: 45%;"> 
+            VS 
+            <input type="text" name="equipe_b" placeholder="Équipe Extérieur" required style="width: 45%;">
+            <br><br>
+            <input type="datetime-local" name="date_match" required>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 5px;">
+            <h3>Options et Marchés</h3>
+            <table style="width: 100%;" id="options-table">
+                <thead>
+                    <tr style="text-align: left;">
+                        <th>Catégorie (ex: Score)</th>
+                        <th>Libellé (ex: Victoire A)</th>
+                        <th>Cote</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="options-body">
+                    <tr>
+                        <td><input type="text" name="categorie[]" placeholder="Résultat" required></td>
+                        <td><input type="text" name="libelle[]" placeholder="V1" required></td>
+                        <td><input type="number" step="0.01" name="cote[]" placeholder="1.50" required style="width: 80px;"></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <button type="button" onclick="ajouterLigne()" style="background: #28a745; color: white; border: none; padding: 8px; cursor: pointer;">
+                + Ajouter une option / catégorie
+            </button>
+        </div>
+
+        <br>
+        <button type="submit" style="width: 100%; padding: 15px; background: #1e3a8a; color: white; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
+            CRÉER LE MATCH ET LES OPTIONS
+        </button>
+    </form>
+</div>
+
+<script>
+function ajouterLigne() {
+    const tbody = document.getElementById('options-body');
+    const nouvelleLigne = document.createElement('tr');
+    
+    nouvelleLigne.innerHTML = `
+        <td><input type="text" name="categorie[]" placeholder="Catégorie" required></td>
+        <td><input type="text" name="libelle[]" placeholder="Option" required></td>
+        <td><input type="number" step="0.01" name="cote[]" placeholder="1.00" required style="width: 80px;"></td>
+        <td><button type="button" onclick="this.parentElement.parentElement.remove()" style="color: red; border: none; background: none; cursor: pointer;">&times; Supprimer</button></td>
+    `;
+    tbody.appendChild(nouvelleLigne);
+}
+</script>
+{% endblock %}

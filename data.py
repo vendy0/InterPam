@@ -109,7 +109,7 @@ def ajouter_parieur(user_data):
             cur = conn.cursor()
             cur.execute("PRAGMA foreign_keys = ON")
             cur.execute(
-                "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, solde) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     user_data["prenom"],
                     user_data["nom"],
@@ -119,7 +119,6 @@ def ajouter_parieur(user_data):
                     user_data["classe"],
                     user_data["mdp"],
                     user_data["created_at"],
-                    user_data["solde"],
                 ),
             )
             print(f"Utilisateur {user_data['username']} ajouté.")
@@ -220,7 +219,7 @@ def filtrer_users_admin(criteres):
             parametres = []
 
             for col, val in filtres.items():
-                if col in ["nom", "prenom"]:
+                if col in ["nom", "prenom", "username"]:
                     clauses.append(f"{col} LIKE ?")
                     parametres.append(f"%{val}%")
                 else:
@@ -494,3 +493,37 @@ def get_fiches_detaillees(parieur_id):
     except sqlite3.Error as e:
         print(f"Erreur SQL fiches détaillées : {e}")
         return {}
+
+
+# from werkzeug.security import generate_password_hash
+# from datetime import datetime
+# def creer_super_admin(prenom, nom, username, email, mdp):
+#     try:
+#         with sqlite3.connect(DB_NAME) as conn:
+#             cur = conn.cursor()
+#             hash_mdp = generate_password_hash(mdp)
+#             created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+#             cur.execute(
+#                 """
+#                 INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, role, solde)
+#                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+#             """,
+#                 (
+#                     prenom,
+#                     nom,
+#                     username,
+#                     email,
+#                     99,
+#                     "Direction",
+#                     hash_mdp,
+#                     created_at,
+#                     "super_admin",
+#                     200000,
+#                 ),
+#             )
+
+#             conn.commit()
+#             return True, "Le Super Admin a été créé avec succès !"
+#     except sqlite3.Error as e:
+#         return False, f"Erreur lors de la création : {e}"

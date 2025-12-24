@@ -14,13 +14,14 @@ from data import (
     get_programmes,
     placer_pari,
     obtenir_cotes_par_ids,
-    get_fiches_detaillees
+    get_fiches_detaillees,
 )
-from admin_routes import admin_bp, users_bp
+from admin_routes import admin_bp, users_bp, matchs_bp
 
 app = Flask(__name__)
 app.register_blueprint(admin_bp)
 app.register_blueprint(users_bp)
+app.register_blueprint(matchs_bp)
 
 app.secret_key = "61e5e0e3df16e86a4957e6c22bc45190fc83bfae9516b771b7241baf55d"
 
@@ -175,7 +176,6 @@ def traitementRegister():
         "classe": classe,
         "mdp": hashed_passeword,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "solde": 0,
     }
     ajouter_parieur(user)
     flash("Votre compte a été créé avec succès.", "succes")
@@ -195,7 +195,7 @@ def traitementRegister():
     #         flash("Accès interdit. Réservé au staff.", "error")
     #         return redirect(url_for("home"))
 
-    return "Bienvenue sur le Panel Admin !"
+    # return "Bienvenue sur le Panel Admin !"
 
 
 @app.route("/about")

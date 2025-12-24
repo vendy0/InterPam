@@ -4,8 +4,8 @@
 
 <ul>
 	<h3>Rechercher</h3>
-	<!-- <li><a href="{{ url_for('admin_users.find_user') }}">Trouver un utilisateur</a></li> -->
-	<form action="{{ url_for('admin_users.find_user') }}" method="POST">
+	<!-- <li><a href="{{ url_for('users.find_user') }}">Trouver un utilisateur</a></li> -->
+	<form action="{{ url_for('users.find_user') }}" method="POST">
 		<input type="text" name="nom" id="name" placeholder="Récupérer utilisateur par nom" value="{{ request.form.nom }}" />
 		<input type="text" name="username_finding" id="username_finding" placeholder="Récupérer utilisateur par username" value="{{ request.form.username_finding }}" />
 		<input type="text" name="email" id="email" placeholder="Récupérer utilisateur par email" value="{{ request.form.email }}" />
@@ -51,7 +51,7 @@
 					<td>{{ user['solde'] }} HTG</td>
 					<td>{{ user['role'] }}</td>
 					<td>
-        <a href="#form-credit" onclick="preRemplirCredit('{{ user['username'] }}')" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer;">
+        <a href="#" onclick="preRemplirCredit('{{ user['username'] }}')" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer;">
             Créditer
         </a></td>
 				</tr>
@@ -63,8 +63,8 @@
 
 	<hr />
 	<h3>Créditer</h3>
-	<!-- <li><a href="{{ url_for('admin_users.credit_user') }}">Créditer</a></li> -->
-	<form id="form-credit" action="{{ url_for('admin_users.credit_user') }}" method="POST">
+	<!-- <li><a href="{{ url_for('users.credit_user') }}">Créditer</a></li> -->
+	<form id="form-credit" action="{{ url_for('users.credit_user') }}" method="POST">
 		<input type="text" name="username_credit" id="username_credit" placeholder="Username"/>
 		<input type="number" name="solde" id="solde" step="any" placeholder="Somme à ajouter"/>
 		<button type="submit">Valider le crédit</button>
