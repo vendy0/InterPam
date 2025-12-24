@@ -1,0 +1,82 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="container" style="padding: 20px; max-width: 800px; margin: auto; background: #f4f4f4; border-radius: 8px;">
+    <h2>Modifier le Match</h2>
+    
+    <form method="POST">
+        <div style="background: white; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <h3>Infos Match</h3>
+            <label>Équipes :</label><br>
+            <input type="text" name="equipe_a" value="{{ match.equipe_a }}" required style="width: 40%;"> 
+            VS 
+            <input type="text" name="equipe_b" value="{{ match.equipe_b }}" required style="width: 40%;">
+            <br><br>
+            
+            <label>Date :</label><br>
+            <input type="datetime-local" name="date_match" value="{{ match.date_match }}" required>
+            
+            <br><br>
+            <label>Statut :</label><br>
+            <select name="statut" style="padding: 5px;">
+                <option value="ouvert" {% if match.statut == 'ouvert' %}selected{% endif %}>Ouvert</option>
+                <option value="fermé" {% if match.statut == 'fermé' %}selected{% endif %}>Fermé</option>
+            </select>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 5px;">
+            <h3>Options et Cotes</h3>
+            <p style="font-size: 0.9em; color: #666;">⚠️ Ne modifiez pas radicalement une option si des paris ont déjà été placés dessus.</p>
+            
+            <table style="width: 100%;" id="options-table">
+                <thead>
+                    <tr style="text-align: left;">
+                        <th>Catégorie</th>
+                        <th>Libellé</th>
+                        <th>Cote</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="options-body">
+                    {% for opt in options %}
+                    <tr>
+                        <input type="hidden" name="option_id[]" value="{{ opt.id }}">
+                        
+                        <td><input type="text" name="categorie[]" value="{{ opt.categorie }}" required></td>
+                        <td><input type="text" name="libelle[]" value="{{ opt.libelle }}" required></td>
+                        <td><input type="number" step="0.01" name="cote[]" value="{{ opt.cote }}" required style="width: 80px;"></td>
+                        <td><span style="color: grey; font-size: 0.8em;">(Existante)</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <br>
+            <button type="button" onclick="ajouterLigne()" style="background: #28a745; color: white; border: none; padding: 8px; cursor: pointer;">
+                + Ajouter une option
+            </button>
+        </div>
+
+        <br>
+        <button type="submit" style="width: 100%; padding: 15px; background: #1e3a8a; color: white; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
+            ENREGISTRER LES MODIFICATIONS
+        </button>
+    </form>
+</div>
+
+<script>
+function ajouterLigne() {
+    const tbody = document.getElementById('options-body');
+    const nouvelleLigne = document.createElement('tr');
+    
+    // Note: l'input option_id est vide value="0" pour indiquer que c'est nouveau
+    nouvelleLigne.innerHTML = `
+        <input type="hidden" name="option_id[]" value="0">
+        <td><input type="text" name="categorie[]" placeholder="Catégorie" required></td>
+        <td><input type="text" name="libelle[]" placeholder="Option" required></td>
+        <td><input type="number" step="0.01" name="cote[]" placeholder="1.00" required style="width: 80px;"></td>
+        <td><button type="button" onclick="this.parentElement.parentElement.remove()" style="color: red; border: none; background: none; cursor: pointer;">&times; Supprimer</button></td>
+    `;
+    tbody.appendChild(nouvelleLigne);
+}
+</script>
+{% endblock %}
