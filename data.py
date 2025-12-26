@@ -333,6 +333,49 @@ def get_programmes():
     return programme
 
 
+def get_all_matchs():
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("""SELECT m.id AS match_id, m.equipe_a, m.equipe_b, m.date_match, o.libelle, o.id AS option_id, o.cote, o.categorie
+            FROM matchs m
+            INNER JOIN options o 
+            ON m.id = o.match_id
+            """)
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(
+            f"Une erreur s'est produite lors de la récupération de tous les matchs : {e}"
+        )
+
+
+def get_all_programmes():
+    donnees = get_all_matchs()
+    programme = {}
+
+    for ligne in donnees:
+        m_id = ligne["match_id"]
+        if m_id not in programme:
+            programme[m_id] = {
+                "equipe_a": ligne["equipe_a"],
+                "equipe_b": ligne["equipe_b"],
+                "date_match": ligne["date_match"],
+                "match_id": m_id,
+                "options": [],
+            }
+
+        if ligne["option_id"]:
+            nouvelle_option = {
+                "option_id": ligne["option_id"],
+                "libelle": ligne["libelle"],
+                "cote": ligne["cote"],
+                "categorie": ligne["categorie"],
+            }
+            programme[m_id]["options"].append(nouvelle_option)
+    return programme
+
+
 """
 ========================================
 4. GESTION DES OPTIONS DE PARIS---------

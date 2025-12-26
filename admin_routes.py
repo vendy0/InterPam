@@ -1,5 +1,6 @@
 # admin_routes.py
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request
+from datetime import datetime, date, timedelta
 from data import (
     get_user_by_username,
     get_user_by_email,
@@ -11,11 +12,34 @@ from data import (
     ajouter_match,
     ajouter_option,
     credit,
+    get_programmes,
 )
+
 
 users_bp = Blueprint("users", __name__, url_prefix="/admin/users")
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 matchs_bp = Blueprint("matchs", __name__, url_prefix="/admin/match")
+
+
+def set_date(date_a_tester):
+    try:
+        partie_date, partie_heure = date_a_tester.split(" ")
+        heure_formatee = partie_heure[:5]
+    except ValueError:
+        return date_a_tester
+
+    aujourdhui = date.today().isoformat()
+    hier = (date.today() - timedelta(days=1)).isoformat()
+    demain = (date.today() + timedelta(days=1)).isoformat()
+
+    if partie_date == aujourdhui:
+        return f"Aujourd'hui à {heure_formatee}"
+    elif partie_date == hier:
+        return f"Hier à {heure_formatee}"
+    elif partie_date == demain:
+        return f"Demain à {heure_formatee}"
+    else:
+        return f"{partie_date} à {heure_formatee}"
 
 
 # Un décorateur personnalisé pour vérifier si c'est un admin
@@ -124,7 +148,7 @@ def nouveau_match():
         date_match = request.form.get("date_match")
 
         # 1. Création du match
-        match_id = ajouter_match(equipe_a, equipe_b, date_match)  #
+        match_id = ajouter_match(equipe_a, equipe_b, date_match.replace("T", " "))  #
 
         if match_id:
             # 2. Récupération des listes dynamiques
@@ -146,3 +170,45 @@ def nouveau_match():
             return redirect(url_for("admin.dashboard"))  #
 
     return render_template("admin/matchs/nouveau_match.html")
+
+
+@matchs_bp.route("/modifier", methods=["GET", "POST"])
+@admin_required  #
+def show_edit_matchs():
+    programmes = get_programmes()
+    return render_template("admin/matchs/edit_match.html", programmes=programmes)
+
+
+@matchs_bp.route("/modifier/<int:match_id>", methods=["GET", "POST"])
+@admin_required  #
+def edit_matchs(match_id):
+    programmes = get_programmes()
+    match_trouve = next(
+        (
+            match
+            for key, match in programmes.items()
+            if match.get("match_id") == match_id
+        ),
+        None,
+    )
+
+    if not match_trouve:
+        flash("Match introuvable !", "error")
+        return redirect(url_for("match.show_edit_matchs"))
+
+    # Dans routes.py -> details_match
+
+    categories_dict = {}
+    for opt in match_trouve["options"]:
+        cat = opt["categorie"]
+        if cat not in categories_dict:
+            categories_dict[cat] = []
+
+        # CETTE LIGNE DOIT ÊTRE INDENTÉE (DÉCALÉE) DANS LA BOUCLE FOR
+        categories_dict[cat].append(opt)
+    return render_template(
+        "admin/matchs/edit_match.html",
+        programmes=programmes,
+        match=match_trouve,
+        categories=categories_dict,
+    )

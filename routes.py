@@ -209,8 +209,7 @@ def home():
         user = get_user_by_username(session["username"])
         programmes = get_programmes()
         return render_template("home.html", user=user, programmes=programmes)
-    else:
-        return redirect(url_for("index"))
+    return redirect(url_for("index"))
 
 
 # Dans routes.py
