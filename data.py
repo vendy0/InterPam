@@ -236,7 +236,7 @@ def get_all_users():
 		with sqlite3.connect(DB_NAME) as conn:
 			conn.row_factory = sqlite3.Row
 			cur = conn.cursor()
-			cur.execute("SELECT * FROM parieurs")
+			cur.execute("SELECT * FROM parieurs ORDER BY prenom ASC")
 			return cur.fetchall()
 	except Exception as e:
 		return f"Erreur lors de la récupération : {e}"

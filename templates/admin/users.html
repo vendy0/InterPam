@@ -50,7 +50,7 @@
 					<td><strong>@{{ user['username'] }}</strong></td>
 					<td>{{ user['email'] }}</td>
 					<td>{{ user['classe'] }}</td>
-					<td>{{ user['solde'] }} HTG</td>
+					<td>{{ user['solde'] / 100 }} HTG</td>
 					<td>{{ user['role'] }}</td>
 					<td>
 						<a href="#" onclick="preRemplirCredit('{{ user['username'] }}')" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer;"> Créditer </a>
