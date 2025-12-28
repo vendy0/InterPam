@@ -96,7 +96,7 @@ def traitementLogin():
     if request.method == "GET":
         return render_template("auth.html")
     donnees = request.form
-    email_username = donnees.get("email_username")
+    email_username = donnees.get("email_username").stip()
     mdp = donnees.get("mdp")
 
     utilisateur = get_user_by_email(email_username) or get_user_by_username(
