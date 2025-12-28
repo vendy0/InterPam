@@ -230,6 +230,18 @@ def filtrer_users_admin(criteres):
 		return []
 
 
+def get_all_users():
+	"""Récupérer tous les utilisateurs."""
+	try:
+		with sqlite3.connect(DB_NAME) as conn:
+			conn.row_factory = sqlite3.Row
+			cur = conn.cursor()
+			cur.execute("SELECT * FROM parieurs")
+			return cur.fetchall()
+	except Exception as e:
+		return f"Erreur lors de la récupération : {e}"
+
+
 def credit(username, montant_decimal):
 	"""Créditer un utilisateur (Accepte un montant Decimal)."""
 	try:

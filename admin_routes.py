@@ -13,6 +13,7 @@ from data import (
 	ajouter_option,
 	credit,
 	get_programmes,
+	get_all_users,
 )
 
 
@@ -83,18 +84,20 @@ def users():
 def find_user():
 	if request.method == "GET":
 		return render_template("admin/users.html")
+	action = request.form.get("action")
+	if action == "search":
+		criteres = {
+			"nom": request.form.get("nom").strip(),
+			"username": request.form.get("username_finding").strip(),
+			"email": request.form.get("email").strip(),
+			"age": request.form.get("age"),
+			"classe": request.form.get("classe"),
+		}
 
-	criteres = {
-		"nom": request.form.get("nom").strip(),
-		"username": request.form.get("username_finding").strip(),
-		"email": request.form.get("email").strip(),
-		"age": request.form.get("age"),
-		"classe": request.form.get("classe"),
-	}
-
-	# On appelle la fonction de filtrage strict (AND)
-	resultats = filtrer_users_admin(criteres)
-
+		# On appelle la fonction de filtrage strict (AND)
+		resultats = filtrer_users_admin(criteres)
+	elif action == "searchAll":
+		resultats = get_all_users()
 	if len(resultats) > 0:
 		return render_template("admin/users.html", users=resultats)
 	else:

@@ -11,7 +11,7 @@
 		<input type="text" name="email" id="email" placeholder="Récupérer utilisateur par email" value="{{ request.form.email }}" />
 		<input type="number" name="age" id="age" placeholder="Récupérer utilisateur par age" value="{{ request.form.age }}" />
 		<select class="classe_input" name="classe">
-			<option value="" selected="selected" disabled="disabled">Niveau scolaire</option>
+			<option value="" selected="selected">Classe</option>
 			<option value="septieme" {% if request.form.classe=="septieme" %} selected="selected" {% endif %}>7e A.F.</option>
 			<option value="huitieme" {% if request.form.classe=="huitieme" %} selected="selected" {%endif%}>8e A.F.</option>
 			<option value="neuvieme" {% if request.form.classe=="neuvieme" %} selected="selected" {%endif%}>9e A.F.</option>
@@ -19,8 +19,10 @@
 			<option value="secondaire 2" {% if request.form.classe=="secondaire 2" %} selected="selected" {%endif%}>NS2</option>
 			<option value="secondaire 3" {% if request.form.classe=="secondaire 3" %} selected="selected" {%endif%}>NS3</option>
 			<option value="secondaire 4" {% if request.form.classe=="secondaire 4" %} selected="selected" {%endif%}>NS4</option>
+			<option value="Direction" {% if request.form.classe=="Direction" %} selected="selected" {%endif%}>Direction</option>
 		</select>
-		<button type="submit">Rechercher</button>
+		<button type="submit" name="action" value="search">Rechercher</button>
+		<button type="submit" name="action" value="searchAll">Tout Rechercher</button>
 	</form>
 
 	<hr />
@@ -48,12 +50,11 @@
 					<td><strong>@{{ user['username'] }}</strong></td>
 					<td>{{ user['email'] }}</td>
 					<td>{{ user['classe'] }}</td>
-					<td>{{ user['solde'] / 100 }} HTG</td>
+					<td>{{ user['solde'] }} HTG</td>
 					<td>{{ user['role'] }}</td>
 					<td>
-        <a href="#" onclick="preRemplirCredit('{{ user['username'] }}')" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer;">
-            Créditer
-        </a></td>
+						<a href="#" onclick="preRemplirCredit('{{ user['username'] }}')" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer;"> Créditer </a>
+					</td>
 				</tr>
 				{% endfor %}
 			</tbody>
@@ -65,23 +66,23 @@
 	<h3>Créditer</h3>
 	<!-- <li><a href="{{ url_for('users.credit_user') }}">Créditer</a></li> -->
 	<form id="form-credit" action="{{ url_for('users.credit_user') }}" method="POST">
-		<input type="text" name="username_credit" id="username_credit" placeholder="Username"/>
-		<input type="number" name="solde" id="solde" step="any" placeholder="Somme à ajouter"/>
+		<input type="text" name="username_credit" id="username_credit" placeholder="Username" />
+		<input type="number" name="solde" id="solde" step="any" placeholder="Somme à ajouter" />
 		<button type="submit">Valider le crédit</button>
 	</form>
 </ul>
 
 <script>
-function preRemplirCredit(username) {
-    // On récupère le champ username du formulaire de crédit
-    const inputCredit = document.getElementById('username_credit');
-    const inputSomme = document.getElementById('solde');
-    
-    if (inputCredit) {
-        inputCredit.value = username; // On injecte le nom
-        inputSomme.focus(); // On place directement le curseur sur le montant pour gagner du temps
-    }
-}
+	function preRemplirCredit(username) {
+	    // On récupère le champ username du formulaire de crédit
+	    const inputCredit = document.getElementById('username_credit');
+	    const inputSomme = document.getElementById('solde');
+
+	    if (inputCredit) {
+	        inputCredit.value = username; // On injecte le nom
+	        inputSomme.focus(); // On place directement le curseur sur le montant pour gagner du temps
+	    }
+	}
 </script>
 
 {%endblock%}
