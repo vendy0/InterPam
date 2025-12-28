@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ticket.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="ticket-container">
+    <h2 class="ticket-title">
+        Mon Ticket 
+        <span class="status-badge status-en-attente">{{ selections|length }} sélection(s)</span>
+    </h2>
+    
+    {% if selections %}
+    <div class="ticket-list">
+        {% for sel in selections %}
+        <div class="ticket-item">
+            <div class="match-info">
+                <div class="match-teams">{{ sel.equipe_a }} vs {{ sel.equipe_b }}</div>
+                <div class="bet-choice">{{ sel.categorie|replace('_', ' ') }} : <strong>{{ sel.libelle }}</strong></div>
+            </div>
+            <div class="selection-right">
+                <span class="cote-badge">{{ sel.cote }}</span>
+                <a href="{{ url_for('supprimer_du_ticket', match_id=sel.match_id) }}" class="btn-delete">Retirer</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="ticket-summary">
+        <div class="summary-row">
+            <span>Cote Totale</span>
+            <span class="cote-totale">{{ cote_totale }}</span>
+        </div>
+
+        <form action="{{ url_for('valider_ticket') }}" method="POST">
+            <div class="same-line">
+            <div class="mise-section">
+            <label class="mise-label">Votre Mise (HTG)</label>
+            <input type="number" name="mise" id="mise-input" placeholder="Min. 10 HTG" required min="10" max="1000" step="0.01">
+            </div>
+            
+            <div class="gain-section">
+                Gain Potentiel : <br>
+                <strong id="gain-estime">0.00</strong> HTG
+            </div>
+            </div>
+
+            <button type="submit" class="btn-valider">
+                VALIDER LE PARI
+            </button>
+        </form>
+        
+        <div class="vider_ticket">
+            <a href="{{ url_for('vider_ticket') }}">Vider le ticket</a>
+        </div>
+    </div>
+
+    <script>
+        const miseInput = document.getElementById('mise-input');
+        const gainDisplay = document.getElementById('gain-estime');
+        const cote = {{ cote_totale }};
+
+        miseInput.addEventListener('input', function() {
+            let mise = parseFloat(this.value);
+            if(isNaN(mise)) mise = 0;
+            let gain = mise * cote;
+            gainDisplay.textContent = gain.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        });
+    </script>
+    
+    {% else %}
+        <div class="empty-ticket">
+            <p>Votre ticket est actuellement vide.</p>
+            <a href="{{ url_for('home') }}" class="btn-return">Parcourir les matchs</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
