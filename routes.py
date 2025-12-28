@@ -15,6 +15,7 @@ from data import (
     placer_pari,
     obtenir_cotes_par_ids,
     get_fiches_detaillees,
+    get_details_options_panier,
 )
 from admin_routes import admin_bp, users_bp, matchs_bp
 
@@ -249,87 +250,153 @@ def details_match(match_id):
     )
 
 
-@app.route("/create_fiche", methods=["POST"])
-def creer_fiche():
+"""
+========================================
+* : GESTION DES PARIS-------------------
+========================================
+"""
+
+
+@app.route("/ajouter_au_ticket", methods=["POST"])
+def ajouter_au_ticket():
+    """Ajoute une sélection au panier (session). Écrase si le match existe déjà."""
     if "username" not in session:
-        flash("Vous devez vous connecter", "error")
         return redirect(url_for("login"))
 
-    try:
-        donnees = request.form
+    match_id = request.form.get("match_id")
+    # On cherche l'option cochée dans le formulaire
+    # Le formulaire envoie dynamiquement le nom de la catégorie, il faut donc itérer
+    option_id = None
+    for key, value in request.form.items():
+        # On ignore le match_id et les champs techniques, on cherche l'ID de l'option (numérique)
+        if key != "match_id" and value.isdigit():
+            option_id = int(value)
+            break
 
-        # Sécurité : Vérifier si match_id est présent
-        raw_match_id = donnees.get("match_id")
-        if not raw_match_id:
-            flash("Match non identifié.", "error")
-            return redirect(request.referrer)
-
-        match_id = int(raw_match_id)
-
-        # --- Lecture mise en Decimal ---
-        # On nettoie la mise (remplace virgule par point)
-        mise_str = donnees.get("mise", "0").replace(",", ".").strip()
-        if not mise_str:
-            mise_str = "0"
-
-        mise_dec = Decimal(mise_str).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-        if mise_dec < Decimal("10.00"):
-            flash("La mise minimum est de 10 HTG", "error")
-            return redirect(request.referrer)
-
-        user = get_user_by_username(session["username"])
-
-        # --- Vérification solde ---
-        if user["solde"] < mise_dec:
-            flash("Solde insuffisant", "error")
-            return redirect(request.referrer)
-
-        # --- Options sélectionnées (CORRECTION ICI) ---
-        options_ids = []
-        for k, v in donnees.items():
-            # On ignore les champs techniques 'match_id' et 'mise'
-            if k in ("match_id", "mise"):
-                continue
-
-            # On ne garde que si la valeur est un nombre (l'ID de l'option)
-            # Cela évite de planter sur le bouton 'submit' ou les tokens CSRF
-            if v.isdigit():
-                options_ids.append(int(v))
-
-        if not options_ids:
-            flash("Veuillez sélectionner au moins une option", "error")
-            return redirect(request.referrer)
-
-        # --- Calcul du gain ---
-        cotes = obtenir_cotes_par_ids(options_ids)
-        cote_totale = Decimal("1.00")
-        for c in cotes:
-            # Conversion explicite en string avant Decimal pour éviter les problèmes de float
-            cote_totale *= Decimal(str(c))
-
-        gain_dec = (mise_dec * cote_totale).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
-
-        # --- Appel DATA ---
-        succes, message = placer_pari(
-            parieur_id=user["id"],
-            match_id=match_id,
-            mise_dec=mise_dec,
-            gain_dec=gain_dec,
-            date_pari=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            options_ids=options_ids,
-        )
-
-        flash(message, "success" if succes else "error")
-        return redirect(url_for("home") if succes else request.referrer)
-
-    except Exception as e:
-        # Affiche l'erreur dans la console pour le développeur
-        print(f"ERREUR CREATE FICHE : {e}")
-        flash("Erreur technique lors de la création du pari.", "error")
+    if not match_id or not option_id:
+        flash("Veuillez sélectionner une cote.", "error")
         return redirect(request.referrer)
+
+    # Initialisation du panier s'il n'existe pas
+    if "ticket" not in session:
+        session["ticket"] = {}
+
+    # RÈGLE D'OR : Une seule option par match.
+    # On utilise match_id comme CLÉ du dictionnaire.
+    # Si l'utilisateur parie à nouveau sur ce match, l'ancienne valeur est écrasée.
+    session["ticket"][match_id] = option_id
+    session.modified = True  # Important pour dire à Flask de sauvegarder la session
+
+    flash("Ajouté au ticket !", "succes")
+    return redirect(
+        request.referrer
+    )  # On reste sur la page ou on va au panier ? Au choix.
+
+
+@app.route("/mon_ticket")
+def mon_ticket():
+    """Affiche le récapitulatif avant validation"""
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    ticket = session.get("ticket", {})
+    user = get_user_by_username(session["username"])
+
+    options_ids = list(ticket.values())
+    details = get_details_options_panier(options_ids)
+
+    # Calcul de la cote totale
+    cote_totale = Decimal("1")
+    for ligne in details:
+        cote_totale *= Decimal(str(ligne["cote"]))
+
+    return render_template(
+        "ticket.html", selections=details, cote_totale=cote_totale, user=user
+    )
+
+
+@app.route("/supprimer_du_ticket/<match_id>")
+def supprimer_du_ticket(match_id):
+    """Retire un match spécifique du ticket"""
+    if "ticket" in session:
+        # On retire la clé correspondant au match
+        session["ticket"].pop(match_id, None)
+        session.modified = True
+    return redirect(url_for("mon_ticket"))
+
+
+@app.route("/vider_ticket")
+def vider_ticket():
+    session.pop("ticket", None)
+    return redirect(url_for("home"))
+
+
+@app.route("/valider_ticket", methods=["POST"])
+def valider_ticket():
+    """Valide le pari combiné final"""
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    ticket = session.get("ticket", {})
+    if not ticket:
+        flash("Votre ticket est vide.", "error")
+        return redirect(url_for("home"))
+
+    user = get_user_by_username(session["username"])
+    mise_str = request.form.get("mise", "0").replace(",", ".")
+
+    try:
+        mise_dec = Decimal(mise_str).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except:
+        mise_dec = Decimal("0.00")
+
+    if mise_dec < Decimal("10.00"):
+        flash("Mise minimum : 10 HTG", "error")
+        return redirect(url_for("mon_ticket"))
+
+    if user["solde"] < mise_dec:
+        flash("Solde insuffisant.", "error")
+        return redirect(url_for("mon_ticket"))
+
+    # Recalculer la cote totale côté serveur (sécurité)
+    options_ids = list(ticket.values())
+    details = get_details_options_panier(options_ids)
+
+    if len(details) != len(options_ids):
+        flash("Une des options n'est plus disponible.", "error")
+        return redirect(url_for("mon_ticket"))
+
+    cote_totale = Decimal("1.00")
+    for d in details:
+        cote_totale *= Decimal(str(d["cote"]))
+
+    gain_dec = (mise_dec * cote_totale).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+
+    # Enregistrement en BDD
+    # On prend le premier match_id de la liste comme référence "principale"
+    # ou on adapte placer_pari pour gérer le NULL si tu préfères,
+    # mais ici on va garder la logique actuelle : on passe le premier ID de match pour la forme,
+    # mais ce qui compte ce sont les options_ids.
+    first_match_id = details[0]["match_id"]
+
+    succes, msg = placer_pari(
+        parieur_id=user["id"],
+        match_id=first_match_id,  # Technique: on lie au moins à un match
+        mise_dec=mise_dec,
+        gain_dec=gain_dec,
+        date_pari=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        options_ids=options_ids,
+    )
+
+    if succes:
+        session.pop("ticket", None)  # On vide le panier après succès
+        flash(f"Pari validé ! Gain potentiel : {gain_dec} HTG", "succes")
+        return redirect(url_for("fiches"))
+    else:
+        flash(msg, "error")
+        return redirect(url_for("mon_ticket"))
 
 
 @app.route("/fiches")

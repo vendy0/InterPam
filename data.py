@@ -416,6 +416,31 @@ def obtenir_cotes_par_ids(liste_ids):
         return []
 
 
+def get_details_options_panier(liste_option_ids):
+    """Récupère les détails complets pour l'affichage du panier"""
+    if not liste_option_ids:
+        return []
+
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            # On formate les ? pour le nombre d'IDs
+            placeholders = ",".join(["?"] * len(liste_option_ids))
+            sql = f"""
+                SELECT o.id as option_id, o.libelle, o.cote, o.categorie,
+                       m.id as match_id, m.equipe_a, m.equipe_b, m.date_match
+                FROM options o
+                JOIN matchs m ON o.match_id = m.id
+                WHERE o.id IN ({placeholders})
+            """
+            cur.execute(sql, liste_option_ids)
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur panier : {e}")
+        return []
+
+
 """
 ========================================
 5. SYSTÈME DE PARIS---------------------
@@ -499,16 +524,17 @@ def get_fiches_detaillees(parieur_id):
         with sqlite3.connect(DB_NAME) as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
+            # Dans data.py, fonction get_fiches_detaillees
+
             query = """
                 SELECT 
-                    p.id AS pari_id, p.mise, p.gain_potentiel, p.date_pari,
-                    m.equipe_a, m.equipe_b, m.date_match,
-                    o.libelle AS option_nom, o.cote
-                FROM paris p
-                JOIN matchs_paris mp ON p.id = mp.paris_id
-                JOIN matchs m ON mp.matchs_id = m.id
-                JOIN options o ON mp.option_id = o.id
-                WHERE p.parieur_id = ?
+                p.id AS pari_id, p.mise, p.gain_potentiel, p.date_pari, m.equipe_a, m.equipe_b, m.date_match, o.libelle AS option_nom, o.cote
+                FROM paris p 
+                JOIN matchs_paris mp 
+                ON p.id = mp.paris_id 
+                JOIN options o ON mp.option_id = o.id 
+                JOIN matchs m ON o.match_id = m.id 
+                WHERE p.parieur_id = ? 
                 ORDER BY p.date_pari DESC
             """
             cur.execute(query, (parieur_id,))
