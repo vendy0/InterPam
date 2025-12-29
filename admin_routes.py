@@ -22,6 +22,8 @@ from data import (
     fermer_match_officiellement,
     valider_option_gagnante,
     executer_settlement_match,
+    get_historique_matchs,
+    get_matchs_actifs,
 )
 
 
@@ -163,17 +165,17 @@ def nouveau_match():
 
         if match_id:
             # 2. Récupération des listes dynamiques
-            libelles = request.form.getlist("libelle[]").strip()
-            cotes = request.form.getlist("cote[]").strip()
-            categories = request.form.getlist("categorie[]").strip()
+            libelles = request.form.getlist("libelle[]")
+            cotes = request.form.getlist("cote[]")
+            categories = request.form.getlist("categorie[]")
 
             # 3. Insertion de toutes les options
             for i in range(len(libelles)):
-                if libelles[i] and cotes[i]:
+                if libelles[i].strip() and cotes[i]:
                     ajouter_option(
-                        libelles[i],
+                        libelles[i].strip(),
                         float(cotes[i].replace(",", ".")),
-                        categories[i],
+                        categories[i].strip(),
                         match_id,
                     )  #
 
@@ -182,22 +184,24 @@ def nouveau_match():
 
     return render_template("admin/matchs/nouveau_match.html")
 
-
 @matchs_bp.route("/modifier", methods=["GET"])
 @admin_required
 def show_edit_matchs():
-    mode = request.args.get("mode", "en_cours")  # Par défaut : en cours
-
-    if mode == "tous":
-        programmes = get_all_matchs_ordonnes()
-        titre = "Tous les matchs"
+    # On récupère le paramètre 'mode' dans l'URL (ex: /modifier?mode=archives)
+    mode = request.args.get('mode', 'actifs') 
+    
+    if mode == 'archives':
+        programmes = get_historique_matchs()
+        titre = "Archives des matchs payés"
     else:
-        programmes = get_programmes()
-        titre = "Matchs en cours"
+        programmes = get_matchs_actifs()
+        titre = "Matchs à traiter (Ouverts/Fermés)"
+        
+    return render_template("admin/matchs/liste_matchs.html", 
+                           programmes=programmes, 
+                           titre=titre, 
+                           mode=mode)
 
-    return render_template(
-        "admin/matchs/liste_matchs.html", programmes=programmes, titre=titre, mode=mode
-    )
 
 
 @matchs_bp.route("/modifier/<int:match_id>", methods=["GET", "POST"])

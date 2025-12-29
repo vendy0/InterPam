@@ -416,7 +416,6 @@ def valider_ticket():
 @app.route("/fiches")
 def fiches():
     if "username" not in session:
-        flash("Veuillez vous connecter !")
         return redirect(url_for("login"))
     user = get_user_by_username(session["username"])
     # On utilise la nouvelle fonction de regroupement
