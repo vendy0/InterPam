@@ -1,70 +1,1 @@
-{% extends 'admin/base.html' %}
-
-{% block content %}
-    	<h3>Matchs en cours ({{ programmes|length }})</h3>
-{% if not programmes %}
-<div class="no-match"><p>Il n'y a aucun match pour le moment...</p></div>
-{% else %}
-<section class="matches">
-    <div class="results-table" style="background: white; padding: 20px; border-radius: 8px;">
-		<table border="1" style="width: 100%; border-collapse: collapse;">
-			<thead style="background-color: #1e3a8a; color: white;">
-				<tr>
-					<th>id</th>
-					<th>Équipe A</th>
-					<th>Équipe B</th>
-					<th>Date</th>
-				</tr>
-			</thead>
-			<tbody>
-  {% for id, match in programmes.items() %}
-  
-  <tr>
-					<td>{{ match["match_id"] }}</td>
-					<td><strong>{{ match['equipe_a'] }}</strong></td>
-					<td>{{ match['equipe_b'] }}</td>
-					<td>{{ set_date(match['date_match']) }} </td>
-					<td>
-        <a href="{{ url_for('matchs.edit_matchs', match_id=match['match_id']) }}" onclick="#" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer;">
-            Modifier
-        </a></td>
-				</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	</div>
-	
-
-</section>
-{% endif %}
-{% if match and categories %}
-    <form action="{{ url_for('creer_fiche') }}" method="POST" class="bet-form" onsubmit="return confirmerMonPari()">
-    <input type="hidden" name="match_id" id="match_id" value="{{ match.match_id }}" />
-    {% for categorie, options in categories.items() %}
-        <h3 class="market-header">{{ categorie|replace('_', ' ')|upper }}</h3>
-        
-        <div class="options-container">
-            {% for opt in options %}
-            <div class="option-item">
-                <input type="radio" name="{{ categorie }}" id="opt-{{ opt['option_id'] }}" value="{{ opt['option_id'] }}" class="radio-input" />
-                <label for="opt-{{ opt['option_id'] }}" class="option-label">
-                    <span class="label-text">{{ opt['libelle'] }}</span>
-                    <span class="label-cote">{{ opt['cote'] }}</span>
-                </label>
-            </div>
-            {% endfor %}
-        </div>
-    {% endfor %}
-    
-    <div class="bet-action">
-    <div class="gain-info">
-        <span>Gain potentiel: </span>
-        <strong id="display-gain">0.00</strong> <small>HTG</small>
-    </div>
-    <input type="number" name="mise" id="mise-input" placeholder="Mise HTG" required min="10" max="1000" class="mise-input" step="0.01">
-    <button type="submit" class="btn-parier">Confirmer le pari</button>
-</div>
-
-</form>
-{% endif %}
-{% endblock %}
+{% extends 'admin/base.html' %} {% block content %}<h3>Matchs en cours ({{ programmes|length }})</h3>{% if not programmes %}<div class="no-match"><p>Il n'y a aucun match pour le moment...</p></div>{% else %}<section class="matches">    <div class="results-table" style="background: white; padding: 20px; border-radius: 8px">        <table border="1" style="width: 100%; border-collapse: collapse">            <thead style="background-color: #1e3a8a; color: white">                <tr>                    <th>id</th>                    <th>Équipe A</th>                    <th>Équipe B</th>                    <th>Date</th>                    <th>Type</th>                    <th>Action</th>                </tr>            </thead>            <tbody>                {% for id, match in programmes.items() %}                <tr>                    <td>{{ match["match_id"] }}</td>                    <td><strong>{{ match['equipe_a'] }}</strong></td>                    <td>{{ match['equipe_b'] }}</td>                    <td>{{ set_date(match['date_match']) }}</td>                    <td>{{ match['type_match'] }}</td>                    <td>                        <a href="{{ url_for('matchs.edit_matchs', match_id=match['match_id']) }}" onclick="#" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer">Modifier</a>                    </td>                </tr>                {% endfor %}            </tbody>        </table>    </div></section>{% endif %}  {% endblock %}

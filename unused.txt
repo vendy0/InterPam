@@ -97,6 +97,8 @@ __
 - Insérer ReCaptcha
 - Ajouter Update cote
 - Télécharger les polices
+- Vue détaillée des tickets : Pouvoir consulter tous les paris d'un utilisateur spécifique en cas de litige.
+- Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
 
 
 C'est une super mentalité ! En isolant les fichiers et en travaillant par modules, tu vas devenir beaucoup plus efficace. Pour transformer ton projet en une plateforme de pari complète et professionnelle, voici les fonctionnalités essentielles qu'un admin doit avoir sous la main :
@@ -130,3 +132,44 @@ C'est une super mentalité ! En isolant les fichiers et en travaillant par modul
 ​Rechargement de compte : C'est ce qui rend ton site "réel", car sans argent crédité par un admin, les parieurs ne pourront bientôt plus jouer.
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
+
+
+
+@matchs_bp.route("/modifier/<int:match_id>", methods=["GET", "POST"])
+@admin_required
+def edit_matchs(match_id):
+    # 1. Récupération des données actuelles
+    match_data = get_match_by_id(match_id) #
+    if not match_data:
+        flash("Match introuvable !")
+        return redirect(url_for("matchs.show_edit_matchs"))
+
+    if request.method == "POST":
+        # --- MISE À JOUR DU MATCH ---
+        equipe_a = request.form.get("equipe_a")
+        equipe_b = request.form.get("equipe_b")
+        date_match = request.form.get("date_match").replace("T", " ")
+        statut = request.form.get("statut")
+
+        update_match_info(match_id, equipe_a, equipe_b, date_match, statut)
+
+        # --- MISE À JOUR / AJOUT DES OPTIONS ---
+        option_ids = request.form.getlist("option_id[]")
+        categories = request.form.getlist("categorie[]")
+        libelles = request.form.getlist("libelle[]")
+        cotes = request.form.getlist("cote[]")
+
+        for i in range(len(option_ids)):
+            o_id = option_ids[i]
+            # Si l'id est "0", c'est une nouvelle ligne ajoutée en JS
+            if o_id == "0":
+                ajouter_option(libelles[i], float(cotes[i]), categories[i], match_id) #
+            else:
+                update_option_info(o_id, libelles[i], float(cotes[i]), categories[i])
+
+        flash("Match mis à jour avec succès !")
+        return redirect(url_for("matchs.show_edit_matchs"))
+
+    # 2. Affichage du formulaire (GET)
+    options = get_options_by_match_id(match_id) #
+    return render_template("admin/matchs/modifier_match.html", match=match_data, options=options)
