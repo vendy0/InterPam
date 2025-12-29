@@ -127,3 +127,25 @@ ___​Clôture de match : Un bouton pour dire "Le match est fini", entrer le sco
 ​Rechargement de compte : C'est ce qui rend ton site "réel", car sans argent crédité par un admin, les parieurs ne pourront bientôt plus jouer.
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
+
+
+mon_projet/
+│
+├── database/               # Infrastructure
+│   ├── __init__.py
+│   ├── connection.py       # Gestion de la connexion SQLite
+│   └── setup.py           # Initialisation des tables
+│
+├── models/                 # Logique métier (CRUD)
+│   ├── __init__.py
+│   ├── user.py            # Fonctions liées aux parieurs
+│   ├── match.py           # Fonctions liées aux matchs/options
+│   └── bet.py             # Logique des paris et settlement
+│
+├── utils/                  # Utilitaires
+│   ├── __init__.py
+│   └── finance.py         # Conversion centimes/decimal
+│
+├── routes.py               # Routes Flask principales
+├── admin_routes.py         # Routes Admin
+└── app.py                  # Point d'entrée (si séparé)
