@@ -751,88 +751,87 @@ def verifier_matchs_ouverts(liste_option_ids):
 
 def executer_settlement_match(match_id):
     """
-    Vérifie les paris liés au match.
-    Un pari est payé uniquement si TOUTES ses options sont gagnantes (winner=1).
-    Si une seule option d'un pari est perdante (winner=2), le pari entier est perdu.
+    Vérifie les paris liés au match et effectue le paiement si nécessaire.
+    Version corrigée et sécurisée.
     """
+    conn = None
     try:
-        with sqlite3.connect(DB_NAME) as conn:
-            cur = conn.cursor()
-            cur.execute("BEGIN TRANSACTION")
+        # On utilise le context manager pour la connexion, mais on gère le commit manuellement
+        # pour s'assurer que tout ou rien n'est exécuté.
+        conn = sqlite3.connect(DB_NAME)
+        cur = conn.cursor()
+        
+        # 1. Récupérer tous les paris "En attente" liés à ce match
+        cur.execute("""
+            SELECT DISTINCT p.id, p.parieur_id, p.gain_potentiel
+            FROM paris p
+            JOIN matchs_paris mp ON p.id = mp.paris_id
+            WHERE mp.matchs_id = ? AND p.statut = 'En attente'
+        """, (match_id,))
+        
+        paris_a_verifier = cur.fetchall()
+        stats = {"gagnants": 0, "perdants": 0, "erreurs": 0}
 
-            # 1. Récupérer tous les paris "En attente" qui contiennent au moins une option de ce match
-            cur.execute(
-                """
-                SELECT DISTINCT p.id, p.parieur_id, p.gain_potentiel
-                FROM paris p
-                JOIN matchs_paris mp ON p.id = mp.paris_id
-                WHERE mp.matchs_id = ? AND p.statut = 'En attente'
-            """,
-                (match_id,),
-            )
+        if not paris_a_verifier:
+            conn.close()
+            return True, "Aucun pari en attente pour ce match."
 
-            paris_a_verifier = cur.fetchall()
-            stats = {"gagnants": 0, "perdants": 0}
+        for p_id, user_id, gain_c in paris_a_verifier:
+            # 2. Analyser l'état de TOUTES les options du ticket (pas seulement ce match)
+            cur.execute("""
+                SELECT 
+                    COUNT(*) as total_options,
+                    COALESCE(SUM(CASE WHEN o.winner = 2 THEN 1 ELSE 0 END), 0) as nb_perdues,
+                    COALESCE(SUM(CASE WHEN o.winner = 1 THEN 1 ELSE 0 END), 0) as nb_gagnees
+                FROM matchs_paris mp
+                JOIN options o ON mp.option_id = o.id
+                WHERE mp.paris_id = ?
+            """, (p_id,))
+            
+            row = cur.fetchone()
+            if not row:
+                continue
 
-            for p_id, user_id, gain_c in paris_a_verifier:
-                # 2. Pour chaque pari, on compte combien il a d'options au total
-                # et combien sont marquées comme "Perdantes" (2)
-                cur.execute(
-                    """
-                    SELECT 
-                        COUNT(*) as total_options,
-                        SUM(CASE WHEN o.winner = 2 THEN 1 ELSE 0 END) as nb_perdues,
-                        SUM(CASE WHEN o.winner = 1 THEN 1 ELSE 0 END) as nb_gagnees
-                    FROM matchs_paris mp
-                    JOIN options o ON mp.option_id = o.id
-                    WHERE mp.paris_id = ?
-                """,
-                    (p_id,),
-                )
+            total, perdues, gagnees = row[0], row[1], row[2]
 
-                res = cur.fetchone()
-                total, perdues, gagnees = res[0], res[1], res[2]
+            # LOGIQUE DE RÉSOLUTION
+            if perdues > 0:
+                # Si AU MOINS UNE option est perdante, tout le ticket est perdu
+                cur.execute("UPDATE paris SET statut = 'Perdu' WHERE id = ?", (p_id,))
+                stats["perdants"] += 1
+                
+            elif gagnees == total and total > 0:
+                # Si TOUTES les options sont gagnantes (et qu'il y en a au moins une)
+                # 1. Créditer le parieur
+                cur.execute("UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, user_id))
+                # 2. Marquer le pari comme gagné
+                cur.execute("UPDATE paris SET statut = 'Gagné' WHERE id = ?", (p_id,))
+                stats["gagnants"] += 1
+            
+            # Sinon, le pari reste "En attente" (en attente d'autres matchs du combiné)
 
-                # LOGIQUE :
-                # - Si au moins 1 option est perdante (2) -> Le pari est PERDU
-                # - Si toutes les options sont gagnantes (1) -> Le pari est GAGNÉ
-                # - Sinon (il reste des options en attente sur d'autres matchs) -> On ne fait rien
+        conn.commit()
+        conn.close()
+        
+        return True, f"Settlement terminé : {stats['gagnants']} payés, {stats['perdants']} perdus."
 
-                if perdues > 0:
-                    # Une seule option à 2 suffit pour perdre toute la fiche
-                    cur.execute(
-                        "UPDATE paris SET statut = 'Perdu' WHERE id = ?", (p_id,)
-                    )
-                    stats["perdants"] += 1
-
-                elif gagnees == total:
-                    # TOUTES les options sont à 1
-                    cur.execute(
-                        "UPDATE parieurs SET solde = solde + ? WHERE id = ?",
-                        (gain_c, user_id),
-                    )
-                    cur.execute(
-                        "UPDATE paris SET statut = 'Gagné' WHERE id = ?", (p_id,)
-                    )
-                    stats["gagnants"] += 1
-
-                # Si le pari n'est ni totalement gagné ni contient une perte,
-                # c'est qu'il attend les résultats d'autres matchs (pari combiné).
-
-            conn.commit()
-            return (
-                True,
-                f"Settlement effectué : {stats['gagnants']} fiches payées, {stats['perdants']} fiches perdues.",
-            )
-
-    except Exception as e:
-        if "conn" in locals():
+    except sqlite3.Error as e:
+        if conn:
             conn.rollback()
-        return False, str(e)
+            conn.close()
+        print(f"Erreur CRITIQUE settlement : {e}")
+        return False, f"Erreur base de données : {e}"
+    except Exception as e:
+        if conn:
+            conn.close()
+        return False, f"Erreur inattendue : {e}"
+
 
 
 from werkzeug.security import generate_password_hash
 from datetime import datetime
+
+
 def creer_super_admin(prenom, nom, username, email, mdp):
     try:
         with sqlite3.connect(DB_NAME) as conn:
