@@ -1,68 +1,1 @@
-{% extends 'admin/base.html' %} 
-
-{% block content %}
-<div class="header-actions" style="margin-bottom: 20px;">
-    <h3>{{ titre }} ({{ programmes|length }})</h3>
-    
-    <div class="filter-tabs" style="margin-top: 15px; display: flex; gap: 10px;">
-        <a href="{{ url_for('matchs.show_edit_matchs', mode='actifs') }}" 
-           style="padding: 8px 16px; border-radius: 4px; text-decoration: none; 
-                  background: {{ '#1e3a8a' if mode == 'actifs' else '#e2e8f0' }}; 
-                  color: {{ 'white' if mode == 'actifs' else 'black' }}; border: 1px solid #1e3a8a;">
-           Matchs Actifs
-        </a>
-        <a href="{{ url_for('matchs.show_edit_matchs', mode='archives') }}" 
-           style="padding: 8px 16px; border-radius: 4px; text-decoration: none; 
-                  background: {{ '#1e3a8a' if mode == 'archives' else '#e2e8f0' }}; 
-                  color: {{ 'white' if mode == 'archives' else 'black' }}; border: 1px solid #1e3a8a;">
-           Archives (Payés)
-        </a>
-    </div>
-</div>
-
-{% if not programmes %}
-    <div class="no-match" style="padding: 20px; text-align: center; background: white; border-radius: 8px;">
-        <p>Aucun match dans cette catégorie.</p>
-    </div>
-{% else %}
-<section class="matches">
-    <div class="results-table" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1)">
-        <table border="1" style="width: 100%; border-collapse: collapse">
-            <thead style="background-color: #1e3a8a; color: white">
-                <tr>
-                    <th>ID</th>
-                    <th>Équipes</th>
-                    <th>Date</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for id, match in programmes.items() %}
-                <tr>
-                    <td>{{ match["match_id"] }}</td>
-                    <td><strong>{{ match['equipe_a'] }}</strong> VS <strong>{{ match['equipe_b'] }}</strong></td>
-                    <td>{{ set_date(match['date_match']) }}</td>
-                    <td>
-                        <span style="padding: 3px 8px; border-radius: 4px; font-size: 0.85em; 
-                                     background: {{ '#dcfce7' if match['statut'] == 'ouvert' else '#fef9c3' if match['statut'] == 'fermé' else '#fee2e2' }};">
-                            {{ match['statut']|upper }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if match['statut'] != 'terminé' %}
-                            <a href="{{ url_for('matchs.edit_matchs', match_id=match['match_id']) }}" style="color: #1e3a8a; font-weight: bold;">Modifier</a>
-                            | 
-                            <a href="{{ url_for('matchs.cloturer_match', match_id=match['match_id']) }}" style="color: #16a34a; font-weight: bold;">Clôturer</a>
-                        {% else %}
-                            <span style="color: #94a3b8; font-style: italic;">Match archivé</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
-{% endif %}
-{% endblock %}
+{% extends 'admin/base.html' %} {% block content %}<div class="header-actions" style="margin-bottom: 20px;">    <h3>{{ titre }} ({{ programmes|length }})</h3>        <div class="filter-tabs" style="margin-top: 15px; display: flex; gap: 10px;">        <a href="{{ url_for('matchs.show_edit_matchs', mode='actifs') }}"            style="padding: 8px 16px; border-radius: 4px; text-decoration: none;                   background: {{ '#1e3a8a' if mode == 'actifs' else '#e2e8f0' }};                   color: {{ 'white' if mode == 'actifs' else 'black' }}; border: 1px solid #1e3a8a;">           Matchs Actifs        </a>        <a href="{{ url_for('matchs.show_edit_matchs', mode='archives') }}"            style="padding: 8px 16px; border-radius: 4px; text-decoration: none;                   background: {{ '#1e3a8a' if mode == 'archives' else '#e2e8f0' }};                   color: {{ 'white' if mode == 'archives' else 'black' }}; border: 1px solid #1e3a8a;">           Archives (Payés)        </a>    </div></div>{% if not programmes %}    <div class="no-match" style="padding: 20px; text-align: center; background: white; border-radius: 8px;">        <p>Aucun match dans cette catégorie.</p>    </div>{% else %}<section class="matches">    <div class="results-table" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1)">        <table border="1" style="width: 100%; border-collapse: collapse">            <thead style="background-color: #1e3a8a; color: white">                <tr>                    <th>ID</th>                    <th>Équipes</th>                    <th>Date</th>                    <th>Statut</th>                    <th>Actions</th>                </tr>            </thead>            <tbody>                {% for id, match in programmes.items() %}<tr>    <td>{{ match["match_id"] }}</td>    <td><strong>{{ match['equipe_a'] }}</strong> VS <strong>{{ match['equipe_b'] }}</strong></td>    <td>{{ set_date(match['date_match']) }}</td>    <td>        <span style="padding: 3px 8px; border-radius: 4px; background: {{ '#fee2e2' if match['statut'] == 'terminé' else '#fef9c3' }}">            {{ match['statut']|upper }}        </span>    </td>    <td>        {% if mode == 'archives' and match.bilan %}            <div style="font-size: 0.85em; text-align: left;">                <div style="color: #1e3a8a;">Mises : <strong>{{ match.bilan.mises }} HTG</strong></div>                <div style="color: #dc2626;">Gains : <strong>-{{ match.bilan.gains }} HTG</strong></div>                <hr style="margin: 5px 0; border: 0; border-top: 1px solid #eee;">                <div style="color: {{ 'green' if match.bilan.benefice > 0 else 'red' }}">                    Profit : <strong>{{ match.bilan.benefice }} HTG</strong>                </div>            </div>        {% else %}            <a href="{{ url_for('matchs.edit_matchs', match_id=match['match_id']) }}">Modifier</a> |            <a href="{{ url_for('matchs.cloturer_match', match_id=match['match_id']) }}" style="color: green;">Clôturer</a>        {% endif %}    </td></tr>{% endfor %}            </tbody>        </table>    </div></section>{% endif %}{% endblock %}

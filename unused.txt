@@ -72,7 +72,6 @@ __
 - ...
 - Page jeu
 - Se connecter avec Google
-- Logo
 - Mot de passe oublié
 - Robot SEO, nom different
 - Les polices
@@ -86,13 +85,9 @@ __
 
 - MiniGames
 - Si Sum(Gain_potentiel) > Sum(Mise), annulation des derniers fiches
-- Fonction de clôture des paris
-- Récupérer l'id d'un match ajouté
 - Modifier le "Créé par des élèves" par "créé sous la demande des élèves du CIF". Supprimer le Black_Hole du site.
 - ReCaptcha 
 - Ne peut pas parier sur un match déjà parié
-- Ne dois pas faire de profit sur deux fiches avec un seul match avec deux options différentes. 
-- Vérifier le type (basket ou foot ?)
 - Ajouter mon email comme adm
 - Insérer ReCaptcha
 - Ajouter Update cote
@@ -109,9 +104,9 @@ C'est une super mentalité ! En isolant les fichiers et en travaillant par modul
 
 
 ​2. Gestion des Matchs & Marchés
-​Moteur de création de matchs : Interface pour entrer les équipes, la date, l'heure et la ligue.
-​Gestionnaire de cotes : Pouvoir modifier une cote en temps réel (si une équipe devient trop favorite, par exemple).
-​Clôture de match : Un bouton pour dire "Le match est fini", entrer le score final, et que le système calcule automatiquement qui a gagné ou perdu.
+___​Moteur de création de matchs : Interface pour entrer les équipes, la date, l'heure et la ligue.
+___​Gestionnaire de cotes : Pouvoir modifier une cote en temps réel (si une équipe devient trop favorite, par exemple).
+___​Clôture de match : Un bouton pour dire "Le match est fini", entrer le score final, et que le système calcule automatiquement qui a gagné ou perdu.
 
 
 ​3. Contrôle des Parieurs & Finances
@@ -132,48 +127,3 @@ C'est une super mentalité ! En isolant les fichiers et en travaillant par modul
 ​Rechargement de compte : C'est ce qui rend ton site "réel", car sans argent crédité par un admin, les parieurs ne pourront bientôt plus jouer.
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
-
-
-            <div class="details-content">
-                {# Liste des sélections (matchs) dans ce ticket #} 
-                {% for sel in info.selections %}
-                    
-                    {# Logique pour déterminer la classe CSS de l'option #}
-                    {% set row_class = '' %}
-                    {% set icon = '' %}
-                    
-                    {% if sel.status_option == 1 %}
-                        {% set row_class = 'gagnant' %}
-                        {% set icon = '✅' %}
-                    {% elif sel.status_option == 2 %}
-                        {% set row_class = 'perdant' %}
-                        {% set icon = '❌' %}
-                    {% endif %}
-
-                <div class="selection-item {{ row_class }}">
-                    <span class="match-name">{{ sel.equipe_a }} vs {{ sel.equipe_b }}</span>
-                    <div class="option-details">
-                        Pronostic : <strong>{{ sel.option }}</strong> 
-                        {{ icon }}
-                        | Cote : <span class="cote-badge">{{ sel.cote }}</span>
-                    </div>
-                </div>
-                {% endfor %}
-
-                <div class="fiche-totals">
-                    <div class="total-row">
-                        <span>Mise totale :</span>
-                        <strong>{{ info.mise | devise }}</strong>
-                    </div>
-                    <div class="total-row">
-                        <span>Gain potentiel :</span>
-                        <span class="gain-potentiel">{{ info.gain | devise }}</span>
-                    </div>
-                </div>
-            </div>
-        </details>
-        {% endfor %}
-    </div>
-    {% endif %}
-</div>
-{% endblock %}

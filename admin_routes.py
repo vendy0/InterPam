@@ -24,6 +24,7 @@ from data import (
     executer_settlement_match,
     get_historique_matchs,
     get_matchs_actifs,
+    get_bilan_financier_match,
 )
 
 
@@ -184,24 +185,28 @@ def nouveau_match():
 
     return render_template("admin/matchs/nouveau_match.html")
 
+
 @matchs_bp.route("/modifier", methods=["GET"])
 @admin_required
 def show_edit_matchs():
     # On récupère le paramètre 'mode' dans l'URL (ex: /modifier?mode=archives)
-    mode = request.args.get('mode', 'actifs') 
-    
-    if mode == 'archives':
-        programmes = get_historique_matchs()
-        titre = "Archives des matchs payés"
+    mode = request.args.get("mode", "actifs")
+
+    if mode == "archives":
+        matchs_raw = get_historique_matchs()
+        programmes = {}
+        # On injecte le bilan financier pour chaque match archivé
+        for m_id, m_data in matchs_raw.items():
+            m_data["bilan"] = get_bilan_financier_match(m_id)
+            programmes[m_id] = m_data
+        titre = "Archives et Bilans Financiers"
     else:
         programmes = get_matchs_actifs()
         titre = "Matchs à traiter (Ouverts/Fermés)"
-        
-    return render_template("admin/matchs/liste_matchs.html", 
-                           programmes=programmes, 
-                           titre=titre, 
-                           mode=mode)
 
+    return render_template(
+        "admin/matchs/liste_matchs.html", programmes=programmes, titre=titre, mode=mode
+    )
 
 
 @matchs_bp.route("/modifier/<int:match_id>", methods=["GET", "POST"])

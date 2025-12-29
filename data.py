@@ -533,6 +533,7 @@ def fermer_match_officiellement(match_id):
         print(f"Erreur fermeture match : {e}")
         return False
 
+
 def get_matchs_actifs():
     """Récupère uniquement les matchs qui ne sont pas encore terminés/payés."""
     try:
@@ -546,7 +547,7 @@ def get_matchs_actifs():
                 ORDER BY date_match ASC
             """)
             matchs = cur.fetchall()
-            return {m['match_id']: dict(m) for m in matchs}
+            return {m["match_id"]: dict(m) for m in matchs}
     except sqlite3.Error as e:
         print(f"Erreur : {e}")
         return {}
@@ -634,6 +635,50 @@ def get_details_options_panier(liste_option_ids):
     except sqlite3.Error as e:
         print(f"Erreur panier : {e}")
         return []
+
+
+def get_bilan_financier_match(match_id):
+    """Calcule le total des mises vs le total des gains payés pour un match."""
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+
+            # Somme des mises sur ce match
+            cur.execute(
+                """
+                SELECT SUM(p.mise) as total_mises
+                FROM paris p
+                JOIN matchs_paris mp ON p.id = mp.paris_id
+                WHERE mp.matchs_id = ?
+            """,
+                (match_id,),
+            )
+            res_mises = cur.fetchone()
+
+            # Somme des gains payés (uniquement pour les fiches marquées 'Gagné')
+            cur.execute(
+                """
+                SELECT SUM(p.gain_potentiel) as total_paye
+                FROM paris p
+                JOIN matchs_paris mp ON p.id = mp.paris_id
+                WHERE mp.matchs_id = ? AND p.statut = 'Gagné'
+            """,
+                (match_id,),
+            )
+            res_gains = cur.fetchone()
+
+            mises = res_mises["total_mises"] or 0
+            gains = res_gains["total_paye"] or 0
+
+            return {
+                "mises": depuis_centimes(mises),
+                "gains": depuis_centimes(gains),
+                "benefice": depuis_centimes(mises - gains),
+            }
+    except sqlite3.Error as e:
+        print(f"Erreur bilan : {e}")
+        return None
 
 
 """
