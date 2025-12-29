@@ -23,7 +23,7 @@
 
 				{# Détermination automatique de la classe du badge selon le statut #} {% set status_class = 'status-en-attente' %} {% if info.statut == 'gagné' %}{% set status_class = 'status-gagne' %} {% elif info.statut == 'perdu' %}{% set status_class = 'status-perdu' %}{% endif %}
 
-				<span class="status-badge {{ status_class }}"> {{ info.statut if info.statut else 'En attente' }} </span>
+				<span class="statut-badge statut-{{ info.statut.lower().replace(' ', '-').replace('é', 'e') if info.statut else 'indetermine' }}"> {{ info.statut if info.statut else 'Indéterminé' }} </span>
 			</summary>
 
 			<div class="details-content">
@@ -40,7 +40,7 @@
 						<strong>{{ info.mise | devise }}</strong>
 					</div>
 					<div class="total-row">
-						<span>Gain potentiel :</span>
+						<span>Gain :</span>
 						<span class="gain-potentiel">{{ info.gain | devise }}</span>
 					</div>
 				</div>

@@ -90,7 +90,7 @@ color: #bdc3c7; /* Gris clair pour que la date reste lisible sur le bleu nuit */
 }
 
 /* Badges de Statut */
-.status-badge {
+.statut-badge {
     padding: 4px 10px;
     border-radius: 20px;
     font-size: 0.8em;
@@ -98,9 +98,10 @@ color: #bdc3c7; /* Gris clair pour que la date reste lisible sur le bleu nuit */
     text-transform: uppercase;
     color: #fff;
 }
-.status-en-attente { background-color: #f1c40f; } /* Jaune */
-.status-gagne { background-color: #27ae60; }      /* Vert */
-.status-perdu { background-color: #e74c3c; }      /* Rouge */
+.statut-en-attente { background-color: #f1c40f; } /* Jaune */
+.statut-gagne { background-color: #27ae60; }      /* Vert */
+.statut-perdu { background-color: #e74c3c; }      /* Rouge */
+.statut-indetermine { background-color: rgb(124,124,124); }      /* Rouge */
 
 .selection-item {
     padding: 10px 0;
