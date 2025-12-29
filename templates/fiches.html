@@ -21,16 +21,23 @@
 					<span class="ticket-date">{{ set_date(info.date) }}</span>
 				</div>
 
-				{# Détermination automatique de la classe du badge selon le statut #} {% set status_class = 'status-en-attente' %} {% if info.statut == 'gagné' %}{% set status_class = 'status-gagne' %} {% elif info.statut == 'perdu' %}{% set status_class = 'status-perdu' %}{% endif %}
+				{# Détermination automatique de la classe du badge selon le statut #}
 
 				<span class="statut-badge statut-{{ info.statut.lower().replace(' ', '-').replace('é', 'e') if info.statut else 'indetermine' }}"> {{ info.statut if info.statut else 'Indéterminé' }} </span>
 			</summary>
 
 			<div class="details-content">
-				{# Liste des sélections (matchs) dans ce ticket #} {% for sel in info.selections %}
-				<div class="selection-item">
+				{# Liste des sélections (matchs) dans ce ticket #}
+				{% for sel in info.selections %} 
+				{# Logique pour déterminer la classe CSS de l'option #} 
+				{% set row_class = '' %}
+				{% if sel.status_option == 1 %} {% set row_class = 'gagnant' %} 
+				{% elif sel.status_option == 2 %} 
+				{% set row_class = 'perdant' %} 
+				{% endif %}
+				<div class="selection-item {{ row_class }}">
 					<span class="match-name">{{ sel.equipe_a }} vs {{ sel.equipe_b }}</span>
-					<div class="option-details">Pronostic : <strong>{{ sel.option }}</strong> | Cote : <span class="cote-badge">{{ sel.cote }}</span></div>
+					<div class="option-details">{{ sel.categorie }} : <strong>{{ sel.option }}</strong> | Cote : <span class="cote-badge">{{ sel.cote }}</span></div>
 				</div>
 				{% endfor %}
 
