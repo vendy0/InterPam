@@ -99,7 +99,7 @@ __
 - Télécharger les polices
 - Vue détaillée des tickets : Pouvoir consulter tous les paris d'un utilisateur spécifique en cas de litige.
 - Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
-
+- Supprimer un match
 
 C'est une super mentalité ! En isolant les fichiers et en travaillant par modules, tu vas devenir beaucoup plus efficace. Pour transformer ton projet en une plateforme de pari complète et professionnelle, voici les fonctionnalités essentielles qu'un admin doit avoir sous la main :
 ​1. Gestion du Staff (Le cœur du pouvoir)

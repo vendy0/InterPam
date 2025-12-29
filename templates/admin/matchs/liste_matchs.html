@@ -1,33 +1,1 @@
-{% extends 'admin/base.html' %}
-{% block content %}
-<h2>Gestion des Matchs</h2>
-<table border="1" style="width:100%; border-collapse: collapse; background: white;">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Match</th>
-            <th>Statut</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for match in matchs %}
-    <tr>
-        <td>{{ match.date_match }}</td>
-        <td>{{ match.equipe_a }} vs {{ match.equipe_b }}</td>
-        <td>
-            <span class="badge {{ 'bg-success' if match.statut == 'ouvert' else 'bg-danger' }}">
-                {{ match.statut }}
-            </span>
-        </td>
-        <td>
-            <a href="{{ url_for('matchs.modifier_match', match_id=match.id) }}" style="text-decoration: none;">
-                📝 Modifier
-            </a>
-        </td>
-    </tr>
-    {% endfor %}
-</tbody>
-
-</table>
-{% endblock %}
+{% extends 'admin/base.html' %} {% block content %}<div class="header-actions" style="margin-bottom: 20px">    <h3>{{ titre }} ({{ programmes|length }})</h3>    <div class="filter-tabs" style="margin-top: 10px">        <a href="{{ url_for('matchs.show_edit_matchs', mode='en_cours') }}">Matchs Ouverts</a>        <a href="{{ url_for('matchs.show_edit_matchs', mode='tous') }}">Tous les matchs (Historique)</a>    </div></div>{% if not programmes %}<div class="no-match"><p>Il n'y a aucun match correspondant...</p></div>{% else %}<section class="matches">    <div class="results-table" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)">        <table border="1" style="width: 100%; border-collapse: collapse">            <thead style="background-color: #1e3a8a; color: white">                <tr>                    <th>ID</th>                    <th>Équipes</th>                    <th>Date</th>                    <th>Type</th>                    <th>Statut</th>                    <th>Modification</th>                    <th>Clôture</th>                </tr>            </thead>            <tbody>                {% for id, match in programmes.items() %}                <tr>                    <td>{{ match["match_id"] }}</td>                    <td>                        <strong>{{ match['equipe_a'] }}</strong>                        VS                        <strong>{{ match['equipe_b'] }}</strong>                    </td>                    <td>{{ set_date(match['date_match']) }}</td>                    <td>{{ match['type_match'] }}</td>                    <td>                        <span style="padding: 3px 8px; border-radius: 4px; font-size: 0.8em; background: {{ '#dcfce7' if match['statut'] == 'ouvert' else '#fee2e2' }}">{{ match['statut'] }}</span>                    </td>                    <td>                        <a href="{{ url_for('matchs.edit_matchs', match_id=match['match_id']) }}" style="color: #1e3a8a; font-weight: bold">Modifier</a>                    </td>                    <td>                        <a href="{{ url_for('matchs.cloturer_match', match_id=match['match_id']) }}" style="color: #1e3a8a; font-weight: bold">Cloturer</a>                    </td>                </tr>                {% endfor %}            </tbody>        </table>    </div></section>{% endif %} {% endblock %}

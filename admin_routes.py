@@ -18,6 +18,9 @@ from data import (
     update_match_info,
     update_option_info,
     get_options_by_match_id,
+    get_all_matchs_ordonnes,
+    fermer_match_officiellement,
+    valider_option_gagnante,
 )
 
 
@@ -179,11 +182,21 @@ def nouveau_match():
     return render_template("admin/matchs/nouveau_match.html")
 
 
-@matchs_bp.route("/modifier", methods=["GET", "POST"])
-@admin_required  #
+@matchs_bp.route("/modifier", methods=["GET"])
+@admin_required
 def show_edit_matchs():
-    programmes = get_programmes()
-    return render_template("admin/matchs/edit_match.html", programmes=programmes)
+    mode = request.args.get("mode", "en_cours")  # Par défaut : en cours
+
+    if mode == "tous":
+        programmes = get_all_matchs_ordonnes()
+        titre = "Tous les matchs"
+    else:
+        programmes = get_programmes()
+        titre = "Matchs en cours"
+
+    return render_template(
+        "admin/matchs/liste_matchs.html", programmes=programmes, titre=titre, mode=mode
+    )
 
 
 @matchs_bp.route("/modifier/<int:match_id>", methods=["GET", "POST"])
@@ -215,7 +228,7 @@ def edit_matchs(match_id):
     #     # CETTE LIGNE DOIT ÊTRE INDENTÉE (DÉCALÉE) DANS LA BOUCLE FOR
     #     categories_dict[cat].append(opt)
     # return render_template(
-    #     "admin/matchs/edit_match.html",
+    #     "admin/matchs/liste_matchs.html",
     #     programmes=programmes,
     #     match=match_trouve,
     #     categories=categories_dict,
@@ -249,7 +262,6 @@ def edit_matchs(match_id):
         flash("Match mis à jour avec succès !")
         return redirect(url_for("matchs.show_edit_matchs"))
 
-    
     # 2. Affichage du formulaire (GET)
     options = get_options_by_match_id(match_id)
     match_dict = dict(match_data)
@@ -260,4 +272,28 @@ def edit_matchs(match_id):
     )
     return render_template(
         "admin/matchs/modifier_match.html", match=match_dict, options=options
+    )
+
+
+@matchs_bp.route("/cloturer/<int:match_id>", methods=["GET", "POST"])
+@admin_required
+def cloturer_match(match_id):
+    match_data = get_match_by_id(match_id)
+    options = get_options_by_match_id(match_id)
+
+    if request.method == "POST":
+        # On récupère les IDs des options cochées comme gagnantes
+        options_gagnantes = request.form.getlist("options_gagnantes")
+
+        for opt_id in options_gagnantes:
+            valider_option_gagnante(opt_id, match_id)
+
+        # Une fois les résultats saisis, on peut fermer le match
+        fermer_match_officiellement(match_id)
+
+        flash("Résultats enregistrés et match clôturé !", "success")
+        return redirect(url_for("matchs.show_edit_matchs"))
+
+    return render_template(
+        "admin/matchs/cloturer_match.html", match=match_data, options=options
     )

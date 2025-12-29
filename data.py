@@ -312,7 +312,7 @@ def get_matchs_en_cours():
         with sqlite3.connect(DB_NAME) as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
-            cur.execute("""SELECT m.id AS match_id, m.equipe_a, m.equipe_b, m.type_match, m.date_match, o.libelle, o.id AS option_id, o.cote, o.categorie
+            cur.execute("""SELECT m.id AS match_id, m.equipe_a, m.equipe_b, m.type_match, m.date_match, m.statut, o.libelle, o.id AS option_id, o.cote, o.categorie
             FROM matchs m
             INNER JOIN options o 
             ON m.id = o.match_id
@@ -334,6 +334,7 @@ def get_programmes():
                 "equipe_a": ligne["equipe_a"],
                 "equipe_b": ligne["equipe_b"],
                 "date_match": ligne["date_match"],
+                "statut": ligne["statut"],
                 "type_match": ligne["type_match"],
                 "match_id": m_id,
                 "options": [],
@@ -459,6 +460,69 @@ def update_option_info(option_id, libelle, cote, categorie):
     except sqlite3.Error as e:
         print(f"Erreur update_option_info : {e}")
 
+
+def get_all_matchs_ordonnes():
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            # Tri par statut (ouvert/fermé) puis par date
+            cur.execute("""
+                SELECT id AS match_id, equipe_a, equipe_b, date_match, statut, type_match
+                FROM matchs
+                ORDER BY statut DESC, date_match ASC
+            """)
+            matchs = cur.fetchall()
+
+            # Transformer en dictionnaire format "programme" pour le template
+            programme = {}
+            for m in matchs:
+                programme[m["match_id"]] = dict(m)
+            return programme
+    except sqlite3.Error as e:
+        print(f"Erreur récupération ordonnée : {e}")
+        return {}
+
+def valider_option_gagnante(option_id, match_id):
+    """
+    Met l'option à 1 (gagné) et les autres options de la même 
+    catégorie pour ce match à 2 (perdu).
+    """
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            # 1. Récupérer la catégorie de l'option choisie
+            cur.execute("SELECT categorie FROM options WHERE id = ?", (option_id,))
+            res = cur.fetchone()
+            if not res: return False
+            categorie = res[0]
+
+            # 2. Mettre toutes les options de cette catégorie pour ce match à 2 (perdu)
+            cur.execute("""
+                UPDATE options SET winner = 2 
+                WHERE match_id = ? AND categorie = ?
+            """, (match_id, categorie))
+
+            # 3. Mettre l'option spécifique à 1 (gagné)
+            cur.execute("UPDATE options SET winner = 1 WHERE id = ?", (option_id,))
+            
+            conn.commit()
+            return True
+    except sqlite3.Error as e:
+        print(f"Erreur validation : {e}")
+        return False
+
+def fermer_match_officiellement(match_id):
+    """Change le statut du match pour qu'il ne soit plus modifiable."""
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            cur.execute("UPDATE matchs SET statut = 'fermé' WHERE id = ?", (match_id,))
+            conn.commit()
+            return True
+    except sqlite3.Error as e:
+        print(f"Erreur fermeture match : {e}")
+        return False
 
 """
 ========================================
@@ -644,6 +708,30 @@ def get_fiches_detaillees(parieur_id):
     except sqlite3.Error as e:
         print(f"Erreur SQL fiches détaillées : {e}")
         return {}
+
+def verifier_matchs_ouverts(liste_option_ids):
+    """Vérifie si tous les matchs liés aux options fournies sont encore 'ouvert'."""
+    if not liste_option_ids:
+        return False
+    
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            placeholders = ",".join(["?"] * len(liste_option_ids))
+            # On compte combien d'options pointent vers un match dont le statut n'est pas 'ouvert'
+            sql = f"""
+                SELECT COUNT(*) 
+                FROM options o
+                JOIN matchs m ON o.match_id = m.id
+                WHERE o.id IN ({placeholders}) AND m.statut != 'ouvert'
+            """
+            cur.execute(sql, liste_option_ids)
+            matchs_fermes = cur.fetchone()[0]
+            # Si le compte est 0, cela signifie que tout est 'ouvert'
+            return matchs_fermes == 0
+    except sqlite3.Error as e:
+        print(f"Erreur vérification statut : {e}")
+        return False
 
 
 # from werkzeug.security import generate_password_hash

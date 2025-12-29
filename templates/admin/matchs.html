@@ -1,9 +1,1 @@
-{% extends 'admin/base.html' %}
-
-{% block content %}
-    <hr>
-    <a href="{{ url_for('matchs.nouveau_match') }}">Ajouter</a>
-    <hr>
-    <a href="{{ url_for('matchs.show_edit_matchs') }}">Modifier</a>
-    <hr>
-{% endblock %}
+{% extends 'admin/base.html' %} {% block content %}<hr /><a href="{{ url_for('matchs.nouveau_match') }}">Ajouter</a><hr /><a href="{{ url_for('matchs.show_edit_matchs') }}">Modifier</a><hr />{% endblock %}

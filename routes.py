@@ -16,6 +16,8 @@ from data import (
     obtenir_cotes_par_ids,
     get_fiches_detaillees,
     get_details_options_panier,
+    get_match_by_id,
+    verifier_matchs_ouverts,
 )
 from admin_routes import admin_bp, users_bp, matchs_bp
 
@@ -333,7 +335,6 @@ def vider_ticket():
 
 @app.route("/valider_ticket", methods=["POST"])
 def valider_ticket():
-    """Valide le pari combiné final"""
     if "username" not in session:
         return redirect(url_for("login"))
 
@@ -341,6 +342,19 @@ def valider_ticket():
     if not ticket:
         flash("Votre ticket est vide.", "error")
         return redirect(url_for("home"))
+
+    options_ids = list(ticket.values())
+
+    # --- NOUVELLE VÉRIFICATION DE SÉCURITÉ ---
+    if not verifier_matchs_ouverts(options_ids):
+        # On identifie les matchs qui ne sont plus ouverts pour nettoyer le ticket (optionnel)
+        # Mais le plus important est de bloquer le pari
+        flash(
+            "Certains matchs de votre ticket ne sont plus disponibles (matchs commencés ou fermés).",
+            "error",
+        )
+        return redirect(url_for("mon_ticket"))
+    # -----------------------------------------
 
     user = get_user_by_username(session["username"])
     mise_str = request.form.get("mise", "0").replace(",", ".")
