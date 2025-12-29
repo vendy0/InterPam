@@ -21,6 +21,7 @@ from data import (
     get_all_matchs_ordonnes,
     fermer_match_officiellement,
     valider_option_gagnante,
+    executer_settlement_match,
 )
 
 
@@ -290,6 +291,7 @@ def cloturer_match(match_id):
 
         # Une fois les résultats saisis, on peut fermer le match
         fermer_match_officiellement(match_id)
+        executer_settlement_match(match_id)
 
         flash("Résultats enregistrés et match clôturé !", "success")
         return redirect(url_for("matchs.show_edit_matchs"))

@@ -483,9 +483,10 @@ def get_all_matchs_ordonnes():
         print(f"Erreur récupération ordonnée : {e}")
         return {}
 
+
 def valider_option_gagnante(option_id, match_id):
     """
-    Met l'option à 1 (gagné) et les autres options de la même 
+    Met l'option à 1 (gagné) et les autres options de la même
     catégorie pour ce match à 2 (perdu).
     """
     try:
@@ -494,23 +495,28 @@ def valider_option_gagnante(option_id, match_id):
             # 1. Récupérer la catégorie de l'option choisie
             cur.execute("SELECT categorie FROM options WHERE id = ?", (option_id,))
             res = cur.fetchone()
-            if not res: return False
+            if not res:
+                return False
             categorie = res[0]
 
             # 2. Mettre toutes les options de cette catégorie pour ce match à 2 (perdu)
-            cur.execute("""
+            cur.execute(
+                """
                 UPDATE options SET winner = 2 
                 WHERE match_id = ? AND categorie = ?
-            """, (match_id, categorie))
+            """,
+                (match_id, categorie),
+            )
 
             # 3. Mettre l'option spécifique à 1 (gagné)
             cur.execute("UPDATE options SET winner = 1 WHERE id = ?", (option_id,))
-            
+
             conn.commit()
             return True
     except sqlite3.Error as e:
         print(f"Erreur validation : {e}")
         return False
+
 
 def fermer_match_officiellement(match_id):
     """Change le statut du match pour qu'il ne soit plus modifiable."""
@@ -523,6 +529,7 @@ def fermer_match_officiellement(match_id):
     except sqlite3.Error as e:
         print(f"Erreur fermeture match : {e}")
         return False
+
 
 """
 ========================================
@@ -709,11 +716,12 @@ def get_fiches_detaillees(parieur_id):
         print(f"Erreur SQL fiches détaillées : {e}")
         return {}
 
+
 def verifier_matchs_ouverts(liste_option_ids):
     """Vérifie si tous les matchs liés aux options fournies sont encore 'ouvert'."""
     if not liste_option_ids:
         return False
-    
+
     try:
         with sqlite3.connect(DB_NAME) as conn:
             cur = conn.cursor()
@@ -734,38 +742,127 @@ def verifier_matchs_ouverts(liste_option_ids):
         return False
 
 
-# from werkzeug.security import generate_password_hash
-# from datetime import datetime
-# def creer_super_admin(prenom, nom, username, email, mdp):
-#     try:
-#         with sqlite3.connect(DB_NAME) as conn:
-#             cur = conn.cursor()
-#             hash_mdp = generate_password_hash(mdp)
-#             created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+"""
+========================================
+6. SETTLEMENT---------------------------
+========================================
+"""
 
-#             cur.execute(
-#                 """
-#                 INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, role, solde)
-#                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-#             """,
-#                 (
-#                     prenom,
-#                     nom,
-#                     username,
-#                     email,
-#                     99,
-#                     "Direction",
-#                     hash_mdp,
-#                     created_at,
-#                     "super_admin",
-#                     200000,
-#                 ),
-#             )
 
-#             conn.commit()
-#             return True, "Le Super Admin a été créé avec succès !"
-#     except sqlite3.Error as e:
-#         return False, f"Erreur lors de la création : {e}"
+def executer_settlement_match(match_id):
+    """
+    Vérifie les paris liés au match.
+    Un pari est payé uniquement si TOUTES ses options sont gagnantes (winner=1).
+    Si une seule option d'un pari est perdante (winner=2), le pari entier est perdu.
+    """
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            cur.execute("BEGIN TRANSACTION")
+
+            # 1. Récupérer tous les paris "En attente" qui contiennent au moins une option de ce match
+            cur.execute(
+                """
+                SELECT DISTINCT p.id, p.parieur_id, p.gain_potentiel
+                FROM paris p
+                JOIN matchs_paris mp ON p.id = mp.paris_id
+                WHERE mp.matchs_id = ? AND p.statut = 'En attente'
+            """,
+                (match_id,),
+            )
+
+            paris_a_verifier = cur.fetchall()
+            stats = {"gagnants": 0, "perdants": 0}
+
+            for p_id, user_id, gain_c in paris_a_verifier:
+                # 2. Pour chaque pari, on compte combien il a d'options au total
+                # et combien sont marquées comme "Perdantes" (2)
+                cur.execute(
+                    """
+                    SELECT 
+                        COUNT(*) as total_options,
+                        SUM(CASE WHEN o.winner = 2 THEN 1 ELSE 0 END) as nb_perdues,
+                        SUM(CASE WHEN o.winner = 1 THEN 1 ELSE 0 END) as nb_gagnees
+                    FROM matchs_paris mp
+                    JOIN options o ON mp.option_id = o.id
+                    WHERE mp.paris_id = ?
+                """,
+                    (p_id,),
+                )
+
+                res = cur.fetchone()
+                total, perdues, gagnees = res[0], res[1], res[2]
+
+                # LOGIQUE :
+                # - Si au moins 1 option est perdante (2) -> Le pari est PERDU
+                # - Si toutes les options sont gagnantes (1) -> Le pari est GAGNÉ
+                # - Sinon (il reste des options en attente sur d'autres matchs) -> On ne fait rien
+
+                if perdues > 0:
+                    # Une seule option à 2 suffit pour perdre toute la fiche
+                    cur.execute(
+                        "UPDATE paris SET statut = 'Perdu' WHERE id = ?", (p_id,)
+                    )
+                    stats["perdants"] += 1
+
+                elif gagnees == total:
+                    # TOUTES les options sont à 1
+                    cur.execute(
+                        "UPDATE parieurs SET solde = solde + ? WHERE id = ?",
+                        (gain_c, user_id),
+                    )
+                    cur.execute(
+                        "UPDATE paris SET statut = 'Gagné' WHERE id = ?", (p_id,)
+                    )
+                    stats["gagnants"] += 1
+
+                # Si le pari n'est ni totalement gagné ni contient une perte,
+                # c'est qu'il attend les résultats d'autres matchs (pari combiné).
+
+            conn.commit()
+            return (
+                True,
+                f"Settlement effectué : {stats['gagnants']} fiches payées, {stats['perdants']} fiches perdues.",
+            )
+
+    except Exception as e:
+        if "conn" in locals():
+            conn.rollback()
+        return False, str(e)
+
+
+from werkzeug.security import generate_password_hash
+from datetime import datetime
+def creer_super_admin(prenom, nom, username, email, mdp):
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            hash_mdp = generate_password_hash(mdp)
+            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            cur.execute(
+                """
+                INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, role, solde)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    prenom,
+                    nom,
+                    username,
+                    email,
+                    99,
+                    "Direction",
+                    hash_mdp,
+                    created_at,
+                    "super_admin",
+                    200000,
+                ),
+            )
+
+            conn.commit()
+            return True, "Le Super Admin a été créé avec succès !"
+    except sqlite3.Error as e:
+        return False, f"Erreur lors de la création : {e}"
 
 
 # def ajouter_column():
