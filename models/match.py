@@ -3,13 +3,41 @@ import sqlite3
 
 
 def ajouter_match(equipe_a, equipe_b, date_match, type_match="foot"):
-    with get_db_connection() as conn:
-        cur = conn.execute(
-            "INSERT INTO matchs (equipe_a, equipe_b, date_match, statut, type_match) VALUES (?, ?, ?, 'ouvert', ?)",
-            (equipe_a, equipe_b, date_match, type_match),
-        )
-        conn.commit()
-        return cur.lastrowid
+    try:
+        with get_db_connection() as conn:
+            cur = conn.execute(
+                "INSERT INTO matchs (equipe_a, equipe_b, date_match, statut, type_match) VALUES (?, ?, ?, 'ouvert', ?)",
+                (equipe_a, equipe_b, date_match, type_match),
+            )
+            conn.commit()
+            return cur.lastrowid
+    except sqlite3.Error as e:
+        print(f"Erreur lors de l'ajout du match : {e}")
+
+
+def ajouter_option(libelle, cote, categorie, match_id):
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO options(libelle, cote, categorie, match_id) VALUES (?, ?, ?, ?)",
+                (libelle, cote, categorie, match_id),
+            )
+            print(
+                f"Option {libelle} x {cote} de la catégorie {categorie} créé avec succès."
+            )
+    except sqlite3.Error as e:
+        print(f"Erreur lors de l'ajout : {e}")
+
+
+def get_options_by_match_id(match_id):
+    """Récupère toutes les options liées à un match."""
+    try:
+        with get_db_connection() as conn:
+            cur = conn.execute("SELECT * FROM options WHERE match_id = ?", (match_id,))
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur get_options_by_match_id : {e}")
+        return []
 
 
 def get_matchs_en_cours():
@@ -166,3 +194,27 @@ def get_historique_matchs():
     except sqlite3.Error as e:
         print(f"Erreur : {e}")
         return {}
+
+
+def verifier_matchs_ouverts(liste_option_ids):
+    """Vérifie si tous les matchs liés aux options fournies sont encore 'ouvert'."""
+    if not liste_option_ids:
+        return False
+
+    try:
+        with get_db_connection() as conn:
+            placeholders = ",".join(["?"] * len(liste_option_ids))
+            # On compte combien d'options pointent vers un match dont le statut n'est pas 'ouvert'
+            sql = f"""
+                SELECT COUNT(*) 
+                FROM options o
+                JOIN matchs m ON o.match_id = m.id
+                WHERE o.id IN ({placeholders}) AND m.statut != 'ouvert'
+            """
+            cur = conn.execute(sql, liste_option_ids)
+            matchs_fermes = cur.fetchone()[0]
+            # Si le compte est 0, cela signifie que tout est 'ouvert'
+            return matchs_fermes == 0
+    except sqlite3.Error as e:
+        print(f"Erreur vérification statut : {e}")
+        return False

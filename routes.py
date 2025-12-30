@@ -4,23 +4,25 @@ import re
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
-from data import (
-    ajouter_parieur,
-    get_user_by_email,
-    get_user_by_username,
-    # get_matchs_complets,
-    placer_pari,
-    obtenir_cotes_par_ids,
-    get_fiches_detaillees,
-    get_details_options_panier,
-    verifier_matchs_ouverts,
-)
 from admin_routes import admin_bp, users_bp, matchs_bp
 from models.match import (
     ajouter_match,
     get_matchs_en_cours,
     get_programmes,
     get_match_by_id,
+    verifier_matchs_ouverts,
+)
+from models.user import (
+    ajouter_parieur,
+    get_user_by_username,
+    get_user_by_email,
+)
+
+from models.bet import (
+    placer_pari,
+    obtenir_cotes_par_ids,
+    get_fiches_detaillees,
+    get_details_options_panier,
 )
 
 app = Flask(__name__)

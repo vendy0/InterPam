@@ -1,32 +1,37 @@
 # admin_routes.py
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request
 from datetime import datetime, date, timedelta
-from data import (
+from models.user import (
+    ajouter_parieur,
     get_user_by_username,
     get_user_by_email,
     get_user_by_name,
     get_user_by_age,
     get_user_by_grade,
-    ajouter_parieur,
     filtrer_users_admin,
-    ajouter_match,
-    ajouter_option,
     credit,
+)
+
+from models.match import (
+    ajouter_match,
+    get_matchs_en_cours,
     get_programmes,
-    get_all_users,
     get_match_by_id,
     update_match_info,
     update_option_info,
-    get_options_by_match_id,
     get_all_matchs_ordonnes,
+    get_matchs_actifs,
+    get_historique_matchs,
+    ajouter_option,
+    get_options_by_match_id,
+)
+
+from models.bet import (
     fermer_match_officiellement,
     valider_option_gagnante,
     executer_settlement_match,
-    get_historique_matchs,
-    get_matchs_actifs,
     get_bilan_financier_match,
 )
-
 
 users_bp = Blueprint("users", __name__, url_prefix="/admin/users")
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -95,20 +100,16 @@ def users():
 def find_user():
     if request.method == "GET":
         return render_template("admin/users.html")
-    action = request.form.get("action")
-    if action == "search":
-        criteres = {
-            "nom": request.form.get("nom").strip(),
-            "username": request.form.get("username_finding").strip(),
-            "email": request.form.get("email").strip(),
-            "age": request.form.get("age"),
-            "classe": request.form.get("classe"),
-        }
+    criteres = {
+        "nom": request.form.get("nom").strip(),
+        "username": request.form.get("username_finding").strip(),
+        "email": request.form.get("email").strip(),
+        "age": request.form.get("age"),
+        "classe": request.form.get("classe"),
+    }
 
-        # On appelle la fonction de filtrage strict (AND)
-        resultats = filtrer_users_admin(criteres)
-    elif action == "searchAll":
-        resultats = get_all_users()
+    # On appelle la fonction de filtrage strict (AND)
+    resultats = filtrer_users_admin(criteres)
     if len(resultats) > 0:
         return render_template("admin/users.html", users=resultats)
     else:

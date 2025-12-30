@@ -1,72 +1,70 @@
-from database.connection import get_db_connection
+from database.connexion import get_db_connection
 from utils.finance import vers_centimes, depuis_centimes
 import sqlite3
 
 
+def ajouter_parieur(user_data):
+    """Ajoute un parieur avec gestion d'exception et tabulation."""
+    try:
+        with get_db_connection() as conn:
+            conn.execute("PRAGMA foreign_keys = ON")
+            conn.execute(
+                "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    user_data["prenom"],
+                    user_data["nom"],
+                    user_data["username"],
+                    user_data["email"],
+                    user_data["age"],
+                    user_data["classe"],
+                    user_data["mdp"],
+                    user_data["created_at"],
+                ),
+            )
+            print(f"Utilisateur {user_data['username']} ajouté.")
+    except sqlite3.Error as e:
+        print(f"Erreur SQL lors de l'ajout du parieur : {e}")
+
+
+def get_user_by_name(nom):
+    """Récupère un utilisateur par son nom."""
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "SELECT * FROM parieurs WHERE prenom LIKE ? OR nom LIKE ?", (nom, nom)
+            )
+            return conn.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération (nom) : {e}")
+        return None
+
+
 def get_user_by_email(email):
-    with get_db_connection() as conn:
-        user = conn.execute(
-            "SELECT * FROM parieurs WHERE email = ?", (email,)
-        ).fetchone()
-        return dict(user) if user else None
+    try:
+        with get_db_connection() as conn:
+            user = conn.execute(
+                "SELECT * FROM parieurs WHERE email = ?", (email,)
+            ).fetchone()
+            return dict(user) if user else None
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération (email) : {e}")
+        return None
 
 
 def get_user_by_username(username):
-    with get_db_connection() as conn:
-        user = conn.execute(
-            "SELECT * FROM parieurs WHERE username = ?", (username,)
-        ).fetchone()
-        return dict(user) if user else None
-
-
-def ajouter_parieur(
-    prenom,
-    nom,
-    username,
-    email,
-    age,
-    classe,
-    mdp,
-    created_at,
-    role="user",
-    solde_initial=0,
-):
-    solde_centimes = vers_centimes(solde_initial)
+    """Récupère un utilisateur par son username."""
     try:
         with get_db_connection() as conn:
-            conn.execute(
-                "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, role, solde) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                (
-                    prenom,
-                    nom,
-                    username,
-                    email,
-                    age,
-                    classe,
-                    mdp,
-                    created_at,
-                    role,
-                    solde_centimes,
-                ),
-            )
-            conn.commit()
-            return True, "Succès"
-    except Exception as e:
-        return False, str(e)
-
-
-def credit(username, montant_decimal):
-    try:
-        solde_centimes = vers_centimes(montant_decimal)
-        with get_db_connection() as conn:
-            conn.execute(
-                "UPDATE parieurs SET solde = solde + ? WHERE username = ?",
-                (solde_centimes, username),
-            )
-            conn.commit()
-            return True, "Compte crédité"
-    except Exception as e:
-        return False, str(e)
+            cur = conn.execute("SELECT * FROM parieurs WHERE username = ?", (username,))
+            user = cur.fetchone()
+            if user:
+                user_dict = dict(user)
+                user_dict["solde"] = depuis_centimes(user_dict["solde"])
+                return user_dict
+            return None
+    except sqlite3.Error as e:
+        print(f"Erreur : {e}")
+        return None
 
 
 def filtrer_users_admin(filtres):
@@ -87,38 +85,6 @@ def filtrer_users_admin(filtres):
             return [dict(u) for u in users]
     except Exception:
         return []
-
-
-def get_user_by_email(email):
-    with get_db_connection() as conn:
-        user = conn.execute(
-            "SELECT * FROM parieurs WHERE email = ?", (email,)
-        ).fetchone()
-        return dict(user) if user else None
-
-
-def get_user_by_username(username):
-    with get_db_connection() as conn:
-        user = conn.execute(
-            "SELECT * FROM parieurs WHERE username = ?", (username,)
-        ).fetchone()
-        return dict(user) if user else None
-
-
-# Ajoute ici tes autres fonctions de filtrage (filtrer_users_admin, etc.)
-
-
-def get_user_by_name(nom):
-    """Récupère un utilisateur par son nom."""
-    try:
-        with get_db_connection() as conn:
-            conn.execute(
-                "SELECT * FROM parieurs WHERE prenom LIKE ? OR nom LIKE ?", (nom, nom)
-            )
-            return conn.fetchall()
-    except sqlite3.Error as e:
-        print(f"Erreur lors de la récupération (nom) : {e}")
-        return None
 
 
 def get_user_by_age(age):
@@ -143,39 +109,15 @@ def get_user_by_grade(classe):
         return None
 
 
-def filtrer_users_admin(criteres):
-    """Recherche des utilisateurs correspondant à TOUS les critères fournis."""
+def credit(username, montant_decimal):
     try:
+        solde_centimes = vers_centimes(montant_decimal)
         with get_db_connection() as conn:
-            filtres = {k: v for k, v in criteres.items() if v and v.strip() != ""}
-
-            if not filtres:
-                return []
-
-            clauses = []
-            parametres = []
-
-            for col, val in filtres.items():
-                if col in ["nom", "prenom", "username"]:
-                    clauses.append(f"{col} LIKE ?")
-                    parametres.append(f"%{val}%")
-                else:
-                    clauses.append(f"{col} = ?")
-                    parametres.append(val)
-
-            sql = f"SELECT * FROM parieurs WHERE {' AND '.join(clauses)}"
-            conn.execute(sql, parametres)
-            return conn.fetchall()
-    except sqlite3.Error as e:
-        print(f"Erreur recherche dynamique : {e}")
-        return []
-
-
-def get_all_users():
-    """Récupérer tous les utilisateurs."""
-    try:
-        with get_db_connection() as conn:
-            conn.execute("SELECT * FROM parieurs ORDER BY prenom ASC")
-            return conn.fetchall()
+            conn.execute(
+                "UPDATE parieurs SET solde = solde + ? WHERE username = ?",
+                (solde_centimes, username),
+            )
+            conn.commit()
+            return True, "Compte crédité"
     except Exception as e:
-        return f"Erreur lors de la récupération : {e}"
+        return False, str(e)
