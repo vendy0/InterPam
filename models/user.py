@@ -135,12 +135,9 @@ def debit(username, montant_decimal):
                     "UPDATE parieurs SET solde = solde - ? WHERE username = ?",
                     (solde_centimes, username),
                 )
+                conn.commit()
+                return True, "Compte débité"
             else:
-                conn.execute(
-                    "UPDATE parieurs SET solde = 0 WHERE username = ?",
-                    (username),
-                )
-            conn.commit()
-            return True, "Compte débité"
-    except Exception as e:
-        return False, str(e)
+                return False, "Solde insuffisant !"
+    except sqlite3.Error as e:
+        return False, f"Erreur lors du débit {e}"
