@@ -43,7 +43,7 @@ def admin_required(f):
             return redirect(url_for("login"))
 
         user = get_user_by_username(session["username"])
-        if user["role"] not in ["super_admin", "admin", "statisticien"]:
+        if user["classe"] != "Direction":
             flash("Accès interdit", "error")
             return redirect(url_for("home"))
 
@@ -141,6 +141,34 @@ def debit_user():
 
     flash(message)
     return render_template("admin/users.html")
+
+
+@users_bp.route("/ban/<username>")
+@admin_required
+def ban_user(username):
+    user = get_user_by_username(session["username"])
+    if not user or user["role"] != "super_admin":
+        flash("Accès refusé", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    username = request.form.get("username").strip()
+    password = request.form.get("password")
+
+    if username != session["username"]:
+        flash("Nom d'utilisateur incorrect !")
+        return redirect(url_for("matchs.show_edit_matchs"))
+
+    # Remplacez par votre logique de vérification (ex: check_password_hash)
+    # Ici, je suppose une comparaison simple ou via une fonction dédiée
+    if check_password_hash(user["mdp"], password):
+        if supprimer_match(match_id):
+            flash("Match supprimé avec succès", "success")
+        else:
+            flash("Erreur lors de la suppression", "error")
+    else:
+        flash("Mot de passe incorrect. Suppression annulée.", "error")
+
+    return redirect(url_for("matchs.show_edit_matchs"))
 
 
 """
