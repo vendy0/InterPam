@@ -308,3 +308,37 @@ def ban_ret_user(username, ban="", ret=""):
 	except sqlite3.Error as e:
 		print(f"Erreur lors du bannissement / rétablissement : {e}")
 		return False
+
+import sqlite3
+import smtplib
+from email.message import EmailMessage
+
+def envoyer_emails():
+    # 1. Configuration de l'expéditeur
+    EMAIL_ADRESSE = "votre.email@gmail.com"
+    EMAIL_MOT_DE_PASSE = "votre_mot_de_passe_application"
+
+    # 2. Connexion à la base de données
+    conn = sqlite3.connect('candidatures.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT nom, email FROM etudiants")
+    destinataires = cursor.fetchall()
+
+    # 3. Connexion au serveur SMTP (ici Gmail)
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+        smtp.login(EMAIL_ADRESSE, EMAIL_MOT_DE_PASSE)
+
+        for nom, email_destinataire in destinataires:
+            msg = EmailMessage()
+            msg['Subject'] = "Information Candidature UCI 2026"
+            msg['From'] = EMAIL_ADRESSE
+            msg['To'] = email_destinataire
+            msg.set_content(f"Bonjour {nom},\n\nCeci est un message automatique concernant votre projet d'études à l'UCI en Cuba.")
+
+            smtp.send_message(msg)
+            print(f"Email envoyé avec succès à {nom} ({email_destinataire})")
+
+    conn.close()
+
+# Appeler la fonction
+# envoyer_emails()
