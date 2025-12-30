@@ -6,10 +6,11 @@ import sqlite3
 def ajouter_parieur(user_data):
     """Ajoute un parieur avec gestion d'exception et tabulation."""
     try:
+        role = user_data.get("role", "parieur")
         with get_db_connection() as conn:
             conn.execute("PRAGMA foreign_keys = ON")
             conn.execute(
-                "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, role, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     user_data["prenom"],
                     user_data["nom"],
@@ -18,6 +19,7 @@ def ajouter_parieur(user_data):
                     user_data["age"],
                     user_data["classe"],
                     user_data["mdp"],
+                    role,
                     user_data["created_at"],
                 ),
             )
@@ -119,5 +121,26 @@ def credit(username, montant_decimal):
             )
             conn.commit()
             return True, "Compte crédité"
+    except Exception as e:
+        return False, str(e)
+
+
+def debit(username, montant_decimal):
+    try:
+        solde_centimes = vers_centimes(montant_decimal)
+        with get_db_connection() as conn:
+            user = get_user_by_username(username)
+            if solde_centimes < user["solde"]:
+                conn.execute(
+                    "UPDATE parieurs SET solde = solde - ? WHERE username = ?",
+                    (solde_centimes, username),
+                )
+            else:
+                conn.execute(
+                    "UPDATE parieurs SET solde = 0 WHERE username = ?",
+                    (username),
+                )
+            conn.commit()
+            return True, "Compte débité"
     except Exception as e:
         return False, str(e)
