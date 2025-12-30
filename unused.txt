@@ -66,7 +66,7 @@ __
 
 - Se connecter avec google
 - Supprimer les commentaires 
-- Cacher la clé de Session
+- Cacher la clé de Session, et mdp email
 - Rules
 - Titles
 - ...

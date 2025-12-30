@@ -9,6 +9,7 @@ from models.user import *
 from models.match import *
 from models.bet import *
 from models.admin import *
+from models.emails import *
 
 users_bp = Blueprint("users", __name__, url_prefix="/admin/users")
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -405,22 +406,14 @@ def staff():
     if succes:
         lien = url_for("admin.setup_staff", token=token, _external=True)
 
-        # Gestion de la partie email
-        email_dict = {}
-        email_dict["nom"] = nom.strip()
-        email_dict["email"] = email
-        email_dict["subject"] = (
-            f"Invitation sur InterPam en tant que nouveau {role}"
-        )
-        email_dict["corps"] = (
-            f"Vous avez été invité à devenir un administrateur de la plateforme InterPam. Voici le lien d'inscription : \n\n {lien} \n\n Attention : Ce lien expirera dans 48h !"
-        )
-        envoyer_email(email_dict)
-
-        flash(
-            f"Invitation envoyé à {nom} ! ({email}) pour le rôle : {role} !",
-            "succes",
-        )
+        succes, message = envoyer_invitation_admin(nom, email, lien)
+        if succes:
+            flash(
+                f"Invitation envoyé à {nom} ! ({email}) pour le rôle : {role} !",
+                "succes",
+            )
+        else:
+            flash(message)
         return redirect(url_for("admin.staff"))
     else:
         flash(message)
