@@ -27,19 +27,31 @@ def get_matchs_en_cours():
 
 
 def get_programmes():
-    """Récupère les matchs ouverts avec leurs options"""
-    with get_db_connection() as conn:
-        # On récupère les matchs
-        matchs = conn.execute("SELECT * FROM matchs WHERE statut = 'ouvert'").fetchall()
-        programmes = []
-        for m in matchs:
-            m_dict = dict(m)
-            opts = conn.execute(
-                "SELECT * FROM options_match WHERE match_id = ?", (m_dict["id"],)
-            ).fetchall()
-            m_dict["options"] = [dict(o) for o in opts]
-            programmes.append(m_dict)
-        return programmes
+    donnees = get_matchs_en_cours()
+    programme = {}
+
+    for ligne in donnees:
+        m_id = ligne["match_id"]
+        if m_id not in programme:
+            programme[m_id] = {
+                "equipe_a": ligne["equipe_a"],
+                "equipe_b": ligne["equipe_b"],
+                "date_match": ligne["date_match"],
+                "statut": ligne["statut"],
+                "type_match": ligne["type_match"],
+                "match_id": m_id,
+                "options": [],
+            }
+
+        if ligne["option_id"]:
+            nouvelle_option = {
+                "option_id": ligne["option_id"],
+                "libelle": ligne["libelle"],
+                "cote": ligne["cote"],
+                "categorie": ligne["categorie"],
+            }
+            programme[m_id]["options"].append(nouvelle_option)
+    return programme
 
 
 def get_match_by_id(match_id):
