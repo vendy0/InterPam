@@ -280,7 +280,7 @@ def supprimer_match_route(match_id):
 	user = get_user_by_username(username)
 	# Remplacez par votre logique de vérification (ex: check_password_hash)
 	# Ici, je suppose une comparaison simple ou via une fonction dédiée
-	if user and check_password_hash(user["mdp"], password):
+	if user and user["role"] != "parieur" and check_password_hash(user["mdp"], password):
 		if supprimer_match(match_id):
 			flash("Match supprimé avec succès", "success")
 		else:

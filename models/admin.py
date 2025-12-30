@@ -231,6 +231,7 @@ def update_option_info(option_id, libelle, cote, categorie):
 	except sqlite3.Error as e:
 		print(f"Erreur update_option_info : {e}")
 
+
 def supprimer_match(match_id):
 	try:
 		with get_db_connection() as conn:
@@ -240,3 +241,10 @@ def supprimer_match(match_id):
 	except sqlite3.Error as e:
 		print(f"Il y a eu une erreur lors de la suppression : {e}")
 		return False
+
+
+"""
+---------------------------------------
+STAFF
+---------------------------------------
+"""

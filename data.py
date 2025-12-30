@@ -957,7 +957,10 @@ def ajouter_column():
 	try:
 		with sqlite3.connect(DB_NAME) as conn:
 			cur = conn.cursor()
-			cur.execute("ALTER TABLE matchs ADD COLUMN type_match TEXT DEFAULT 'foot'")
+			cur.execute(
+				"ALTER TABLE parieurs ADD COLUMN actif INTEGER NOT NULL DEFAULT 1 CHECK (actif IN (0,1))"
+			)
+			cur.execute("ALTER TABLE matchs DROP COLUMN actif")
 			conn.commit()
 	except sqlite3.Error as e:
 		print(f"Erreur lors de l'ajout de la colonne : {e}")
@@ -988,4 +991,4 @@ def ajouter_column():
 # 		print(f"Erreur ! : {e}")
 
 # add()
-# 
+#

@@ -1,6 +1,6 @@
 from data import ajouter_match, ajouter_option
 
-# from data import ajouter_column
+from data import ajouter_column
 # from data import update
 
 match_id = ajouter_match("S2", "S1", "Ce soir")
@@ -40,6 +40,6 @@ if match_id:
 #     ajouter_option("> 7", 5.0, "Nombre_de_but", match_id)
 
 
-# ajouter_column()
+ajouter_column()
 
 # update()
