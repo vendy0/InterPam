@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, flash,
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
+from models.emails import welcome_email
 from re import match
 
 from models.user import *

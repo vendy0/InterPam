@@ -174,6 +174,7 @@ def traitementRegister():
 	}
 	ajouter_parieur(user)
 	flash("Votre compte a été créé avec succès.", "succes")
+	welcome_email(prenom, email, url_for('home'))
 	session["username"] = username
 	return redirect(url_for("home"))
 
