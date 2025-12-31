@@ -530,7 +530,17 @@ def mailbox():
     lien = donnees.get("lien").strip()
 
     key = donnees.get("key").strip()
-    result = donnees.get("result").strip()
+    result = donnees.get("result")
+    if key == "age":
+        try:
+            result = int(donnees.get("result"))
+        except:
+            flash("Vous devez entrer un nombre pour l'age !")
+            return redirect(request.referrer)
+        if result < 0 or result > 100:
+            flash("Vous devez entrer un age supérieur à 0 et inférieur à 100 !")
+            return redirect(request.referrer)
+
     emails_envoyes = 0
     error = ""
 

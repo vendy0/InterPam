@@ -181,3 +181,18 @@ def debit(username, montant_decimal):
                 return False, "Solde insuffisant !"
     except sqlite3.Error as e:
         return False, f"Erreur lors du débit {e}"
+
+
+def save_sub(push_subscription, user_id):
+    """Récupère un utilisateur par sa classe."""
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "UPDATE parieurs SET push_subscription = ? WHERE id = ?",
+                (push_subscription, user_id),
+            )
+            conn.commit()
+        return {"statut": "Succès"}
+    except sqlite3.Error as e:
+        print(f"Erreur lors de l'abonnement : {e}")
+        return None
