@@ -516,13 +516,13 @@ def mailbox():
 	if request.method == "GET":
 		return render_template("admin/mailbox.html")
 	donnees = request.form
-	titre = donnes.get("titre").strip()
-	message = donnes.get("message").strip()
-	text_button = donnes.get("text_button").strip()
-	lien = donnes.get("lien").strip()
+	titre = donnees.get("titre").strip()
+	message = donnees.get("message").strip()
+	text_button = donnees.get("text_button").strip()
+	lien = donnees.get("lien").strip()
 
-	key = donnes.get("key").strip()
-	result = donnes.get("result").strip()
+	key = donnees.get("key").strip()
+	result = donnees.get("result").strip()
 	emails_envoyes = 0
 
 	users = get_users(key, result)
