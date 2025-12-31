@@ -1,7 +1,8 @@
 <!-- @format -->
 
-{% extends 'base.html' %} {% block css %}
+{% extends 'base.html' %} {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/fiches.css') }}" type="text/css" media="all" />
+<title>Fiches</title>
 {% endblock %} {% block content %}
 <div class="fiches-container">
 	<h2 class="section-title">Mes Paris</h2>

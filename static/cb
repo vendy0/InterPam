@@ -1,0 +1,11 @@
+InterPam/
+├── interpam.db             # Ta base SQLite3
+├── app.py                  # Ton serveur (Flask ou autre)
+├── gen_keys.py             # Ton script pour les clés VAPID
+├── static/                 # Dossier pour les fichiers publics
+│   ├── manifest.json       # Configuration PWA
+│   ├── sw.js               # LE SERVICE WORKER (Important)
+│   ├── main.js             # Ton code JS avec la clé publique
+│   └── icon-192.png        # L'icône de ta notif
+└── templates/
+    └── index.html          # Ta page web
