@@ -1,6 +1,8 @@
 import smtplib
 from email.message import EmailMessage
 from jinja2 import Template
+import json
+from pywebpush import webpush, WebPushException
 
 
 def envoyer_email_generique(destinataire, sujet, contenu_html, contenu_texte):
@@ -110,3 +112,33 @@ def envoyer_notification_generale(
     """)
 
     return envoyer_email_generique(email, sujet, html, corps_texte)
+
+
+# Tes clés (Garde la privée SECRÈTE !)
+VAPID_PRIVATE_KEY = "oU5-E5H6fbcgYHfRqwMaYyqNaBy7mu81w739O2Q8h44"
+VAPID_CLAIMS = {
+    "sub": "mailto:ton-email@exemple.com"  # Obligatoire pour les serveurs push
+}
+
+def envoyer_push_notification(subscription_json, title, message, url="/"):
+    """
+    Envoie une notification à un utilisateur spécifique via son JSON d'abonnement.
+    """
+    try:
+        # On transforme le string JSON de la BDD en dictionnaire
+        subscription_info = json.loads(subscription_json)
+
+        # Préparation du contenu de la notification (lu par sw.js)
+        data = json.dumps({"title": title, "body": message, "url": url})
+
+        webpush(
+            subscription_info=subscription_info,
+            data=data,
+            vapid_private_key=VAPID_PRIVATE_KEY,
+            vapid_claims=VAPID_CLAIMS,
+        )
+        return True, "Envoyé"
+    except WebPushException as ex:
+        print(f"Erreur WebPush: {ex}")
+        # Si l'erreur est 410, l'utilisateur s'est désabonné, tu devrais supprimer l'abonnement en BDD
+        return False, str(ex)

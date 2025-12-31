@@ -1,5 +1,5 @@
 from routes import app
-from data import initialiser_bdd
+from database.setup import initialiser_bdd
 
 initialiser_bdd()
 if __name__ == "__main__":

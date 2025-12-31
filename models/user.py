@@ -183,8 +183,8 @@ def debit(username, montant_decimal):
         return False, f"Erreur lors du débit {e}"
 
 
-def save_sub(push_subscription, user_id):
-    """Récupère un utilisateur par sa classe."""
+def save_subscription(push_subscription, user_id):
+    """Sauvegarder l'id de l'appareil pour notification."""
     try:
         with get_db_connection() as conn:
             conn.execute(

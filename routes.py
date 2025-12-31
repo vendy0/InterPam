@@ -1,5 +1,14 @@
 # Dans ton fichier principal
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    flash,
+    send_from_directory,
+)
 import re
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, date, timedelta
@@ -196,12 +205,12 @@ def home():
 
 
 @app.route("/save-subscription", methods=["POST"])
-def save_sub():
+def save_subscription_route():
     subscription_data = request.json
     user = get_user_by_username(session["username"])
     user_id = user["id"]
     # C'est le JSON envoyé par le JS
-    (save_sub(json.dumps(subscription_data), user_id))
+    (save_subscription(json.dumps(subscription_data), user_id))
 
 
 # Dans ton app.py

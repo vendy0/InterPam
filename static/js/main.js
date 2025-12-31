@@ -11,10 +11,13 @@ document.addEventListener('DOMContentLoaded', () => {
             pushBtn.style.display = 'block';
             
             pushBtn.addEventListener('click', async () => {
-                try {
-                    await activerNotifications();
-                } catch (error) {
-                    console.error("Erreur d'abonnement :", error);
+                confirmer = confirm("Voulez vous activer les notifications pour InterPam ?")
+                if(confirmer){
+                    try {
+                        await activerNotifications();
+                    } catch (error) {
+                        console.error("Erreur d'abonnement :", error);
+                    }
                 }
             });
         }
@@ -31,7 +34,7 @@ async function activerNotifications() {
     // 3. Demander la permission à l'utilisateur
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-        alert("Tu as refusé les notifications.");
+        alert("Alertes par notifications désactivées.");
         return;
     }
 
@@ -48,10 +51,11 @@ async function activerNotifications() {
         headers: { 'Content-Type': 'application/json' }
     });
 
-    alert("✅ Notifications activées pour InterPam !");
+    alert("✅ Notifications activées . Rendez vous dans les paramètres pour les désactiver.");
     if(pushBtn) {
-        pushBtn.textContent = "🔔 Notifications activées";
+        const container = document.querySelector(".subscription")
         pushBtn.disabled = true;
+        container.style.bottom = 0
     }
 }
 

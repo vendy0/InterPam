@@ -508,6 +508,7 @@ def setup_staff(token):
         "classe": classe,
         "mdp": hashed_passeword,
         "role": role,
+        "solde": 0,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
     ajouter_parieur(user)
@@ -529,6 +530,12 @@ def mailbox():
     text_button = donnees.get("text_button").strip()
     lien = donnees.get("lien").strip()
 
+    titre_popup = donnees.get("titre_popup").strip()
+    message_popup = donnees.get("message_popup").strip()
+
+    if not titre_popup:
+        titre_popup = titre
+
     key = donnees.get("key").strip()
     result = donnees.get("result")
     if key == "age":
@@ -542,21 +549,43 @@ def mailbox():
             return redirect(request.referrer)
 
     emails_envoyes = 0
-    error = ""
+    notifications_envoyes = 0
+    error_email = ""
+    error_popup = ""
 
     users = get_users(key, result)
     for user in users:
-        succes, succes_msg = envoyer_notification_generale(
-            user["prenom"], user["email"], titre, message, lien, text_button
-        )
-        if succes:
-            emails_envoyes += 1
-        else:
-            error = succes_msg
-    if not error:
-        flash(f"Email(s) envoyés : {emails_envoyes} !")
-    else:
+        if titre:
+            succes, succes_msg = envoyer_notification_generale(
+                user["prenom"], user["email"], titre, message, lien, text_button
+            )
+            if succes:
+                emails_envoyes += 1
+            else:
+                error_email = succes_msg
+
+        if message_popup and titre_popup and user["push_subscription"] is not None:
+            succes_popup, msg_popup = envoyer_push_notification(
+                user["push_subscription"], titre_popup, message_popup, lien
+            )
+            if succes_popup:
+                notifications_envoyes += 1
+            else:
+                error_popup = msg_popup
+                
+
+    if not error_email or not error_popup:
         flash(
-            f"Il y a eu une erreur lors de l'envoi : {error} ! Emails envoyés : {emails_envoyes}"
+            f"Email(s) envoyés : {emails_envoyes}."
         )
+        flash(f"Notification(s) envoyée(s) : {notifications_envoyes}.")
+    else:
+        if error_email:
+            flash(
+                f"Il y a eu une erreur lors de l'envoi : {error_email} ! Email(s) envoyé(s) : {emails_envoyes}"
+            )
+        else:
+            flash(
+                f"Il y a eu une erreur lors de l'envoi : {error_popup} ! Notification(s) envoyé(s) : {notifications_envoyes}"
+            )
     return redirect(request.referrer)

@@ -1,26 +1,29 @@
 
 // Écouter l'événement "push" envoyé par ton script Python
+// Dans ton sw.js
 self.addEventListener('push', function(event) {
     if (event.data) {
-        // On récupère les données envoyées par pywebpush
         const data = event.data.json(); 
+        
+        // On construit l'URL complète vers l'image
+        const base = self.location.origin; 
+        const iconUrl = base + '/static/img/logo.png';
+        const iconUrlBadge = base + '/static/img/logo_badge.png';
 
         const options = {
             body: data.body,
-            icon: '/static/icon-192.png', // Chemin vers ton icône
-            badge: '/static/icon-192.png',
+            icon: iconUrl,   // Image principale de la notif
+            badge: iconUrlBadge,  // Petite icône dans la barre d'état Android
             vibrate: [100, 50, 100],
-            data: {
-                url: data.url // On stocke l'URL pour ouvrir la page au clic
-            }
+            data: { url: data.url }
         };
 
-        // Afficher la notification sur l'écran
         event.waitUntil(
             self.registration.showNotification(data.title, options)
         );
     }
 });
+
 
 // Gérer le clic sur la notification
 self.addEventListener('notificationclick', function(event) {

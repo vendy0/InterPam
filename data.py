@@ -48,6 +48,7 @@ def initialiser_bdd():
                     created_at TEXT NOT NULL,
                     solde INTEGER DEFAULT 0,
                     role TEXT DEFAULT 'parieur',
+                    push_subscription TEXT,
                     actif INTEGER DEFAULT 1
                 )""")
 
@@ -984,7 +985,20 @@ def ajouter_column():
         return None
 
 
-# ajouter_column()    
+def delete_element():
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            cur.execute("UPDATE parieurs SET push_subscription = NULL WHERE id = 1")
+            conn.commit()
+            print("Colonne supprimé !")
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la suppression de la colonne : {e}")
+        return None
+
+
+# delete_element()
+# ajouter_column()
 
 # def update():
 #     try:
