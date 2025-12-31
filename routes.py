@@ -114,6 +114,16 @@ def traitementLogin():
 		return render_template("auth.html", loginError=loginError)
 
 
+def valider_nom_prenom(entree):
+	# On définit le pattern
+	pattern = r"^[a-zA-ZàâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ\s'-]+$"
+
+	# On vérifie la correspondance
+	if re.match(pattern, entree):
+		return True
+	return False
+
+
 # Inscription
 @app.route("/traitement-register", methods=["POST", "GET"])
 def traitementRegister():
@@ -130,6 +140,13 @@ def traitementRegister():
 	mdpConfirm = donnees.get("mdpConfirm")
 	rules = donnees.get("rules")
 
+	confirm_prenom = valider_nom_prenom(prenom)
+	confirm_nom = valider_nom_prenom(nom)
+
+	if not confirm_prenom or not confirm_nom:
+		nameError = "Le nom et le prénom ne doivent contenir que des lettres, des espaces, des tirets ou des apostrophes (ex: Jean-Pierre, D'Olier)."
+		return render_template("auth.html", error=nameError)
+
 	# Vérifie si le champ contient UNIQUEMENT lettres, chiffres et _
 	if not re.match(r"^[a-zA-Z0-9_]+$", username):
 		usernameError = (
@@ -140,6 +157,10 @@ def traitementRegister():
 	if len(prenom) > 20 or len(nom) > 20 or len(username) > 20:
 		lenError = "Certains champs sont trop longs !"
 		return render_template("auth.html", error=lenError)
+		
+	if not classe:
+		classeError="Vous n'avez pas séléctionné la classe !"
+		return render_template("auth.html", error=classeError)
 
 	if len(mdp) < 8 or not mdp:
 		mdpLenError = "Le mot de passe est trop court !"

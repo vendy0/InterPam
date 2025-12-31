@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pushBtn.style.display = 'block';
             
             pushBtn.addEventListener('click', async () => {
-                confirmer = confirm("Voulez vous activer les notifications pour InterPam ?")
+                const confirmer = confirm("Voulez vous activer les notifications pour InterPam ?")
                 if(confirmer){
                     try {
                         await activerNotifications();
@@ -55,7 +55,9 @@ async function activerNotifications() {
     if(pushBtn) {
         const container = document.querySelector(".subscription")
         pushBtn.disabled = true;
-        container.style.bottom = 0
+        if(container){
+        	container.style.bottom = "0px"
+        }
     }
 }
 
