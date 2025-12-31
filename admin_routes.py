@@ -112,10 +112,10 @@ def credit_user():
     try:
         solde = int(solde)
         if solde <= 0:
-            flash("Le montant doit être positif !")
+            flash("Le montant doit être positif !", "error")
             return render_template("admin/users.html")
     except:
-        flash("Vous devez entrer un nombre !")
+        flash("Vous devez entrer un nombre !", "error")
         return render_template("admin/users.html")
 
     succes, message = credit(username, solde)
@@ -137,10 +137,10 @@ def debit_user():
     try:
         solde = int(solde)
         if solde <= 0:
-            flash("Le montant doit être positif !")
+            flash("Le montant doit être positif !", "error")
             return render_template("admin/users.html")
     except:
-        flash("Vous devez entrer un nombre !")
+        flash("Vous devez entrer un nombre !", "error")
         return render_template("admin/users.html")
 
     succes, message = debit(username, solde)
@@ -161,7 +161,7 @@ def ban_user_route(action, username):
     password = request.form.get("password")
 
     if username_adm != session["username"]:
-        flash("Nom d'utilisateur incorrect !")
+        flash("Nom d'utilisateur incorrect !", "error")
         return redirect(url_for("users.users"))
 
     # Remplacez par votre logique de vérification (ex: check_password_hash)
@@ -169,12 +169,12 @@ def ban_user_route(action, username):
     if check_password_hash(user["mdp"], password):
         if action == "ban":
             if ban_ret_user(username, ban="ban"):
-                flash(f"Le joueur {username} a été suspendu !", "success")
+                flash(f"Le joueur {username} a été suspendu !", "succes")
             else:
                 flash("Erreur lors de la suspension", "error")
         else:
             if ban_ret_user(username, ret="ret"):
-                flash(f"Le joueur {username} a été rétablie !", "success")
+                flash(f"Le joueur {username} a été rétablie !", "succes")
             else:
                 flash("Erreur lors du rétablissement", "error")
     else:
@@ -223,7 +223,7 @@ def nouveau_match():
                         match_id,
                     )  #
 
-            flash("Match ajouté avec succès !", "success")
+            flash("Match ajouté avec succès !", "succes")
             return redirect(url_for("admin.dashboard"))  #
 
     return render_template("admin/matchs/nouveau_match.html")
@@ -302,7 +302,7 @@ def edit_matchs(match_id):
                     o_id, libelles[i].strip(), float(cotes[i]), categories[i].strip()
                 )
 
-        flash("Match mis à jour avec succès !")
+        flash("Match mis à jour avec succès !", "succes")
         return redirect(url_for("matchs.show_edit_matchs"))
 
     # 2. Affichage du formulaire (GET)
@@ -335,7 +335,7 @@ def cloturer_match(match_id):
         fermer_match_officiellement(match_id)
         executer_settlement_match(match_id)
 
-        flash("Résultats enregistrés et match clôturé !", "success")
+        flash("Résultats enregistrés et match clôturé !", "succes")
         return redirect(url_for("matchs.show_edit_matchs"))
 
     return render_template(
@@ -350,7 +350,7 @@ def supprimer_match_route(match_id):
     password = request.form.get("password")
 
     if username != session["username"]:
-        flash("Nom d'utilisateur incorrect !")
+        flash("Nom d'utilisateur incorrect !", "error")
         return redirect(url_for("matchs.show_edit_matchs"))
 
     user = get_user_by_username(username)
@@ -362,7 +362,7 @@ def supprimer_match_route(match_id):
         and check_password_hash(user["mdp"], password)
     ):
         if supprimer_match(match_id):
-            flash("Match supprimé avec succès", "success")
+            flash("Match supprimé avec succès", "succes")
         else:
             flash("Erreur lors de la suppression", "error")
     else:
@@ -394,7 +394,7 @@ def staff():
     nom = request.form.get("nom")
 
     if not role:
-        flash("Choisissez le role !")
+        flash("Choisissez le role !", "error")
         return redirect(request.referrer)
     token = secrets.token_urlsafe(32)
     expiration = datetime.now() + timedelta(hours=48)
@@ -414,10 +414,10 @@ def staff():
                 "succes",
             )
         else:
-            flash(message)
+            flash(message, "error")
         return redirect(url_for("admin.staff"))
     else:
-        flash(message)
+        flash(message, 'error')
         return redirect(url_for("admin.staff"))
 
 
@@ -428,15 +428,15 @@ def setup_staff(token):
         invitation = get_invitation_by_token(token)  # À créer dans admin.py
 
         if not invitation:
-            flash("Lien d'invitation invalide.")
+            flash("Lien d'invitation invalide.", 'error')
             return redirect(url_for("home"))
 
         # 2. Vérification du délai de 48h
         # On convertit la chaîne de la BD en objet datetime
         expire_at = datetime.strptime(invitation["expiration"], "%Y-%m-%d %H:%M:%S.%f")
         if datetime.now() > expire_at:
-            flash("Ce lien a expiré.")
-            return redirect(url_for("home"))
+            flash("Ce lien a expiré.", 'error')
+            return "Ce lien a expiré !"
 
             # ... (tes vérifications de mdp, username, etc.) ...
 
@@ -542,10 +542,10 @@ def mailbox():
         try:
             result = int(donnees.get("result"))
         except:
-            flash("Vous devez entrer un nombre pour l'age !")
+            flash("Vous devez entrer un nombre pour l'age !", 'error')
             return redirect(request.referrer)
         if result < 0 or result > 100:
-            flash("Vous devez entrer un age supérieur à 0 et inférieur à 100 !")
+            flash("Vous devez entrer un age supérieur à 0 et inférieur à 100 !", 'error')
             return redirect(request.referrer)
 
     emails_envoyes = 0
@@ -572,20 +572,17 @@ def mailbox():
                 notifications_envoyes += 1
             else:
                 error_popup = msg_popup
-                
 
     if not error_email or not error_popup:
-        flash(
-            f"Email(s) envoyés : {emails_envoyes}."
-        )
-        flash(f"Notification(s) envoyée(s) : {notifications_envoyes}.")
+        flash(f"Email(s) envoyés : {emails_envoyes}.", 'succes')
+        flash(f"Notification(s) envoyée(s) : {notifications_envoyes}.", 'succes')
     else:
         if error_email:
             flash(
-                f"Il y a eu une erreur lors de l'envoi : {error_email} ! Email(s) envoyé(s) : {emails_envoyes}"
+                f"Il y a eu une erreur lors de l'envoi : {error_email} ! Email(s) envoyé(s) : {emails_envoyes}", 'error'
             )
         else:
             flash(
-                f"Il y a eu une erreur lors de l'envoi : {error_popup} ! Notification(s) envoyé(s) : {notifications_envoyes}"
+                f"Il y a eu une erreur lors de l'envoi : {error_popup} ! Notification(s) envoyé(s) : {notifications_envoyes}", 'error'
             )
     return redirect(request.referrer)

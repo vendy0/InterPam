@@ -9,6 +9,7 @@ from flask import (
     flash,
     send_from_directory,
 )
+import jinja_partials
 import re
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, date, timedelta
@@ -58,7 +59,7 @@ def inject_user():
 
 
 app.jinja_env.globals.update(set_date=set_date)
-
+jinja_partials.register_extensions(app)
 
 @app.template_filter("devise")
 def format_devise(valeur_centimes):
