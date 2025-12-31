@@ -1,13 +1,1 @@
-{% extends 'admin/base.html' %}
-
-{% block content %}
-	<form action="{{ url_for('admin.mailbox') }}" method="POST" accept-charset="utf-8">
-		<input type="text" name="titre" id="titre" placeholder="Titre" value="{{ request.form.email }}" />
-		<textarea name="message" id=message rows="8" cols="40" placeholder="Message" value="{{ request.form.message }}"></textarea>
-		<input type="text" name="lien" id="lien" placeholder="Lien (facultatif)" value="{{ request.form.lien }}" />
-		<input type="text" name="text_button" id="text_button" placeholder="Texte du bouton (facultatif)" value="{{ request.form.text_button }}" />
-		
-		<input type="text" name="key" id="key" placeholder="Klé" value="{{ request.form.key }}" />
-		<input type="text" name="result" id="result" placeholder="Résultat" value="{{ request.form.result }}" />
-	</form>
-{% endblock %}
+{% extends 'admin/base.html' %} {% block content %}<form action="{{ url_for('admin.mailbox') }}" method="POST" accept-charset="utf-8">    <input type="text" name="titre" id="titre" placeholder="Titre" value="{{ request.form.email }}" />    <textarea name="message" id="message" rows="8" cols="40" placeholder="Message" value="{{ request.form.message }}"></textarea>    <input type="text" name="lien" id="lien" placeholder="Lien (facultatif)" value="{{ request.form.lien }}" />    <input type="text" name="text_button" id="text_button" placeholder="Texte du bouton (facultatif)" value="{{ request.form.text_button }}" />    <select name="key" id="key">        <option value="prenom">Prénom</option>        <option value="nom">Nom</option>        <option value="username">Username</option>        <option value="email">Email</option>        <option value="classe">Classe</option>    </select>    <input type="text" name="result" id="result" placeholder="Résultat" value="{{ request.form.result }}" />    <button type="submit">Envoyer</button></form>{% endblock %}
