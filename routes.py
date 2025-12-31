@@ -8,6 +8,7 @@ from admin_routes import admin_bp, users_bp, matchs_bp
 from models.match import *
 from models.user import *
 from models.bet import *
+from models.emails import *
 
 app = Flask(__name__)
 app.register_blueprint(admin_bp)
@@ -174,7 +175,7 @@ def traitementRegister():
 	}
 	ajouter_parieur(user)
 	flash("Votre compte a été créé avec succès.", "succes")
-	welcome_email(prenom, email, url_for('home'))
+	welcome_email(prenom, email, url_for("home"))
 	session["username"] = username
 	return redirect(url_for("home"))
 
