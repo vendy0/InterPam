@@ -1,6 +1,8 @@
+import os
 import sqlite3
 
-DB_NAME = "interpam.db"
+DB_NAME = os.getenv("DB_PATH", "interpam.db")
+
 
 def get_db_connection():
     conn = sqlite3.connect(DB_NAME)

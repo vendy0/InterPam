@@ -3,8 +3,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, flash,
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
-from models.emails import welcome_email
-from re import match
+from re import match as re_match
 
 from models.user import *
 from models.match import *
@@ -164,8 +163,6 @@ def ban_user_route(action, username):
 		flash("Nom d'utilisateur incorrect !", "error")
 		return redirect(url_for("users.users"))
 
-	# Remplacez par votre logique de vérification (ex: check_password_hash)
-	# Ici, je suppose une comparaison simple ou via une fonction dédiée
 	if check_password_hash(user["mdp"], password):
 		if action == "ban":
 			if ban_ret_user(username, ban="ban"):
@@ -191,29 +188,26 @@ ROUTES DES MATCHS
 
 
 @matchs_bp.route("/")
-@admin_required  #
+@admin_required
 def matchs():
 	return render_template("admin/matchs.html")
 
 
 @matchs_bp.route("/nouveau", methods=["GET", "POST"])
-@admin_required  #
+@admin_required
 def nouveau_match():
 	if request.method == "POST":
 		equipe_a = request.form.get("equipe_a").strip()
 		equipe_b = request.form.get("equipe_b").strip()
 		date_match = request.form.get("date_match")
 
-		# 1. Création du match
-		match_id = ajouter_match(equipe_a, equipe_b, date_match.replace("T", " "))  #
+		match_id = ajouter_match(equipe_a, equipe_b, date_match.replace("T", " "))
 
 		if match_id:
-			# 2. Récupération des listes dynamiques
 			libelles = request.form.getlist("libelle[]")
 			cotes = request.form.getlist("cote[]")
 			categories = request.form.getlist("categorie[]")
 
-			# 3. Insertion de toutes les options
 			for i in range(len(libelles)):
 				if libelles[i].strip() and cotes[i]:
 					ajouter_option(
@@ -221,10 +215,10 @@ def nouveau_match():
 						float(cotes[i].replace(",", ".")),
 						categories[i].strip(),
 						match_id,
-					)  #
+					)
 
 			flash("Match ajouté avec succès !", "succes")
-			return redirect(url_for("admin.dashboard"))  #
+			return redirect(url_for("admin.dashboard"))
 
 	return render_template("admin/matchs/nouveau_match.html")
 
@@ -232,13 +226,11 @@ def nouveau_match():
 @matchs_bp.route("/modifier", methods=["GET"])
 @admin_required
 def show_edit_matchs():
-	# On récupère le paramètre 'mode' dans l'URL (ex: /modifier?mode=archives)
 	mode = request.args.get("mode", "actifs")
 
 	if mode == "archives":
 		matchs_raw = get_historique_matchs()
 		programmes = {}
-		# On injecte le bilan financier pour chaque match archivé
 		for m_id, m_data in matchs_raw.items():
 			m_data["bilan"] = get_bilan_financier_match(m_id)
 			programmes[m_id] = m_data
@@ -253,24 +245,13 @@ def show_edit_matchs():
 
 
 @matchs_bp.route("/modifier/<int:match_id>", methods=["GET", "POST"])
-@admin_required  #
+@admin_required
 def edit_matchs(match_id):
-	programmes = get_programmes()
 	match_data = get_match_by_id(match_id)
-	# convertir row en dict si nécessaire
-	match_dict = dict(match_data)
-	# on prend les 16 premiers caractères "YYYY-MM-DD HH:MM"
-	# et on remplace l'espace par 'T' pour datetime-local "YYYY-MM-DDTHH:MM"
-	if match_dict.get("date_match"):
-		match_dict["date_match_local"] = match_dict["date_match"][:16].replace(" ", "T")
-	else:
-		match_dict["date_match_local"] = ""
-
 	if not match_data:
 		flash("Match introuvable !", "error")
-		return redirect(url_for("match.show_edit_matchs"))
+		return redirect(url_for("matchs.show_edit_matchs"))
 
-	""" --- MISE À JOUR DU MATCH --- """
 	if request.method == "POST":
 		donnees = request.form
 		equipe_a = donnees.get("equipe_a").strip()
@@ -280,8 +261,6 @@ def edit_matchs(match_id):
 		type_match = donnees.get("type_match")
 		update_match_info(match_id, equipe_a, equipe_b, date_match, statut, type_match)
 
-		""" --- MISE À JOUR / AJOUT DES OPTIONS --- """
-		# --- MISE À JOUR / AJOUT DES OPTIONS ---
 		option_ids = request.form.getlist("option_id[]")
 		categories = request.form.getlist("categorie[]")
 		libelles = request.form.getlist("libelle[]")
@@ -289,14 +268,13 @@ def edit_matchs(match_id):
 
 		for i in range(len(option_ids)):
 			o_id = option_ids[i]
-			# Si l'id est "0", c'est une nouvelle ligne ajoutée en JS
 			if o_id == "0":
 				ajouter_option(
 					libelles[i].strip(),
 					float(cotes[i]),
 					categories[i].strip(),
 					match_id,
-				)  #
+				)
 			else:
 				update_option_info(
 					o_id, libelles[i].strip(), float(cotes[i]), categories[i].strip()
@@ -305,7 +283,6 @@ def edit_matchs(match_id):
 		flash("Match mis à jour avec succès !", "succes")
 		return redirect(url_for("matchs.show_edit_matchs"))
 
-	# 2. Affichage du formulaire (GET)
 	options = get_options_by_match_id(match_id)
 	match_dict = dict(match_data)
 	match_dict["date_match_local"] = (
@@ -321,13 +298,11 @@ def cloturer_match(match_id):
 	options = get_options_by_match_id(match_id)
 
 	if request.method == "POST":
-		# On récupère les IDs des options cochées comme gagnantes
 		options_gagnantes = request.form.getlist("options_gagnantes")
 
 		for opt_id in options_gagnantes:
 			valider_option_gagnante(opt_id, match_id)
 
-		# Une fois les résultats saisis, on peut fermer le match
 		fermer_match_officiellement(match_id)
 		executer_settlement_match(match_id)
 
@@ -348,8 +323,6 @@ def supprimer_match_route(match_id):
 		return redirect(url_for("matchs.show_edit_matchs"))
 
 	user = get_user_by_username(username)
-	# Remplacez par votre logique de vérification (ex: check_password_hash)
-	# Ici, je suppose une comparaison simple ou via une fonction dédiée
 	if user and user["role"] != "parieur" and check_password_hash(user["mdp"], password):
 		if supprimer_match(match_id):
 			flash("Match supprimé avec succès", "succes")
@@ -386,126 +359,96 @@ def staff():
 	if not role:
 		flash("Choisissez le role !", "error")
 		return redirect(request.referrer)
+
 	token = secrets.token_urlsafe(32)
 	expiration = datetime.now() + timedelta(hours=48)
 
-	# Appel d'une fonction SQL (à créer dans models/admin.py)
-	# Elle insère : email, role, token, expiration et actif=0
 	succes, message = creer_invitation_admin(email, role, token, expiration)
 
-	# Lien à envoyer (en local pour tes tests)
 	if succes:
 		lien = url_for("admin.setup_staff", token=token, _external=True)
-
-		succes, message = envoyer_invitation_admin(nom, email, lien)
-		if succes:
-			flash(
-				f"Invitation envoyé à {nom} ({email}) pour le rôle : {role} !",
-				"succes",
-			)
+		succes_mail, message_mail = envoyer_invitation_admin(nom, email, lien)
+		if succes_mail:
+			flash(f"Invitation envoyée à {nom} ! ({email}) pour le rôle : {role}", "succes")
 		else:
-			flash(message, "error")
-		return redirect(url_for("admin.staff"))
+			flash(message_mail, "error")
 	else:
 		flash(message, "error")
-		return redirect(url_for("admin.staff"))
+
+	return redirect(url_for("admin.staff"))
 
 
-@admin_bp.route("/setup_staff/<token>", methods=["GET", "POST"])  # Ajout du <token>
+@admin_bp.route("/setup_staff/<token>", methods=["GET", "POST"])
 def setup_staff(token):
-	if request.method == "GET":
-		# 1. On cherche l'invitation par le TOKEN, pas par l'email
-		invitation = get_invitation_by_token(token)  # À créer dans admin.py
-
-		if not invitation:
-			flash("Lien d'invitation invalide.", "error")
-			return redirect(url_for("home"))
-
-		# 2. Vérification du délai de 48h
-		# On convertit la chaîne de la BD en objet datetime
-		expire_at = datetime.strptime(invitation["expiration"], "%Y-%m-%d %H:%M:%S.%f")
-		if datetime.now() > expire_at:
-			flash("Ce lien a expiré.", "error")
-			return "Ce lien a expiré !"
-
-			# ... (tes vérifications de mdp, username, etc.) ...
-
-			# 3. Utilise l'email et le rôle qui viennent de l'invitation (sécurisé)
 	invitation = get_invitation_by_token(token)
-	email = invitation["email"]
-	role = invitation["role"]
+	if not invitation:
+		flash("Lien d'invitation invalide.", "error")
+		return redirect(url_for("home"))
 
-	# ... (logique d'ajout du parieur) ...
+	# Vérification du délai de 48h
+	expire_at = datetime.strptime(invitation["expiration"], "%Y-%m-%d %H:%M:%S.%f")
+	if datetime.now() > expire_at:
+		flash("Ce lien a expiré.", "error")
+		return "Ce lien a expiré !"
+
+	if request.method == "GET":
+		return render_template("admin/setup_staff.html", token=token)
 
 	donnees = request.form
-
 	prenom = donnees.get("first_name", "").strip()
 	nom = donnees.get("last_name", "").strip()
 	username = donnees.get("username", "").strip()
 	age = donnees.get("age", "")
-	classe = "Direction"
 	mdp = donnees.get("mdp", "")
 	mdpConfirm = donnees.get("mdpConfirm")
-	role = invitation["role"]
 	rules = donnees.get("rules")
+	
+	email = invitation["email"]
+	role = invitation["role"]
 
-	# Vérifie si le champ contient UNIQUEMENT lettres, chiffres et _
-	if not match(r"^[a-zA-Z0-9_]+$", username):
-		usernameError = (
-			"Le nom d'utilisateur ne peut contenir que des lettres, chiffres et underscores (_)"
-		)
-		return render_template("admin/setup_staff.html", error=usernameError)
+	if not re_match(r"^[a-zA-Z0-9_]+$", username):
+		return render_template("admin/setup_staff.html", error="Le nom d'utilisateur est invalide.")
 
 	if len(prenom) > 20 or len(nom) > 20 or len(username) > 20:
-		lenError = "Certains champs sont trop longs !"
-		return render_template("admin/setup_staff.html", error=lenError)
+		return render_template("admin/setup_staff.html", error="Certains champs sont trop longs !")
 
-	if len(mdp) < 8 or not mdp:
-		mdpLenError = "Le mot de passe est trop court !"
-		return render_template("admin/setup_staff.html", error=mdpLenError)
+	if len(mdp) < 8:
+		return render_template("admin/setup_staff.html", error="Le mot de passe est trop court !")
 
 	if mdp != mdpConfirm:
-		mdpError = "Les mots de passe ne correspondent pas !"
-		return render_template("admin/setup_staff.html", error=mdpError)
+		return render_template("admin/setup_staff.html", error="Les mots de passe ne correspondent pas !")
 
-	utilisateur = get_user_by_email(email)
-	if utilisateur and utilisateur["email"] == email:
-		emailError = "Cet email est déjà utilisé !"
-		return render_template("admin/setup_staff.html", error=emailError)
+	if get_user_by_email(email):
+		return render_template("admin/setup_staff.html", error="Cet email est déjà utilisé !")
 
-	utilisateur = get_user_by_username(username)
-	if utilisateur:
-		usernameError = "Ce nom d'utilisateurest déjà pris !"
-		return render_template("admin/setup_staff.html", error=usernameError)
+	if get_user_by_username(username):
+		return render_template("admin/setup_staff.html", error="Ce nom d'utilisateur est déjà pris !")
 
 	try:
 		age = int(age)
 		if age < 0 or age > 100:
-			raise ValueError("Age non valide !")
-	except ValueError:
-		ageError = "Veuillez entrer un âge valide (entre 0 et 100 ans)."
-		return render_template("admin/setup_staff.html", error=ageError)
+			raise ValueError()
+	except:
+		return render_template("admin/setup_staff.html", error="Veuillez entrer un âge valide.")
 
 	if not rules:
-		rulesError = "Vous n'avez pas accepté les règles d'utilisation."
-		return render_template("admin/setup_staff.html", error=rulesError)
+		return render_template("admin/setup_staff.html", error="Vous n'avez pas accepté les règles.")
 
-	hashed_passeword = generate_password_hash(mdp)
-	user = {
+	user_data = {
 		"prenom": prenom,
 		"nom": nom,
 		"username": username,
 		"email": email,
 		"age": age,
-		"classe": classe,
-		"mdp": hashed_passeword,
+		"classe": "Direction",
+		"mdp": generate_password_hash(mdp),
 		"role": role,
 		"solde": 0,
 		"created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
 	}
-	ajouter_parieur(user)
-
+	ajouter_parieur(user_data)
 	supprimer_invitation(token)
+	
 	session["username"] = username
 	flash(f"Votre compte a été créé avec succès. Bienvenue Adm {prenom}", "succes")
 	return redirect(url_for("home"))
@@ -516,28 +459,24 @@ def setup_staff(token):
 def mailbox():
 	if request.method == "GET":
 		return render_template("admin/mailbox.html")
+
 	donnees = request.form
 	titre = donnees.get("titre").strip()
 	message = donnees.get("message").strip()
 	text_button = donnees.get("text_button").strip()
 	lien = donnees.get("lien").strip()
-
-	titre_popup = donnees.get("titre_popup").strip()
+	titre_popup = donnees.get("titre_popup", titre).strip()
 	message_popup = donnees.get("message_popup").strip()
-
-	if not titre_popup:
-		titre_popup = titre
-
 	key = donnees.get("key").strip()
 	result = donnees.get("result")
+
 	if key == "age":
 		try:
-			result = int(donnees.get("result"))
+			result = int(result)
+			if result < 0 or result > 100:
+				raise ValueError()
 		except:
-			flash("Vous devez entrer un nombre pour l'age !", "error")
-			return redirect(request.referrer)
-		if result < 0 or result > 100:
-			flash("Vous devez entrer un age supérieur à 0 et inférieur à 100 !", "error")
+			flash("L'âge doit être un nombre entre 0 et 100.", "error")
 			return redirect(request.referrer)
 
 	emails_envoyes = 0
@@ -545,38 +484,21 @@ def mailbox():
 	error_email = ""
 	error_popup = ""
 
-	users = get_users(key, result)
-	for user in users:
+	users_list = get_users(key, result)
+	for u in users_list:
 		if titre:
-			succes, succes_msg = envoyer_notification_generale(
-				user["prenom"], user["email"], titre, message, lien, text_button
-			)
-			if succes:
-				emails_envoyes += 1
-			else:
-				error_email = succes_msg
+			succes, msg = envoyer_notification_generale(u["prenom"], u["email"], titre, message, lien, text_button)
+			if succes: emails_envoyes += 1
+			else: error_email = msg
 
-		if message_popup and titre_popup and user["push_subscription"] is not None:
-			succes_popup, msg_popup = envoyer_push_notification(
-				user["push_subscription"], titre_popup, message_popup, lien
-			)
-			if succes_popup:
-				notifications_envoyes += 1
-			else:
-				error_popup = msg_popup
+		if message_popup and titre_popup and u.get("push_subscription"):
+			succes_p, msg_p = envoyer_push_notification(u["push_subscription"], titre_popup, message_popup, lien)
+			if succes_p: notifications_envoyes += 1
+			else: error_popup = msg_p
 
-	if not error_email or not error_popup:
-		flash(f"Email(s) envoyés : {emails_envoyes}.", "succes")
-		flash(f"Notification(s) envoyée(s) : {notifications_envoyes}.", "succes")
+	if not error_email and not error_popup:
+		flash(f"Emails : {emails_envoyes}, Notifications : {notifications_envoyes} envoyés.", "succes")
 	else:
-		if error_email:
-			flash(
-				f"Il y a eu une erreur lors de l'envoi : {error_email} ! Email(s) envoyé(s) : {emails_envoyes}",
-				"error",
-			)
-		else:
-			flash(
-				f"Il y a eu une erreur lors de l'envoi : {error_popup} ! Notification(s) envoyé(s) : {notifications_envoyes}",
-				"error",
-			)
+		flash(f"Erreur partielle. Emails : {emails_envoyes}, Notifications : {notifications_envoyes}", "error")
+
 	return redirect(request.referrer)

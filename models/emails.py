@@ -1,3 +1,4 @@
+import os
 import smtplib
 from email.message import EmailMessage
 from jinja2 import Template
@@ -6,9 +7,8 @@ from pywebpush import webpush, WebPushException
 
 
 def envoyer_email_generique(destinataire, sujet, contenu_html, contenu_texte):
-	# Configuration (À mettre en variables d'environnement idéalement)
-	EMAIL_ADRESSE = "interpam.school@gmail.com"
-	EMAIL_MOT_DE_PASSE = "inqlvpgskrkezcha"
+	EMAIL_ADRESSE = os.getenv("EMAIL_ADRESSE")
+	EMAIL_MOT_DE_PASSE = os.getenv("MAIL_PASSWORD")
 
 	msg = EmailMessage()
 	msg["Subject"] = sujet

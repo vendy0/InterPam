@@ -4,6 +4,6 @@
   "start_url": "/",
   "display": "standalone",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }
+    { "src": "static/img/logo_badge.png", "sizes": "192x192", "type": "image/png" }
   ]
 }
