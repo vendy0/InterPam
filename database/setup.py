@@ -91,7 +91,8 @@ def initialiser_bdd():
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     email TEXT NOT NULL,
                     token TEXT NOT NULL,
-                    expiration TEXT NOT NULL
+                    expiration_date TEXT NOT NULL,
+                    expiration_bool INTEGER NOT NULL DEFAULT 1
                 )""")
 
     except sqlite3.Error as e:

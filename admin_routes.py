@@ -37,6 +37,11 @@ def set_date(date_a_tester):
         return f"{partie_date} à {heure_formatee}"
 
 
+# On définit une petite fonction utilitaire pour nettoyer proprement
+def clean_input(val):
+    return val.strip() if val and isinstance(val, str) else ""
+
+
 # Un décorateur personnalisé pour vérifier si c'est un admin
 def admin_required(f):
     def wrap(*args, **kwargs):
@@ -78,7 +83,7 @@ def users():
 def find_user():
     if request.method == "GET":
         return render_template("admin/users.html")
-
+    
     # Récupération des critères
     criteres = {
         "nom": request.form.get("nom", "").strip(),

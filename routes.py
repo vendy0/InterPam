@@ -37,11 +37,13 @@ app.config["EMAIL_ADRESSE"] = os.getenv("EMAIL_ADRESSE")
 # Sécurité supplémentaire pour les cookies de session
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = True  # si HTTPS
 
 
 # --- AJOUT À FAIRE ICI ---
 # Définit la durée de la session à 30 jours (ou 365 pour un an)
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+
 
 app.secret_key = os.getenv("SECRET_KEY_SESSION")
 
@@ -65,6 +67,11 @@ def set_date(date_a_tester):
         return f"Demain à {heure_formatee}"
     else:
         return f"{partie_date} à {heure_formatee}"
+
+
+# On définit une petite fonction utilitaire pour nettoyer proprement
+def clean_input(val):
+    return val.strip() if val and isinstance(val, str) else ""
 
 
 @app.context_processor
@@ -116,26 +123,33 @@ def traitementLogin():
     if request.method == "GET":
         return render_template("auth.html")
     donnees = request.form
-    email_username = donnees.get("email_username").strip()
+    email_username = clean_input(donnees.get("email_username"))
     mdp = donnees.get("mdp")
-    remember = donnees.get("remember")
+    remember = True if request.form.get("remember", "") else False
+
+    if not email_username or not mdp:
+        return render_template(
+            "auth.html", loginError="Tous les champs doivent être remplis !"
+        )
 
     utilisateur = get_user_by_email(email_username) or get_user_by_username(
         email_username
     )
     if utilisateur and check_password_hash(utilisateur["mdp"], mdp):
-        actif = bool(utilisateur["actif"])
-        if not actif:
-            banError = "Ce compte a été suspendu !"
-            return render_template("auth.html", loginError=banError)
-        if remember:
-            session.permanent = (
-                True  # Rend la session persistante (30 jours selon config)
-            )
+        if not bool(utilisateur["actif"]):
+            return render_template("auth.html", loginError="Ce compte a été suspendu !")
+
+        session.clear()  # IMPORTANT
         session["username"] = utilisateur["username"]
+
+        if remember:
+            session.permanent = True
+        else:
+            session.permanent = False
+
         return redirect(url_for("home"))
     else:
-        loginError = "Email ou mot de passe incorrect !"
+        loginError = "Email / Nom d'utilisateur ou mot de passe incorrect !"
         return render_template("auth.html", loginError=loginError)
 
 
@@ -155,15 +169,18 @@ def traitementRegister():
     if request.method == "GET":
         return render_template("auth.html")
     donnees = request.form
-    prenom = donnees.get("first_name", "").strip()
-    nom = donnees.get("last_name", "").strip()
-    username = donnees.get("username", "").strip()
-    email = donnees.get("email", "").strip()
+    prenom = clean_input(donnees.get("first_name", ""))
+    nom = clean_input(donnees.get("last_name", ""))
+    username = clean_input(donnees.get("username", ""))
+    email = clean_input(donnees.get("email", ""))
     age = donnees.get("age", "")
-    classe = donnees.get("classe", "")
-    mdp = donnees.get("mdp", "")
-    mdpConfirm = donnees.get("mdpConfirm")
-    rules = donnees.get("rules")
+    classe = clean_input(donnees.get("classe", ""))
+    mdp = clean_input(donnees.get("mdp", ""))
+    mdpConfirm = clean_input(donnees.get("mdpConfirm"))
+    rules = donnees.get("rules", False)
+
+    if not all([prenom, nom, username, email, age, classe, mdp, mdpConfirm]):
+        return render_template("auth.html", error="Tous les champs sont obligatoire !")
 
     confirm_prenom = valider_nom_prenom(prenom)
     confirm_nom = valider_nom_prenom(nom)
@@ -229,16 +246,17 @@ def traitementRegister():
     }
     ajouter_parieur(user)
     flash("Votre compte a été créé avec succès.", "succes")
-    welcome_email(prenom, email, url_for("home"))
+    welcome_email(prenom, email, url_for("home", _external=True))
+    session.permanent = False
     session["username"] = username
     return redirect(url_for("home"))
 
 
-@app.route("/forget_passeword")
-def forget_passeword():
-    email = request.form.get("email").strip
+@app.route("/forget_passeword", methods=["GET", "POST"])
+def forget_passeword_route():
+    email = clean_input(request.form.get("forget_email"))
     if not email:
-        forgetError = "Veuiller rentrer un email valide !"
+        forgetError = "Veuillez rentrer un email valide !"
         return render_template("auth.html", forgetError=forgetError)
 
     user = get_user_by_email(email)
@@ -262,11 +280,12 @@ def forget_passeword():
 def reset_passeword_route(token):
     recuperation = get_recuperation_by_token(token)
     if not recuperation:
-        flash("Lien invalide.", "error")
-        return redirect(url_for("home"))
+        return "<h1>Lien invalide !</h1>"
     # Vérification du délai de 48h
-    expire_at = datetime.strptime(recuperation["expiration"], "%Y-%m-%d %H:%M:%S.%f")
-    if datetime.now() > expire_at:
+    expire_at = datetime.strptime(
+        recuperation["expiration_date"], "%Y-%m-%d %H:%M:%S.%f"
+    )
+    if datetime.now() > expire_at or recuperation["expiration_bool"] == 0:
         flash("Ce lien a expiré.", "error")
         return "<h1>Ce lien a expiré !</h1>"
 
@@ -281,7 +300,7 @@ def reset_passeword_route(token):
             resetError="Vous devez remplire les deux champs de mot de passe !",
         )
 
-    if len(mdp) < 8 or not mdp:
+    if not mdp or len(mdp) < 8:
         mdpLenError = "Le mot de passe est trop court !"
         return render_template("auth.html", error=mdpLenError)
 
@@ -292,7 +311,9 @@ def reset_passeword_route(token):
     hashed_passeword = generate_password_hash(mdp)
     if reset_passeword(email, hashed_passeword):
         message = "Votre mot de passe InterPam vient d'être modifier. Cliquer ici pour acceder au site et vous connecter à votre compte avec votre nouveau mot de passe :"
-        envoyer_notification_generale(user["prenom"], email, "Réinitialisation réussie", message)
+        envoyer_notification_generale(
+            user["prenom"], email, "Réinitialisation réussie", message
+        )
 
 
 @app.route("/about")
