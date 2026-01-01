@@ -60,11 +60,11 @@ def welcome_email(nom, email, lien):
     return envoyer_email_generique(email, sujet, html, corps_texte)
 
 
-def passeword_reset_email(nom, email, lien):
+def password_reset_email(nom, email, lien):
     sujet = "Réinitialisation de mot de passe"
 
     # 1. Charger le template depuis le fichier
-    with open("templates/_passeword_reset.html", "r", encoding="utf-8") as f:
+    with open("templates/_password_reset.html", "r", encoding="utf-8") as f:
         template_html = f.read()
 
     # 2. Remplacer les variables

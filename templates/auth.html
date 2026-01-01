@@ -15,10 +15,10 @@
       <p class="title">Bienvenue</p>
       <form class="form" action="{{ url_for('traitementRegister') }}" method="POST" id="registerForm">
         <div id="name_container_inscription">
-          <input type="text" name="first_name" class="first_name_input" placeholder="Prénom" required="required" value="{{request.form.first_name }}" />
-          <input type="text" name="last_name" class="last_name_input" placeholder="Nom de famille" required="required" value="{{ request.form.last_name }}" />
+          <input type="text" name="first_name" class="first_name_input" autocomplete="given-name" placeholder="Prénom" required="required" value="{{request.form.first_name }}" />
+          <input type="text" name="last_name" class="last_name_input" autocomplete="family-name" placeholder="Nom de famille" required="required" value="{{ request.form.last_name }}" />
         </div>
-        <input type="text" name="username" class="username_input" placeholder="Username" required="required" value="{{ request.form.username }}" />
+        <input type="text" name="username" autocomplete="off" class="username_input" placeholder="Username" required="required" value="{{ request.form.username }}" />
         <input type="email" name="email" class="email_input" placeholder="Email" required="required" value="{{ request.form.email }}" />
         
         <div id="age_and_grade">
@@ -131,7 +131,7 @@
       {% endif %}
       <p class="title">Mot de passe oublié</p>
       <p>Rentrez l'email avec laquelle vous avez créé votre compte précédemment :</p>
-      <form class="form" action="{{ url_for('forget_passeword_route') }}" method="POST" id="forgetForm">
+      <form class="form" action="{{ url_for('forget_password_route') }}" method="POST" id="forgetForm">
         <input type="email" name="forget_email" class="email_input" placeholder="Email" required="required" value="{{ request.form.forget_email }}"/>
         <button class="form-btn">Envoyer</button>
       </form>

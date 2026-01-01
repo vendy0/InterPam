@@ -155,8 +155,7 @@ def traitementLogin():
 
 def valider_nom_prenom(entree):
     # On définit le pattern
-    pattern = r"^[a-zA-ZàâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ\s'-]+$"
-
+    pattern = r"^[a-zA-ZàâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ\s'.-]+$"
     # On vérifie la correspondance
     if re_match(pattern, entree):
         return True
@@ -232,7 +231,7 @@ def traitementRegister():
         rulesError = "Vous n'avez pas accepté les règles d'utilisation."
         return render_template("auth.html", error=rulesError)
 
-    hashed_passeword = generate_password_hash(mdp)
+    hashed_password = generate_password_hash(mdp)
 
     user = {
         "prenom": prenom,
@@ -241,7 +240,7 @@ def traitementRegister():
         "email": email,
         "age": age,
         "classe": classe,
-        "mdp": hashed_passeword,
+        "mdp": hashed_password,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
     ajouter_parieur(user)
@@ -252,8 +251,8 @@ def traitementRegister():
     return redirect(url_for("home"))
 
 
-@app.route("/forget_passeword", methods=["GET", "POST"])
-def forget_passeword_route():
+@app.route("/forget_password", methods=["GET", "POST"])
+def forget_password_route():
     email = clean_input(request.form.get("forget_email"))
     if not email:
         forgetError = "Veuillez rentrer un email valide !"
@@ -271,49 +270,62 @@ def forget_passeword_route():
             "auth.html",
             forgetError="Il y a eu une erreur lors de la réinitialisation. Veuillez contacter l'assistance si l'erreur persiste.",
         )
-    lien = url_for("reset_passeword_route", token=token, _external=True)
-    succes_mail, message = passeword_reset_email(user["prenom"], email, lien)
+    lien = url_for("reset_password_route", token=token, _external=True)
+    succes_mail, message = password_reset_email(user["prenom"], email, lien)
     return "<h1>Veuillez vérifier vos emails !</h1>"
 
 
-@app.route("/reset_passeword/<token>", methods=["GET", "POST"])
-def reset_passeword_route(token):
+@app.route("/reset_password/<token>", methods=["GET", "POST"])
+def reset_password_route(token):
     recuperation = get_recuperation_by_token(token)
     if not recuperation:
         return "<h1>Lien invalide !</h1>"
     # Vérification du délai de 48h
     expire_at = datetime.strptime(
-        recuperation["expiration_date"], "%Y-%m-%d %H:%M:%S.%f"
+        recuperation["expiration"], "%Y-%m-%d %H:%M:%S.%f"
     )
-    if datetime.now() > expire_at or recuperation["expiration_bool"] == 0:
+    if datetime.now() > expire_at:
         flash("Ce lien a expiré.", "error")
         return "<h1>Ce lien a expiré !</h1>"
 
     if request.method == "GET":
-        return render_template("reset_passeword.html", token=token)
+        return render_template("reset_password.html", token=token)
 
-    mdp = request.form.get("passeword")
-    confirm_mdp = request.form.get("confirm_passeword")
+    mdp = request.form.get("password")
+    confirm_mdp = request.form.get("confirm_password")
     if not mdp or not confirm_mdp:
         return render_template(
-            "reset_passeword.html",
+            "reset_password.html",
             resetError="Vous devez remplire les deux champs de mot de passe !",
         )
 
     if not mdp or len(mdp) < 8:
         mdpLenError = "Le mot de passe est trop court !"
-        return render_template("auth.html", error=mdpLenError)
+        return render_template("reset_password.html", resetError=mdpLenError)
 
-    if mdp != mdpConfirm:
+    if mdp != confirm_mdp:
         mdpError = "Les mots de passe ne correspondent pas !"
-        return render_template("auth.html", error=mdpError)
+        return render_template("reset_password.html", resetError=mdpError)
 
-    hashed_passeword = generate_password_hash(mdp)
-    if reset_passeword(email, hashed_passeword):
-        message = "Votre mot de passe InterPam vient d'être modifier. Cliquer ici pour acceder au site et vous connecter à votre compte avec votre nouveau mot de passe :"
+    user = get_user_by_email(recuperation["email"])
+
+    hashed_password = generate_password_hash(mdp)
+    if reset_password(recuperation["email"], hashed_password):
+        message = "Votre mot de passe InterPam vient d'être modifier. Cliquer ici pour acceder à InterPam dès maintenant :"
+        lien = url_for("home", _external=True)
+
         envoyer_notification_generale(
-            user["prenom"], email, "Réinitialisation réussie", message
+            user["prenom"],
+            recuperation["email"],
+            "Réinitialisation réussie",
+            message,
+            lien,
         )
+        session.permanent = False
+        session["username"] = user["username"]
+        return redirect(url_for("login"))
+    else:
+        return "<h1>Il y a eu une erreur lors de la réinitialisation du mot de passe !</h1>"
 
 
 @app.route("/about")

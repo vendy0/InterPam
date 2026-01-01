@@ -55,17 +55,6 @@ def initialiser_bdd():
                     type_match TEXT DEFAULT 'foot'
                 )""")
 
-            # Table matchs_paris
-            cur.execute("""CREATE TABLE IF NOT EXISTS matchs_paris(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                matchs_id INTEGER NOT NULL,
-                paris_id INTEGER NOT NULL,
-                option_id INTEGER NOT NULL,
-                FOREIGN KEY (matchs_id) REFERENCES matchs(id),
-                FOREIGN KEY (paris_id) REFERENCES paris(id),
-                FOREIGN KEY (option_id) REFERENCES options(id)
-            )""")
-
             # Table Options
             cur.execute("""CREATE TABLE IF NOT EXISTS options (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -76,6 +65,17 @@ def initialiser_bdd():
                     match_id INTEGER NOT NULL,
                     FOREIGN KEY (match_id) REFERENCES matchs(id) ON DELETE CASCADE
                 )""")
+
+            # Table matchs_paris
+            cur.execute("""CREATE TABLE IF NOT EXISTS matchs_paris(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                matchs_id INTEGER NOT NULL,
+                paris_id INTEGER NOT NULL,
+                option_id INTEGER NOT NULL,
+                FOREIGN KEY (matchs_id) REFERENCES matchs(id),
+                FOREIGN KEY (paris_id) REFERENCES paris(id),
+                FOREIGN KEY (option_id) REFERENCES options(id)
+            )""")
 
             # Table Invitations
             cur.execute("""CREATE TABLE IF NOT EXISTS invitations (
@@ -91,9 +91,8 @@ def initialiser_bdd():
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     email TEXT NOT NULL,
                     token TEXT NOT NULL,
-                    expiration_date TEXT NOT NULL,
-                    expiration_bool INTEGER NOT NULL DEFAULT 1
-                )""")
+                    expiration TEXT NOT NULL
+                    )""")
 
     except sqlite3.Error as e:
         print(f"Erreur lors de l'initialisation : {e}")

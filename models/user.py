@@ -219,7 +219,7 @@ def save_recuperation(email, token, expiration):
         with get_db_connection() as conn:
             conn.execute(
                 """
-            INSERT INTO recuperations (email, token, expiration_date) 
+            INSERT INTO recuperations (email, token, expiration) 
             VALUES (?, ?, ?)""",
                 (
                     email,
@@ -244,19 +244,22 @@ def get_recuperation_by_token(token):
         print(f"Erreur lors de la récupération : {e}")
 
 
-def reset_passeword(email, mdp):
+def reset_password(email, mdp):
     try:
         with get_db_connection() as conn:
             cur = conn.execute(
-                "UPDATE parieurs SET passeword = ? WHERE email = ?",
+                "UPDATE parieurs SET mdp = ? WHERE email = ?",
                 (
                     mdp,
                     email,
                 ),
-                "UPDATE save_recuperation SET expiration_bool = 0 WHERE email = ?",
+            )
+            conn.execute(
+                "DELETE FROM recuperations WHERE email = ?",
                 (email,),
             )
             conn.commit()
             return True
     except sqlite3.Error as e:
+        print(f"Erreur lors de la réinitialisation du mot de passe : {e}")
         return False
