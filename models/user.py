@@ -106,23 +106,34 @@ def get_users(key=None, result=None):
 
 
 def filtrer_users_admin(filtres):
-	try:
-		with get_db_connection() as conn:
-			clauses = []
-			parametres = []
-			for col, val in filtres.items():
-				if val:
-					clauses.append(f"{col} LIKE ?")
-					parametres.append(f"%{val}%")
+    try:
+        with get_db_connection() as conn:
+            clauses = []
+            parametres = []
+            
+            for col, val in filtres.items():
+                if val:
+                    # Traitement spécial pour les notifications
+                    if col == "notif":
+                        if val == "oui":
+                            clauses.append("push_subscription IS NOT NULL AND push_subscription != ''")
+                        elif val == "non":
+                            clauses.append("(push_subscription IS NULL OR push_subscription = '')")
+                    # Traitement standard pour les autres colonnes
+                    else:
+                        clauses.append(f"{col} LIKE ?")
+                        parametres.append(f"%{val}%")
 
-			sql = "SELECT * FROM parieurs"
-			if clauses:
-				sql += " WHERE " + " AND ".join(clauses)
+            sql = "SELECT * FROM parieurs"
+            if clauses:
+                sql += " WHERE " + " AND ".join(clauses)
 
-			users = conn.execute(sql, parametres).fetchall()
-			return [dict(u) for u in users]
-	except Exception:
-		return []
+            users = conn.execute(sql, parametres).fetchall()
+            return [dict(u) for u in users]
+    except Exception as e:
+        print(f"Erreur : {e}")
+        return []
+
 
 
 def get_user_by_age(age):
