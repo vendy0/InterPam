@@ -300,7 +300,7 @@ def supprimer_invitation(token):
         print(f"Erreur lors de la suppression de l'invitation {e}")
 
 
-def ban_ret_user(username, ban="", ret=""):
+def ban_ret_user(username, ban=False, ret=False):
     try:
         with get_db_connection() as conn:
             if ban == "ban":

@@ -234,6 +234,67 @@ def traitementRegister():
     return redirect(url_for("home"))
 
 
+@app.route("/forget_passeword")
+def forget_passeword():
+    email = request.form.get("email").strip
+    if not email:
+        forgetError = "Veuiller rentrer un email valide !"
+        return render_template("auth.html", forgetError=forgetError)
+
+    user = get_user_by_email(email)
+    if not user:
+        forgetError = "Aucun compte n'est encore lié à cet email !"
+        return render_template("auth.html", forgetError=forgetError)
+    token = secrets.token_urlsafe(32)
+    expiration = datetime.now() + timedelta(hours=24)
+    succes = save_recuperation(email, token, expiration)
+    if not succes:
+        return render_template(
+            "auth.html",
+            forgetError="Il y a eu une erreur lors de la réinitialisation. Veuillez contacter l'assistance si l'erreur persiste.",
+        )
+    lien = url_for("reset_passeword_route", token=token, _external=True)
+    succes_mail, message = passeword_reset_email(user["prenom"], email, lien)
+    return "<h1>Veuillez vérifier vos emails !</h1>"
+
+
+@app.route("/reset_passeword/<token>", methods=["GET", "POST"])
+def reset_passeword_route(token):
+    recuperation = get_recuperation_by_token(token)
+    if not recuperation:
+        flash("Lien invalide.", "error")
+        return redirect(url_for("home"))
+    # Vérification du délai de 48h
+    expire_at = datetime.strptime(recuperation["expiration"], "%Y-%m-%d %H:%M:%S.%f")
+    if datetime.now() > expire_at:
+        flash("Ce lien a expiré.", "error")
+        return "<h1>Ce lien a expiré !</h1>"
+
+    if request.method == "GET":
+        return render_template("reset_passeword.html", token=token)
+
+    mdp = request.form.get("passeword")
+    confirm_mdp = request.form.get("confirm_passeword")
+    if not mdp or not confirm_mdp:
+        return render_template(
+            "reset_passeword.html",
+            resetError="Vous devez remplire les deux champs de mot de passe !",
+        )
+
+    if len(mdp) < 8 or not mdp:
+        mdpLenError = "Le mot de passe est trop court !"
+        return render_template("auth.html", error=mdpLenError)
+
+    if mdp != mdpConfirm:
+        mdpError = "Les mots de passe ne correspondent pas !"
+        return render_template("auth.html", error=mdpError)
+
+    hashed_passeword = generate_password_hash(mdp)
+    if reset_passeword(email, hashed_passeword):
+        message = "Votre mot de passe InterPam vient d'être modifier. Cliquer ici pour acceder au site et vous connecter à votre compte avec votre nouveau mot de passe :"
+        envoyer_notification_generale(user["prenom"], email, "Réinitialisation réussie", message)
+
+
 @app.route("/about")
 def about():
     return render_template("about.html")

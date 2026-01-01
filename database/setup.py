@@ -1,4 +1,5 @@
 import sqlite3
+
 DB_NAME = "interpam.db"
 
 
@@ -84,5 +85,14 @@ def initialiser_bdd():
                     token TEXT NOT NULL,
                     expiration TEXT NOT NULL
                 )""")
+
+            # Table Recupération_mdp
+            cur.execute("""CREATE TABLE IF NOT EXISTS recuperations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    email TEXT NOT NULL,
+                    token TEXT NOT NULL,
+                    expiration TEXT NOT NULL
+                )""")
+
     except sqlite3.Error as e:
         print(f"Erreur lors de l'initialisation : {e}")

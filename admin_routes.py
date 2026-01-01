@@ -78,7 +78,7 @@ def users():
 def find_user():
     if request.method == "GET":
         return render_template("admin/users.html")
-    
+
     # Récupération des critères
     criteres = {
         "nom": request.form.get("nom", "").strip(),
@@ -88,17 +88,16 @@ def find_user():
         "classe": request.form.get("classe", "").strip(),
         "notif": request.form.get("notif", "").strip(),
     }
-    
+
     # Nettoyage des critères vides pour ne pas polluer la requête SQL
     filtres_actifs = {k: v for k, v in criteres.items() if v}
-    
+
     users = filtrer_users_admin(filtres_actifs)
-    
+
     # Déterminer si on affiche le message "Aucun utilisateur"
     no_users = len(users) == 0
-    
-    return render_template("admin/users.html", users=users, no_users=no_users)
 
+    return render_template("admin/users.html", users=users, no_users=no_users)
 
 
 @users_bp.route("/credit", methods=["GET", "POST"])
@@ -168,12 +167,12 @@ def ban_user_route(action, username):
 
     if check_password_hash(user["mdp"], password):
         if action == "ban":
-            if ban_ret_user(username, ban="ban"):
+            if ban_ret_user(username, ban=True):
                 flash(f"Le joueur {username} a été suspendu !", "succes")
             else:
                 flash("Erreur lors de la suspension", "error")
         else:
-            if ban_ret_user(username, ret="ret"):
+            if ban_ret_user(username, ret=True):
                 flash(f"Le joueur {username} a été rétablie !", "succes")
             else:
                 flash("Erreur lors du rétablissement", "error")

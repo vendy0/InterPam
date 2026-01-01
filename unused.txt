@@ -66,7 +66,6 @@ __
 
 - Se connecter avec google
 - Supprimer les commentaires 
-- Cacher la clé de Session, et mdp email, publique et privée notif key
 - Rules
 - Titles
 - ...
@@ -87,21 +86,35 @@ __
 - Si Sum(Gain_potentiel) > Sum(Mise), annulation des derniers fiches
 - Modifier le "Créé par des élèves" par "créé sous la demande des élèves du CIF". Supprimer le Black_Hole du site.
 - ReCaptcha 
-- Ne peut pas parier sur un match déjà parié
 - Ajouter mon email comme adm
 - Insérer ReCaptcha
-- Ajouter Update cote
-- Télécharger les polices
 - Vue détaillée des tickets : Pouvoir consulter tous les paris d'un utilisateur spécifique en cas de litige.
 - Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
-- Supprimer un match
 - Diviser le code
 - Double chance. Modification dans le choix des options gagnantes.
-- Email aux joueurs
 - Partie Email de l'infterface adm
 - Route pour atreindre l'interface adm
-- Débiter des joueurs
+
+
+
+"""
+========================================
+FINIS-----------------------------------
+========================================
+"""
 - Si l'adm est déjà présent on annule
+- Débiter des joueurs
+- Email aux joueurs
+- Supprimer un match
+- Ajouter Update cote
+- Ne peut pas parier sur un match déjà parié
+- Cacher la clé de Session, et mdp email, publique et privée notif key
+
+
+- Télécharger les polices
+
+
+
 
 C'est une super mentalité ! En isolant les fichiers et en travaillant par modules, tu vas devenir beaucoup plus efficace. Pour transformer ton projet en une plateforme de pari complète et professionnelle, voici les fonctionnalités essentielles qu'un admin doit avoir sous la main :
 ​1. Gestion du Staff (Le cœur du pouvoir)
@@ -136,23 +149,4 @@ ___​Clôture de match : Un bouton pour dire "Le match est fini", entrer le sco
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
 
 
-mon_projet/
-│
-├── database/               # Infrastructure
-│   ├── __init__.py
-│   ├── connection.py       # Gestion de la connexion SQLite
-│   └── setup.py           # Initialisation des tables
-│
-├── models/                 # Logique métier (CRUD)
-│   ├── __init__.py
-│   ├── user.py            # Fonctions liées aux parieurs
-│   ├── match.py           # Fonctions liées aux matchs/options
-│   └── bet.py             # Logique des paris et settlement
-│
-├── utils/                  # Utilitaires
-│   ├── __init__.py
-│   └── finance.py         # Conversion centimes/decimal
-│
-├── routes.py               # Routes Flask principales
-├── admin_routes.py         # Routes Admin
-└── app.py                  # Point d'entrée (si séparé)
+- Si l'admin s'est inscrit en tant que parizur entre temps.
