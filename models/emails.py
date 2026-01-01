@@ -1,3 +1,4 @@
+import os
 import smtplib
 from email.message import EmailMessage
 from jinja2 import Template
@@ -8,7 +9,7 @@ from pywebpush import webpush, WebPushException
 def envoyer_email_generique(destinataire, sujet, contenu_html, contenu_texte):
     # Configuration (À mettre en variables d'environnement idéalement)
     EMAIL_ADRESSE = "interpam.school@gmail.com"
-    EMAIL_MOT_DE_PASSE = "inqlvpgskrkezcha"
+    EMAIL_MOT_DE_PASSE = os.getenv("MAIL_PASSWORD")
 
     msg = EmailMessage()
     msg["Subject"] = sujet
@@ -119,6 +120,7 @@ VAPID_PRIVATE_KEY = "oU5-E5H6fbcgYHfRqwMaYyqNaBy7mu81w739O2Q8h44"
 VAPID_CLAIMS = {
     "sub": "mailto:ton-email@exemple.com"  # Obligatoire pour les serveurs push
 }
+
 
 def envoyer_push_notification(subscription_json, title, message, url="/"):
     """

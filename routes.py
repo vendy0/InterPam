@@ -1,4 +1,6 @@
 # Dans ton fichier principal
+import os
+from dotenv import load_dotenv
 from flask import (
     Flask,
     render_template,
@@ -9,8 +11,7 @@ from flask import (
     flash,
     send_from_directory,
 )
-import jinja_partials
-import re
+from re import match as re_match
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -26,7 +27,17 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(matchs_bp)
 
-app.secret_key = "61e5e0e3df16e86a4957e6c22bc45190fc83bfae9516b771b7241baf55d"
+
+# Utilise les variables chargées
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY_SESSION")
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
+app.config["DB_PATH"] = os.getenv("DB_PATH")
+
+# Sécurité supplémentaire pour les cookies de session
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+app.secret_key = os.getenv("SECRET_KEY")
 
 
 def set_date(date_a_tester):
@@ -60,6 +71,7 @@ def inject_user():
 
 app.jinja_env.globals.update(set_date=set_date)
 jinja_partials.register_extensions(app)
+
 
 @app.template_filter("devise")
 def format_devise(valeur_centimes):
@@ -134,7 +146,7 @@ def traitementRegister():
     rules = donnees.get("rules")
 
     # Vérifie si le champ contient UNIQUEMENT lettres, chiffres et _
-    if not re.match(r"^[a-zA-Z0-9_]+$", username):
+    if not re_match(r"^[a-zA-Z0-9_]+$", username):
         usernameError = "Le nom d'utilisateur ne peut contenir que des lettres, chiffres et underscores (_)"
         return render_template("auth.html", error=usernameError)
 

@@ -3,8 +3,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, flash,
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
-from models.emails import welcome_email
-from re import match
+from re import match as re_match
 
 from models.user import *
 from models.match import *
@@ -417,7 +416,7 @@ def staff():
             flash(message, "error")
         return redirect(url_for("admin.staff"))
     else:
-        flash(message, 'error')
+        flash(message, "error")
         return redirect(url_for("admin.staff"))
 
 
@@ -428,14 +427,14 @@ def setup_staff(token):
         invitation = get_invitation_by_token(token)  # À créer dans admin.py
 
         if not invitation:
-            flash("Lien d'invitation invalide.", 'error')
+            flash("Lien d'invitation invalide.", "error")
             return redirect(url_for("home"))
 
         # 2. Vérification du délai de 48h
         # On convertit la chaîne de la BD en objet datetime
         expire_at = datetime.strptime(invitation["expiration"], "%Y-%m-%d %H:%M:%S.%f")
         if datetime.now() > expire_at:
-            flash("Ce lien a expiré.", 'error')
+            flash("Ce lien a expiré.", "error")
             return "Ce lien a expiré !"
 
             # ... (tes vérifications de mdp, username, etc.) ...
@@ -460,7 +459,7 @@ def setup_staff(token):
     rules = donnees.get("rules")
 
     # Vérifie si le champ contient UNIQUEMENT lettres, chiffres et _
-    if not match(r"^[a-zA-Z0-9_]+$", username):
+    if not re_match(r"^[a-zA-Z0-9_]+$", username):
         usernameError = "Le nom d'utilisateur ne peut contenir que des lettres, chiffres et underscores (_)"
         return render_template("admin/setup_staff.html", error=usernameError)
 
@@ -542,10 +541,12 @@ def mailbox():
         try:
             result = int(donnees.get("result"))
         except:
-            flash("Vous devez entrer un nombre pour l'age !", 'error')
+            flash("Vous devez entrer un nombre pour l'age !", "error")
             return redirect(request.referrer)
         if result < 0 or result > 100:
-            flash("Vous devez entrer un age supérieur à 0 et inférieur à 100 !", 'error')
+            flash(
+                "Vous devez entrer un age supérieur à 0 et inférieur à 100 !", "error"
+            )
             return redirect(request.referrer)
 
     emails_envoyes = 0
@@ -574,15 +575,17 @@ def mailbox():
                 error_popup = msg_popup
 
     if not error_email or not error_popup:
-        flash(f"Email(s) envoyés : {emails_envoyes}.", 'succes')
-        flash(f"Notification(s) envoyée(s) : {notifications_envoyes}.", 'succes')
+        flash(f"Email(s) envoyés : {emails_envoyes}.", "succes")
+        flash(f"Notification(s) envoyée(s) : {notifications_envoyes}.", "succes")
     else:
         if error_email:
             flash(
-                f"Il y a eu une erreur lors de l'envoi : {error_email} ! Email(s) envoyé(s) : {emails_envoyes}", 'error'
+                f"Il y a eu une erreur lors de l'envoi : {error_email} ! Email(s) envoyé(s) : {emails_envoyes}",
+                "error",
             )
         else:
             flash(
-                f"Il y a eu une erreur lors de l'envoi : {error_popup} ! Notification(s) envoyé(s) : {notifications_envoyes}", 'error'
+                f"Il y a eu une erreur lors de l'envoi : {error_popup} ! Notification(s) envoyé(s) : {notifications_envoyes}",
+                "error",
             )
     return redirect(request.referrer)
