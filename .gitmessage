@@ -1,0 +1,10 @@
+type(scope): sujet court
+
+# --- Types possibles ---
+# feat     : Nouvelle fonctionnalité (ex: système de paris)
+# fix      : Correction de bug (ex: accès admin)
+# docs     : Documentation
+# style    : Formatage, ponctuation manquante
+# refactor : Changement de code qui ne modifie pas le comportement
+# chore    : Tâches de maintenance (ex: mise à jour de data.py)
+
