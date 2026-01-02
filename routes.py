@@ -33,6 +33,8 @@ app.config["SECRET_KEY_SESSION"] = os.getenv("SECRET_KEY_SESSION")
 app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
 app.config["DB_PATH"] = os.getenv("DB_PATH")
 app.config["EMAIL_ADRESSE"] = os.getenv("EMAIL_ADRESSE")
+app.config["VAPID_PRIVATE_KEY"] = os.getenv("VAPID_PRIVATE_KEY")
+app.config["VAPID_SUBJECT"] = os.getenv("VAPID_SUBJECT")
 
 # Sécurité supplémentaire pour les cookies de session
 app.config["SESSION_COOKIE_HTTPONLY"] = True
@@ -281,9 +283,7 @@ def reset_password_route(token):
     if not recuperation:
         return "<h1>Lien invalide !</h1>"
     # Vérification du délai de 48h
-    expire_at = datetime.strptime(
-        recuperation["expiration"], "%Y-%m-%d %H:%M:%S.%f"
-    )
+    expire_at = datetime.strptime(recuperation["expiration"], "%Y-%m-%d %H:%M:%S.%f")
     if datetime.now() > expire_at:
         flash("Ce lien a expiré.", "error")
         return "<h1>Ce lien a expiré !</h1>"

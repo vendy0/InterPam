@@ -166,11 +166,13 @@ def envoyer_notification_generale(
     return envoyer_email_generique(email, sujet, html, corps_texte)
 
 
-# Tes clés (Garde la privée SECRÈTE !)
-VAPID_PRIVATE_KEY = "oU5-E5H6fbcgYHfRqwMaYyqNaBy7mu81w739O2Q8h44"
-VAPID_CLAIMS = {
-    "sub": "mailto:ton-email@exemple.com"  # Obligatoire pour les serveurs push
-}
+# 1. Récupération des variables d'environnement
+PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+SUBJECT = os.getenv("VAPID_SUBJECT", "")
+# 2. Configuration correcte pour l'envoi
+VAPID_CLAIMS = {"sub": SUBJECT}
+# Utilisation (exemple avec la clé privée)
+VAPID_PRIVATE_KEY = PRIVATE_KEY
 
 
 def envoyer_push_notification(subscription_json, title, message, url="/home"):
