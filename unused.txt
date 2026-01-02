@@ -151,3 +151,48 @@ ___​Clôture de match : Un bouton pour dire "Le match est fini", entrer le sco
 
 
 - Si l'admin s'est inscrit en tant que parizur entre temps.
+
+
+
+
+<br /><br />
+<hr>
+<br /><br />
+{% if messages %}
+<h3>Messages : ({{ messages|length }})</h3>
+<div class="results-table" style="background: white; padding: 20px; border-radius: 8px">
+    <table border="1" style="width: 100%; border-collapse: collapse">
+        <thead style="background-color: #1e3a8a; color: white">
+            <tr>
+                <th>Id message</th>
+                <td>Nom</td>
+                <th>Message</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for message in messages %}
+            {% if message["read"] != 0 %}
+            
+            <tr>
+                <td>{{ message['id'] }}</td>
+                <td>
+                    {% if message.prenom and message.nom %}
+                        {{ message.prenom }} {{ message.nom }}
+                    {% else %}
+                        <span class="text-muted"><i>Utilisateur supprimé</i></span>
+                    {% endif %}
+                </td>
+                <td>{{ message['message'] }}</td>
+                <td>{{ set_date(message['created_at']) }}</td>
+                <td>                        <a href="{{ url_for('users.find_user', user_id=message['parieur_id']) }}" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer">Rechercher</a>
+</td>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <h3>Aucun message pour le moment.</h3>
+{% endif %}

@@ -1,1 +1,147 @@
-<!-- @format -->{% extends 'admin/base.html' %} {% block content %}<ul>    <h3>Rechercher</h3>    <!-- <li><a href="{{ url_for('users.find_user') }}">Trouver un utilisateur</a></li> -->    <form action="{{ url_for('users.find_user') }}" autocomplete="off" method="POST">        <input type="text" name="nom" id="name" placeholder="Récupérer utilisateur par nom" value="{{ request.form.nom }}" />        <input type="text" name="username_finding" id="username_finding" placeholder="Récupérer utilisateur par username" value="{{ request.form.username_finding }}" />        <input type="text" name="email" id="email" autocomplete="off" placeholder="Récupérer utilisateur par email" value="{{ request.form.email }}" />        <input type="number" name="age" id="age" placeholder="Récupérer utilisateur par age" value="{{ request.form.age }}" />        <select class="classe_input" name="classe">            <option value="" selected="selected">Classe</option>            <option value="septieme" {% if request.form.classe=="septieme" %} selected="selected" {% endif %}>7e A.F.</option>            <option value="huitieme" {% if request.form.classe=="huitieme" %} selected="selected" {%endif%}>8e A.F.</option>            <option value="neuvieme" {% if request.form.classe=="neuvieme" %} selected="selected" {%endif%}>9e A.F.</option>            <option value="secondaire 1" {% if request.form.classe=="secondaire 1" %} selected="selected" {%endif%}>NS1</option>            <option value="secondaire 2" {% if request.form.classe=="secondaire 2" %} selected="selected" {%endif%}>NS2</option>            <option value="secondaire 3" {% if request.form.classe=="secondaire 3" %} selected="selected" {%endif%}>NS3</option>            <option value="secondaire 4" {% if request.form.classe=="secondaire 4" %} selected="selected" {%endif%}>NS4</option>            <option value="Direction" {% if request.form.fclasse=="Direction" %} selected="selected" {%endif%}>Direction</option>        </select>        <select name="notif" id="notif">            <option value="">Notifications</option>            <option value="oui">Oui</option>            <option value="non">Non</option>        </select>        <button type="submit" name="action">Rechercher</button>    </form>    <hr />    {% if no_users %}    <h3>Aucun utilisateur ne correspond à la recherche</h3>    {% elif users %}    <h3>Résultats trouvés ({{ users|length }})</h3>    <div class="results-table" style="background: white; padding: 20px; border-radius: 8px">        <table border="1" style="width: 100%; border-collapse: collapse">            <thead style="background-color: #1e3a8a; color: white">                <tr>                    <th>Id</th>                    <th>Nom Complet</th>                    <th class="username_col">Username</th>                    <th>Email</th>                    <th>Classe</th>                    <th>Solde</th>                    <th>Rôle</th>                    <th>Activité</th>                    <th>Notification</th>                    <th>Date d'inscription</th>                    <th>Action</th>                </tr>            </thead>            <tbody>                {% for user in users %}                <tr>                    <td>{{ user['id'] }}</td>                    <td>{{ user['prenom'] }} {{ user['nom'] }}</td>                    <td><strong>@{{ user['username'] }}</strong></td>                    <td>{{ user['email'] }}</td>                    <td>{{ user['classe'] }}</td>                    <td>{{ user['solde'] / 100 }} HTG</td>                    <td>{{ user['role'] }}</td>                    <td>{{ 'Actif' if user['actif'] == 1 else 'Suspendu' }}</td>                    <td>{{ 'Oui' if user['push_subscription'] else 'Non' }}</td>                    <td>{{ set_date(user['created_at']) }}</td>                    	{% if user['username'] != current_user['username'] or current_user['role'] == "super_admin" %}                    <td>                        <a href="#" onclick="preRemplirCredit('{{ user['username'] }}')" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer">Créditer</a>                        <a href="#" onclick="preRemplirDebit('{{ user['username'] }}')" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer">Débiter</a>                        <a href="javascript:void(0)" onclick="{{ 'confirmBan' if user['actif'] == 1 else 'confirmRet' }}('{{ user['username'] }}')" style="color: #dc2626; margin-left: 10px; font-weight: bold;">{{ 'Bannir' if user['actif'] == 1 else 'Rétablir' }}</a>                    </td>                    {% else %}                    <td style="background-color: black;"></td>                    {% endif %}                </tr>                {% endfor %}            </tbody>        </table>    </div>    {% endif %}    <hr />    <h3>Créditer</h3>    <!-- <li><a href="{{ url_for('users.credit_user') }}">Créditer</a></li> -->    <form id="form-credit" autocomplete="off" action="{{ url_for('users.credit_user') }}" method="POST">        <input type="text" name="username_credit" id="username_credit" placeholder="Username" />        <input type="number" name="solde_credit" id="solde_credit" step="any" placeholder="Somme à ajouter" />        <button type="submit">Valider le crédit</button>    </form>    <hr />    <h3>Débiter</h3>    <!-- <li><a href="{{ url_for('users.credit_user') }}">Créditer</a></li> -->    <form id="form-credit" autocomplete="off" action="{{ url_for('users.debit_user') }}" method="POST">        <input type="text" name="username_debit" id="username_debit" placeholder="Username" />        <input type="number" name="solde_debit" id="solde_debit" step="any" placeholder="Somme à retirer" />        <button type="submit">Valider le débit</button>    </form></ul><div id="deleteModal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">    <div style="background: white; padding: 25px; border-radius: 8px; width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">        <h4 style="margin-top: 0;">Confirmation</h4>        <p style="font-size: 0.9em; color: #666;">Entrez votre nom d'utilisateur et votre mot de passe :</p>                <form id="deleteForm" method="POST" autocomplete="off">            <input type="text" name="username" autocomplete="off" required placeholder="Username" style="width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">            <input type="password" name="password" autocomplete="off" required placeholder="Mot de passe" style="width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">            <textarea name="message_ban_ret" id="message_ban_ret" rows="8" cols="40" placeholder="Message..."></textarea>                        <div style="display: flex; gap: 10px; justify-content: center;">                <button type="button" onclick="closeDeleteModal()" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer;">Annuler</button>                <button type="submit" style="padding: 8px 15px; border-radius: 4px; border: none; background: #dc2626; color: white; cursor: pointer;">Confirmer</button>            </div>        </form>    </div></div><script>    function preRemplirCredit(username) {        // On récupère le champ username du formulaire de crédit        const inputCredit = document.getElementById("username_credit");        const inputSommeCredit = document.getElementById("solde_credit");        if (inputCredit) {            inputCredit.value = username; // On injecte le nom            inputSommeCredit.focus(); // On place directement le curseur sur le montant pour gagner du temps        }    }    function preRemplirDebit(username) {        // On récupère le champ username du formulaire de crédit        const inputDebit = document.getElementById("username_debit");        const inputSommeDebit = document.getElementById("solde_debit");        if (inputDebit) {            inputDebit.value = username; // On injecte le nom            inputSommeDebit.focus(); // On place directement le curseur sur le montant pour gagner du temps        }    }    const modal = document.getElementById('deleteModal');    const form = document.getElementById('deleteForm');    function confirmBan(username) {        // Définit l'URL d'action du formulaire dynamiquement        form.action = `/admin/users/ban/${username}`;        // Affiche la modale        modal.style.display = 'flex';    }    function confirmRet(username) {        // Définit l'URL d'action du formulaire dynamiquement        form.action = `/admin/users/ret/${username}`;        // Affiche la modale        modal.style.display = 'flex';    }    function closeDeleteModal() {        modal.style.display = 'none';        form.reset();    }    // Fermer si on clique en dehors de la modale    window.onclick = function(event) {        if (event.target == modal) closeDeleteModal();    }</script>{%endblock%}
+{% extends 'admin/base.html' %} 
+
+{% block content %}
+<div class="page-header">
+    <h3>Gestion des Joueurs</h3>
+</div>
+
+<details class="admin-filter" {{ 'open' if request.method == 'POST' else '' }}>
+    <summary>
+        <span>🔍 Rechercher / Filtrer</span>
+    </summary>
+    <div class="filter-content">
+        <form action="{{ url_for('users.find_user') }}" method="POST" autocomplete="off" style="display: grid; gap: 15px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <input type="text" name="nom" placeholder="Nom" value="{{ request.form.nom }}" />
+                <input type="text" name="username_finding" placeholder="Username" value="{{ request.form.username_finding }}" />
+            </div>
+            
+            <input type="text" name="email" placeholder="Email" value="{{ request.form.email }}" />
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <input type="number" name="age" placeholder="Age" value="{{ request.form.age }}" />
+                <select name="classe">
+                    <option value="">-- Classe --</option>
+                    <option value="septieme" {% if request.form.classe=="septieme" %} selected {% endif %}>7e A.F.</option>
+                    <option value="huitieme" {% if request.form.classe=="huitieme" %} selected {%endif%}>8e A.F.</option>
+                    <option value="neuvieme" {% if request.form.classe=="neuvieme" %} selected {%endif%}>9e A.F.</option>
+                    <option value="secondaire 1" {% if request.form.classe=="secondaire 1" %} selected {%endif%}>NS1</option>
+                    <option value="secondaire 2" {% if request.form.classe=="secondaire 2" %} selected {%endif%}>NS2</option>
+                    <option value="secondaire 3" {% if request.form.classe=="secondaire 3" %} selected {%endif%}>NS3</option>
+                    <option value="secondaire 4" {% if request.form.classe=="secondaire 4" %} selected {%endif%}>NS4</option>
+                    <option value="Direction" {% if request.form.fclasse=="Direction" %} selected {%endif%}>Direction</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-primary">Lancer la recherche</button>
+        </form>
+    </div>
+</details>
+
+{% if users %}
+<div class="table-responsive">
+    <table>
+        <thead>
+            <tr>
+                <th>Utilisateur</th>
+                <th>Solde</th>
+                <th>Classe</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>
+                    <strong>{{ user['prenom'] }} {{ user['nom'] }}</strong><br>
+                    <span style="color:#64748b; font-size:0.85em;">@{{ user['username'] }}</span>
+                </td>
+                <td style="font-weight:bold; color: var(--admin-primary);">{{ user['solde'] / 100 }} HTG</td>
+                <td>{{ user['classe'] }}</td>
+                <td>
+                    {% if user['actif'] == 1 %}
+                    <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:10px; font-size:0.8em;">Actif</span>
+                    {% else %}
+                    <span style="background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:10px; font-size:0.8em;">Suspendu</span>
+                    {% endif %}
+                </td>
+                <td class="table-actions">
+                    {% if user['username'] != current_user['username'] or current_user['role'] == "super_admin" %}
+                        <a href="#action-zone" onclick="preRemplir('{{ user['username'] }}')" class="text-edit">Gérer $$</a>
+                        <a href="javascript:void(0)" onclick="{{ 'confirmBan' if user['actif'] == 1 else 'confirmRet' }}('{{ user['username'] }}')" class="text-delete">
+                            {{ 'Bannir' if user['actif'] == 1 else 'Rétablir' }}
+                        </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif no_users %}
+<div style="text-align:center; padding:30px; color:#64748b;">Aucun utilisateur trouvé.</div>
+{% endif %}
+
+<div id="action-zone" style="margin-top: 30px; display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+    
+    <details class="admin-filter">
+        <summary>➕ Créditer un compte</summary>
+        <div class="filter-content">
+            <form action="{{ url_for('users.credit_user') }}" method="POST">
+                <input type="text" name="username_credit" id="username_credit" placeholder="Username" required style="margin-bottom:10px;">
+                <input type="number" name="solde_credit" id="solde_credit" step="any" placeholder="Montant à ajouter" required style="margin-bottom:10px;">
+                <button type="submit" class="btn-success" style="width:100%">Valider Crédit</button>
+            </form>
+        </div>
+    </details>
+
+    <details class="admin-filter">
+        <summary>➖ Débiter un compte</summary>
+        <div class="filter-content">
+            <form action="{{ url_for('users.debit_user') }}" method="POST">
+                <input type="text" name="username_debit" id="username_debit" placeholder="Username" required style="margin-bottom:10px;">
+                <input type="number" name="solde_debit" id="solde_debit" step="any" placeholder="Montant à retirer" required style="margin-bottom:10px;">
+                <button type="submit" class="btn-danger" style="width:100%">Valider Débit</button>
+            </form>
+        </div>
+    </details>
+</div>
+
+<div id="deleteModal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div style="background: white; padding: 25px; border-radius: 8px; width: 350px; text-align: center;">
+        <h4>Confirmation</h4>
+        <form id="deleteForm" method="POST">
+            <input type="text" name="username" placeholder="Votre Username Admin" required style="margin:10px 0;">
+            <input type="password" name="password" placeholder="Votre Mot de passe" required style="margin:10px 0;">
+            <textarea name="message_ban_ret" rows="3" placeholder="Raison..." style="margin-bottom:10px;"></textarea>
+            <div style="display:flex; gap:10px;">
+                <button type="button" onclick="closeDeleteModal()" style="background:#ccc; flex:1;">Annuler</button>
+                <button type="submit" class="btn-danger" style="flex:1;">Confirmer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function preRemplir(username) {
+        document.getElementById("username_credit").value = username;
+        document.getElementById("username_debit").value = username;
+        // Scroll doux vers la zone
+        document.getElementById("action-zone").scrollIntoView({ behavior: 'smooth' });
+    }
+    // ... Reste des scripts JS existants (confirmBan, etc.) ...
+    const modal = document.getElementById('deleteModal');
+    const form = document.getElementById('deleteForm');
+
+    function confirmBan(username) {
+        form.action = `/admin/users/ban/${username}`;
+        modal.style.display = 'flex';
+    }
+    function confirmRet(username) {
+        form.action = `/admin/users/ret/${username}`;
+        modal.style.display = 'flex';
+    }
+    function closeDeleteModal() { modal.style.display = 'none'; form.reset(); }
+</script>
+{% endblock %}
