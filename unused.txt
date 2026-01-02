@@ -82,7 +82,6 @@ __
 
 - MiniGames
 - Si Sum(Gain_potentiel) > Sum(Mise), annulation des derniers fiches
-- Modifier le "Créé par des élèves" par "créé sous la demande des élèves du CIF". Supprimer le Black_Hole du site.
 - ReCaptcha 
 - Ajouter mon email comme adm
 - Insérer ReCaptcha
@@ -92,7 +91,7 @@ __
 - Double chance. Modification dans le choix des options gagnantes.
 - Partie Email de l'infterface adm
 - Route pour atreindre l'interface adm
-
+- Renommer les icones
 
 
 """
@@ -108,7 +107,9 @@ FINIS-----------------------------------
 - Ne peut pas parier sur un match déjà parié
 - Cacher la clé de Session, et mdp email, publique et privée notif key
 - Mot de passe oublié
-- L'icone 
+- L'icone
+- Modifier le "Créé par des élèves" par "créé sous la demande des élèves du CIF". Supprimer le Black_Hole du site.
+
 
 
 - Télécharger les polices

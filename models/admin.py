@@ -48,15 +48,17 @@ def fermer_match_officiellement(match_id):
             conn.execute(
                 "UPDATE matchs SET statut = 'terminé' WHERE id = ?", (match_id,)
             )
-            cur = conn.execute("SELECT push_subscription AS sub FROM parieurs")
+            cur = conn.execute(
+                "SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL"
+            )
             users = cur.fetchall()
             cur = conn.execute("SELECT * FROM matchs WHERE id = ?", (match_id,))
             match = cur.fetchone()
             for user in users:
-                if not user["sub"]:
-                    pass
-                message = f"Le match {match['equipe_a']} VS {match['equipe_b']} vient d'être fermé à tous nouveaux paris !"
-                envoyer_push_notification(user["sub"], "Match fermé", message)
+                message = (
+                    f"Le match {match['equipe_a']} VS {match['equipe_b']} est terminé !"
+                )
+                envoyer_push_notification(user["sub"], "Match terminé", message)
             conn.commit()
             return True
     except Exception as e:
@@ -67,16 +69,15 @@ def fermer_match_officiellement(match_id):
 def executer_settlement_match(match_id):
     """
     Vérifie les paris liés au match et effectue le paiement si nécessaire.
-    Version corrigée et sécurisée.
     """
     conn = None
     try:
-        # On utilise le context manager pour la connexion, mais on gère le commit manuellement
-        # pour s'assurer que tout ou rien n'est exécuté.
         conn = sqlite3.connect("interpam.db")
+        # Permet d'accéder aux colonnes par nom : row['solde'] au lieu de row[1]
+        conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
-        # 1. Récupérer tous les paris "En attente" liés à ce match
+        # 1. Récupérer tous les paris "En attente" contenant ce match
         cur.execute(
             """
             SELECT DISTINCT p.id, p.parieur_id, p.gain_potentiel
@@ -88,20 +89,24 @@ def executer_settlement_match(match_id):
         )
 
         paris_a_verifier = cur.fetchall()
-        stats = {"gagnants": 0, "perdants": 0, "erreurs": 0}
+        stats = {"gagnants": 0, "perdants": 0}
 
         if not paris_a_verifier:
             conn.close()
             return True, "Aucun pari en attente pour ce match."
 
-        for p_id, user_id, gain_c in paris_a_verifier:
-            # 2. Analyser l'état de TOUTES les options du ticket (pas seulement ce match)
+        for pari in paris_a_verifier:
+            p_id = pari["id"]
+            u_id = pari["parieur_id"]
+            gain_c = pari["gain_potentiel"]
+
+            # 2. Vérifier l'état global du ticket
             cur.execute(
                 """
                 SELECT 
-                    COUNT(*) as total_options,
-                    COALESCE(SUM(CASE WHEN o.winner = 2 THEN 1 ELSE 0 END), 0) as nb_perdues,
-                    COALESCE(SUM(CASE WHEN o.winner = 1 THEN 1 ELSE 0 END), 0) as nb_gagnees
+                    COUNT(*) as total,
+                    SUM(CASE WHEN o.winner = 2 THEN 1 ELSE 0 END) as perdues,
+                    SUM(CASE WHEN o.winner = 1 THEN 1 ELSE 0 END) as gagnees
                 FROM matchs_paris mp
                 JOIN options o ON mp.option_id = o.id
                 WHERE mp.paris_id = ?
@@ -109,108 +114,62 @@ def executer_settlement_match(match_id):
                 (p_id,),
             )
 
-            row = cur.fetchone()
-            if not row:
-                continue
+            res = cur.fetchone()
+            total, perdues, gagnees = (
+                res["total"],
+                res["perdues"] or 0,
+                res["gagnees"] or 0,
+            )
 
-            total, perdues, gagnees = row[0], row[1], row[2]
+            # --- LOGIQUE DE DÉCISION ---
 
-            # LOGIQUE DE RÉSOLUTION
             if perdues > 0:
-                # Si AU MOINS UNE option est perdante, tout le ticket est perdu
-                cur.execute(
-                    "UPDATE paris SET statut = 'Perdu' WHERE id = ?",
-                    (p_id,),
-                )
+                # Échec : Au moins un match du combiné est faux
+                cur.execute("UPDATE paris SET statut = 'Perdu' WHERE id = ?", (p_id,))
                 stats["perdants"] += 1
 
-            elif gagnees == total and total > 0:
-                # Si TOUTES les options sont gagnantes (et qu'il y en a au moins une)
-                # 1. Créditer le parieur
+            elif gagnees == total:
+                # Succès : Tous les matchs du ticket sont gagnés
+                # 1. Créditer le solde du parieur (Atomic update)
                 cur.execute(
-                    "UPDATE parieurs SET solde = solde + ? WHERE id = ?",
-                    (gain_c, user_id),
+                    "UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id)
                 )
-                # 2. Marquer le pari comme gagné
-                cur.execute(
-                    "UPDATE paris SET statut = 'Gagné' WHERE id = ? AND statut = 'En attente'",
-                    (p_id,),
-                )
+                # 2. Marquer le ticket comme gagné
+                cur.execute("UPDATE paris SET statut = 'Gagné' WHERE id = ?", (p_id,))
                 stats["gagnants"] += 1
 
-                # Notifications push
-                cur = conn.execute(
-                    "SELECT push_subscription AS sub, solde FROM parieurs WHERE id = ?",
-                    (p_id,),
-                )
-                user = cur.fetchone()
-                if not user["sub"]:
-                    pass
-                new_solde = depuis_centimes(user["solde"] + gain_c)
-                message = f"Félicitation. Vous avez gagné : {depuis_centimes(gain_c)} HTG. Solde actuel : {new_solde}"
-                envoyer_push_notification(user["sub"], "Vous avez gagné", message)
-
-            # Sinon, le pari reste "En attente" (en attente d'autres matchs du combiné)
+                # 3. Notification (Optionnel mais recommandé)
+                envoi_notification_gain(cur, u_id, gain_c)
 
         conn.commit()
-        conn.close()
-
         return (
             True,
-            f"Settlement terminé : {stats['gagnants']} payés, {stats['perdants']} perdus.",
+            f"Settlement réussi : {stats['gagnants']} gagnés, {stats['perdants']} perdus.",
         )
 
-    except sqlite3.Error as e:
-        if conn:
-            conn.rollback()
-            conn.close()
-        print(f"Erreur CRITIQUE settlement : {e}")
-        return False, f"Erreur base de données : {e}"
     except Exception as e:
         if conn:
+            conn.rollback()
+        return False, f"Erreur settlement : {str(e)}"
+    finally:
+        if conn:
             conn.close()
-        return False, f"Erreur inattendue : {e}"
 
 
-def get_bilan_financier_match(match_id):
-    """Calcule le total des mises vs le total des gains payés pour un match."""
-    try:
-        with get_db_connection() as conn:
-            # Somme des mises sur ce match
-            cur = conn.execute(
-                """
-                SELECT SUM(p.mise) as total_mises
-                FROM paris p
-                JOIN matchs_paris mp ON p.id = mp.paris_id
-                WHERE mp.matchs_id = ?
-            """,
-                (match_id,),
+def envoi_notification_gain(cursor, user_id, gain_c):
+    """Sous-fonction pour gérer les notifications sans casser la boucle principale"""
+    cursor.execute(
+        "SELECT push_subscription, solde FROM parieurs WHERE id = ?", (user_id,)
+    )
+    user = cursor.fetchone()
+    if user and user["push_subscription"]:
+        try:
+            message = f"Félicitations ! Gain de {depuis_centimes(gain_c)} HTG reçu."
+            envoyer_push_notification(
+                user["push_subscription"], "Pari Gagné !", message
             )
-            res_mises = cur.fetchone()
-
-            # Somme des gains payés (uniquement pour les fiches marquées 'Gagné')
-            cur = conn.execute(
-                """
-                SELECT SUM(p.gain_potentiel) as total_paye
-                FROM paris p
-                JOIN matchs_paris mp ON p.id = mp.paris_id
-                WHERE mp.matchs_id = ? AND p.statut = 'Gagné'
-            """,
-                (match_id,),
-            )
-            res_gains = cur.fetchone()
-
-            mises = res_mises["total_mises"] or 0
-            gains = res_gains["total_paye"] or 0
-
-            return {
-                "mises": depuis_centimes(mises),
-                "gains": depuis_centimes(gains),
-                "benefice": depuis_centimes(mises - gains),
-            }
-    except sqlite3.Error as e:
-        print(f"Erreur bilan : {e}")
-        return None
+        except:
+            pass  # Ne pas bloquer le paiement si la notification échoue
 
 
 def ajouter_option(libelle, cote, categorie, match_id):
@@ -231,14 +190,26 @@ def update_match_info(match_id, equipe_a, equipe_b, date_match, statut, type_mat
     """Met à jour les informations générales du match."""
     try:
         with get_db_connection() as conn:
+            closed = conn.execute(
+                "SELECT * FROM matchs WHERE id = ? AND statut <> 'fermé'", (match_id,)
+            )
+            match = closed.fetchone()
             cur = conn.execute(
                 """
                 UPDATE matchs 
                 SET equipe_a = ?, equipe_b = ?, date_match = ?, statut = ?, type_match = ?
                 WHERE id = ?
-            """,
+                """,
                 (equipe_a, equipe_b, date_match, statut, type_match, match_id),
             )
+            if match:
+                cur = conn.execute(
+                    "SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL"
+                )
+                users = cur.fetchall()
+                for user in users:
+                    message = f"Le match {match['equipe_a']} VS {match['equipe_b']} vient d'être fermé à tous nouveaux paris !"
+                    envoyer_push_notification(user["sub"], "Match terminé", message)
             conn.commit()
             return True
     except sqlite3.Error as e:

@@ -308,21 +308,21 @@ def cloturer_match(match_id):
     match_data = get_match_by_id(match_id)
     options = get_options_by_match_id(match_id)
 
-    if request.method == "POST":
-        options_gagnantes = request.form.getlist("options_gagnantes")
+    if request.method == "GET":
+        return render_template(
+            "admin/matchs/cloturer_match.html", match=match_data, options=options
+        )
 
-        for opt_id in options_gagnantes:
-            valider_option_gagnante(opt_id, match_id)
+    options_gagnantes = request.form.getlist("options_gagnantes")
 
-        fermer_match_officiellement(match_id)
-        executer_settlement_match(match_id)
+    for opt_id in options_gagnantes:
+        valider_option_gagnante(opt_id, match_id)
 
-        flash("Résultats enregistrés et match clôturé !", "succes")
-        return redirect(url_for("matchs.show_edit_matchs"))
+    fermer_match_officiellement(match_id)
+    executer_settlement_match(match_id)
 
-    return render_template(
-        "admin/matchs/cloturer_match.html", match=match_data, options=options
-    )
+    flash("Résultats enregistrés et match clôturé !", "succes")
+    return redirect(url_for("matchs.show_edit_matchs"))
 
 
 @matchs_bp.route("/supprimer/<int:match_id>", methods=["POST"])

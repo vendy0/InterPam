@@ -6,16 +6,32 @@
 {% endblock %} {% block content %}
 <div class="fiches-container">
 	<h2 class="section-title">Mes Paris</h2>
-
 	{% if not fiches %}
 	<div style="text-align: center; margin-top: 50px;">
 		<p>Vous n'avez pas encore placé de paris.</p>
 		<a href="{{ url_for('home') }}" class="btn-parier" style="display:inline-block; margin-top:15px; padding:10px 20px; background:#007bff; color:white; border-radius:5px; text-decoration:none;">Commencer à parier</a>
 	</div>
 	{% else %}
+    <div class="filter-container">
+        <button class="filter-btn active" data-filter="tous">
+            Tous <span class="filter-count" id="count-tous"></span>
+        </button>
+        <button class="filter-btn" data-filter="gagne">
+            Gagnés <span class="filter-count" id="count-gagne"></span>
+        </button>
+        <button class="filter-btn" data-filter="perdu">
+            Perdus <span class="filter-count" id="count-perdu"></span>
+        </button>
+        <button class="filter-btn" data-filter="en-attente">
+            En attente <span class="filter-count" id="count-en-attente"></span>
+        </button>
+    </div>
+
+
 	<div class="fiches-list">
-		{# On boucle sur le dictionnaire 'fiches' (regroupé par ID) #} {% for id_pari, info in fiches.items() %}
-		<details class="pari-card">
+		{# On boucle sur le dictionnaire 'fiches' (regroupé par ID) #} 
+		{% for id_pari, info in fiches.items() %}
+		<details class="pari-card" data-statut="{{ info.statut.lower().replace(' ', '-').replace('é', 'e') if info.statut else 'indetermine' }}">
 			<summary>
 				<div class="ticket-info">
 					<span class="ticket-id">Ticket #{{ id_pari }}</span>
@@ -58,4 +74,79 @@
 	</div>
 	{% endif %}
 </div>
+{% endblock %}
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filters = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.pari-card');
+
+    filters.forEach(button => {
+        button.addEventListener('click', () => {
+            // 1. Gérer l'état actif des boutons
+            filters.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            const filterValue = button.getAttribute('data-filter');
+
+            // 2. Filtrer les cartes
+            cards.forEach(card => {
+                const cardStatut = card.getAttribute('data-statut');
+                
+                if (filterValue === 'tous' || cardStatut === filterValue) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        });
+    });
+    
+    // --- FONCTION POUR METTRE À JOUR LES COMPTEURS ---
+    function updateCounts() {
+        const counts = {
+            'tous': cards.length,
+            'gagne': 0,
+            'perdu': 0,
+            'en-attente': 0
+        };
+
+        cards.forEach(card => {
+            const statut = card.getAttribute('data-statut');
+            if (counts.hasOwnProperty(statut)) {
+                counts[statut]++;
+            }
+        });
+
+        document.getElementById('count-tous').textContent = `(${counts['tous']})`;
+        document.getElementById('count-gagne').textContent = `(${counts['gagne']})`;
+        document.getElementById('count-perdu').textContent = `(${counts['perdu']})`;
+        document.getElementById('count-en-attente').textContent = `(${counts['en-attente']})`;
+    }
+
+    // Initialisation des compteurs au chargement
+    updateCounts();
+
+    // --- LOGIQUE DE FILTRAGE ---
+    filters.forEach(button => {
+        button.addEventListener('click', () => {
+            filters.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            const filterValue = button.getAttribute('data-filter');
+
+            cards.forEach(card => {
+                const cardStatut = card.getAttribute('data-statut');
+                
+                if (filterValue === 'tous' || cardStatut === filterValue) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        });
+    });
+});
+</script>
+
 {% endblock %}
