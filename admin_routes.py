@@ -78,12 +78,19 @@ def users():
     return render_template("admin/users.html")
 
 
-@users_bp.route("/find-user", methods=["POST", "GET"])
+@users_bp.route("/find-user/<user_id>", methods=["POST", "GET"])
 @admin_required
-def find_user():
+def find_user(user_id=None):
     if request.method == "GET":
-        return render_template("admin/users.html")
-
+        if user_id:
+            users = []
+            user = get_user_by_id(user_id)
+            users.append(user)
+            no_users = len(users) == 0
+            return render_template("admin/users.html", users=users, no_users=no_users)
+        else:
+            return render_template("admin/users.html", no_users=True)
+    return render_template("admin/users.html")
     # Récupération des critères
     criteres = {
         "nom": request.form.get("nom", "").strip(),
@@ -494,7 +501,14 @@ def setup_staff(token):
 @admin_required
 def mailbox():
     if request.method == "GET":
-        return render_template("admin/mailbox.html")
+        # Une seule requête SQL fait tout le travail
+        messages = get_messages()
+
+        # Si vous voulez quand même gérer l'affichage "Utilisateur supprimé"
+        # directement en Python avant le template (optionnel) :
+            # Comme on ne peut pas modifier un objet sqlite3.Row directement,
+            # on peut convertir en dict ou gérer la logique dans le template Jinja2
+        return render_template("admin/mailbox.html", messages=messages)
 
     donnees = request.form
     titre = donnees.get("titre").strip()
@@ -551,4 +565,4 @@ def mailbox():
             "error",
         )
 
-    return redirect(request.referrer)
+    return redirect(url_for("admin.dashboard"))

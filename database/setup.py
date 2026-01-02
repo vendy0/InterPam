@@ -94,5 +94,58 @@ def initialiser_bdd():
                     expiration TEXT NOT NULL
                     )""")
 
+            # Table Messagerie
+            cur.execute("""CREATE TABLE IF NOT EXISTS messagerie (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    message TEXT NOT NULL,
+                    read INTEGER NOT NULL DEFAULT 1,
+                    created_at TEXT NOT NULL,
+                    parieur_id INTEGER,
+                    FOREIGN KEY (parieur_id) REFERENCES parieurs(id) ON DELETE SET NULL
+                    )""")
+
     except sqlite3.Error as e:
         print(f"Erreur lors de l'initialisation : {e}")
+
+
+"""
+========================================
+2. CREATE SUPER ADMIN-------------------
+========================================
+"""
+# Create Super Admin
+
+from werkzeug.security import generate_password_hash
+from datetime import datetime
+
+
+def creer_super_admin(prenom, nom, username, email, mdp):
+    try:
+        with sqlite3.connect(DB_NAME) as conn:
+            cur = conn.cursor()
+            hash_mdp = generate_password_hash(mdp)
+            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            cur.execute(
+                """
+                INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, role, solde)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    prenom,
+                    nom,
+                    username,
+                    email,
+                    99,
+                    "Direction",
+                    hash_mdp,
+                    created_at,
+                    "super_admin",
+                    200000,
+                ),
+            )
+
+            conn.commit()
+            return True, "Le Super Admin a été créé avec succès !"
+    except sqlite3.Error as e:
+        return False, f"Erreur lors de la création : {e}"

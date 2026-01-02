@@ -343,3 +343,21 @@ def ban_ret_user(username, message, ban=False, ret=False):
     except sqlite3.Error as e:
         print(f"Erreur lors du bannissement / rétablissement : {e}")
         return False
+
+
+def get_messages():
+    try:
+        with get_db_connection() as conn:
+            # On sélectionne les colonnes du message ET les colonnes de l'utilisateur
+            query = """
+                SELECT m.*, p.prenom, p.nom 
+                FROM messagerie m
+                LEFT JOIN parieurs p ON m.parieur_id = p.id
+                ORDER BY m.created_at DESC
+            """
+            cur = conn.execute(query)
+            # fetchall() renvoie des objets sqlite3.Row qui se comportent comme des dicts
+            return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération : {e}")
+        return []

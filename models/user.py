@@ -306,3 +306,22 @@ def reset_password(email, mdp):
     except sqlite3.Error as e:
         print(f"Erreur lors de la réinitialisation du mot de passe : {e}")
         return False
+
+
+def send_message(parieur_id, message, created_at):
+    try:
+        with get_db_connection() as conn:
+            cur = conn.execute(
+                "INSERT INTO messagerie(parieur_id, message, created_at) VALUES(?, ?, ?)",
+                (
+                    parieur_id,
+                    message,
+                    created_at,
+                ),
+            )
+            conn.commit()
+            return True
+    except sqlite3.Error as e:
+        print(f"Erreur lors de l'envoie : {e}")
+        return False
+

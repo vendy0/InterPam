@@ -342,6 +342,21 @@ def home():
     return redirect(url_for("index"))
 
 
+@app.route("/send_message", methods=["POST"])
+def send_message_route():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    user = get_user_by_username(session["username"])
+    message_sent = request.form.get("message")
+    created_at = (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    if send_message(user["id"], message_sent, created_at):
+        flash("Message envoyé !", "succes")
+        return redirect(request.referrer)
+    else:
+        flash("Il y a eu une erreur lors de l'envoi !", "error")
+        return redirect(request.referrer)
+
+
 @app.route("/save-subscription", methods=["POST"])
 def save_subscription_route():
     subscription_data = request.json
