@@ -83,7 +83,7 @@ def users():
 def find_user():
     if request.method == "GET":
         return render_template("admin/users.html")
-    
+
     # Récupération des critères
     criteres = {
         "nom": request.form.get("nom", "").strip(),
@@ -127,7 +127,7 @@ def credit_user():
     succes, message = credit(username, solde)
 
     flash(message)
-    return render_template("admin/users.html")
+    return redirect(url_for("admin.dashboard"))
 
 
 @users_bp.route("/debit", methods=["GET", "POST"])
@@ -152,7 +152,7 @@ def debit_user():
     succes, message = debit(username, solde)
 
     flash(message)
-    return render_template("admin/users.html")
+    return redirect(url_for("admin.dashboard"))
 
 
 @users_bp.route("/<action>/<username>", methods=["POST"])
@@ -165,26 +165,26 @@ def ban_user_route(action, username):
 
     username_adm = request.form.get("username").strip()
     password = request.form.get("password")
+    message_ban_ret = request.form.get("message_ban_ret")
 
     if username_adm != session["username"]:
         flash("Nom d'utilisateur incorrect !", "error")
         return redirect(url_for("users.users"))
 
-    if check_password_hash(user["mdp"], password):
-        if action == "ban":
-            if ban_ret_user(username, ban=True):
-                flash(f"Le joueur {username} a été suspendu !", "succes")
-            else:
-                flash("Erreur lors de la suspension", "error")
-        else:
-            if ban_ret_user(username, ret=True):
-                flash(f"Le joueur {username} a été rétablie !", "succes")
-            else:
-                flash("Erreur lors du rétablissement", "error")
-    else:
+    if not check_password_hash(user["mdp"], password):
         flash("Mot de passe incorrect. Suppression annulée.", "error")
+    if action == "ban":
+        if ban_ret_user(username, message_ban_ret, ban=True):
+            flash(f"Le joueur {username} a été suspendu !", "succes")
+        else:
+            flash("Erreur lors de la suspension", "error")
+    else:
+        if ban_ret_user(username, message_ban_ret, ret=True):
+            flash(f"Le joueur {username} a été rétablie !", "succes")
+        else:
+            flash("Erreur lors du rétablissement", "error")
 
-    return redirect(url_for("users.users"))
+    return redirect(url_for("admin.dashboard"))
 
 
 """

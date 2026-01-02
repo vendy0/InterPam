@@ -77,6 +77,44 @@ def password_reset_email(nom, email, lien):
     return envoyer_email_generique(email, sujet, html, corps_texte)
 
 
+def ban_notification(nom, email):
+    sujet = "Compte suspendu"
+
+    # 1. Charger le template depuis le fichier
+    with open(
+        "templates/admin/emails/ban_notification.html", "r", encoding="utf-8"
+    ) as f:
+        template_html = f.read()
+
+    # 2. Remplacer les variables
+    j2_template = Template(template_html)
+    html = j2_template.render(nom=nom, url_for=url_for)
+
+    # 3. Version texte simple (pour les vieux clients mail)
+    corps_texte = f"Bonjour {nom}, Votre compte InterPam vient d'être suspendu !"
+
+    return envoyer_email_generique(email, sujet, html, corps_texte)
+
+
+def ret_notification(nom, email):
+    sujet = "Compte restauré"
+
+    # 1. Charger le template depuis le fichier
+    with open(
+        "templates/admin/emails/account_restored.html", "r", encoding="utf-8"
+    ) as f:
+        template_html = f.read()
+
+    # 2. Remplacer les variables
+    j2_template = Template(template_html)
+    html = j2_template.render(nom=nom, url_for=url_for)
+
+    # 3. Version texte simple (pour les vieux clients mail)
+    corps_texte = f"Bonjour {nom}, Votre compte InterPam a été restauré. Vous pouvez désormais vous reconnecter !"
+
+    return envoyer_email_generique(email, sujet, html, corps_texte)
+
+
 def envoyer_notification_generale(
     nom, email, titre, message, lien=None, texte_bouton=None
 ):
@@ -135,7 +173,7 @@ VAPID_CLAIMS = {
 }
 
 
-def envoyer_push_notification(subscription_json, title, message, url="/"):
+def envoyer_push_notification(subscription_json, title, message, url="/home"):
     """
     Envoie une notification à un utilisateur spécifique via son JSON d'abonnement.
     """

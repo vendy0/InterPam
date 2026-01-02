@@ -2,6 +2,7 @@ from database.connexion import get_db_connection
 from utils.finance import vers_centimes, depuis_centimes
 import sqlite3
 import secrets
+from models.emails import envoyer_push_notification
 
 
 def ajouter_parieur(user_data):
@@ -169,32 +170,74 @@ def get_user_by_grade(classe):
 def credit(username, montant_decimal):
     try:
         solde_centimes = vers_centimes(montant_decimal)
+
         with get_db_connection() as conn:
+            # 1. Mise à jour du solde
             conn.execute(
                 "UPDATE parieurs SET solde = solde + ? WHERE username = ?",
                 (solde_centimes, username),
             )
+            # 2. Valider la transaction AVANT de continuer
             conn.commit()
+
+            # 3. Récupérer les infos à jour pour la notification
+            user = get_user_by_username(username)
+            if not user:
+                return False, "Utilisateur introuvable"
+
+            # 4. Préparation du message avec le nouveau solde
+            # Note : Assurez-vous que user['solde'] est converti de centimes vers HTG pour l'affichage
+            nouveau_solde_htg = user["solde"]
+            message = f"Votre compte InterPam vient d'être crédité de {montant_decimal} HTG. Nouveau solde : {nouveau_solde_htg} HTG"
+
+            # 5. Envoi de la notification
+            if user.get("push_subscription"):
+                envoyer_push_notification(
+                    user["push_subscription"],
+                    "Compte crédité",
+                    message,
+                )
+
             return True, "Compte crédité"
+
     except Exception as e:
-        return False, str(e)
+        # En production, il est préférable de logger l'erreur 'e' au lieu de la retourner brute
+        return False, f"Erreur lors du crédit : {str(e)}"
 
 
 def debit(username, montant_decimal):
     try:
-        solde_centimes = int(vers_centimes(montant_decimal))
+        solde_centimes = vers_centimes(montant_decimal)
         with get_db_connection() as conn:
             user = get_user_by_username(username)
-            if montant_decimal <= user["solde"]:
-                conn.execute(
-                    "UPDATE parieurs SET solde = solde - ? WHERE username = ?",
-                    (solde_centimes, username),
-                )
-                conn.commit()
-                return True, "Compte débité"
-            else:
+            if montant_decimal > user["solde"]:
                 return False, "Solde insuffisant !"
-    except sqlite3.Error as e:
+            conn.execute(
+                "UPDATE parieurs SET solde = solde - ? WHERE username = ?",
+                (solde_centimes, username),
+            )
+            conn.commit()
+
+            # 3. Récupérer les infos à jour pour la notification
+            user = get_user_by_username(username)
+            if not user:
+                return False, "Utilisateur introuvable"
+
+            # 4. Préparation du message avec le nouveau solde
+            # Note : Assurez-vous que user['solde'] est converti de centimes vers HTG pour l'affichage
+            nouveau_solde_htg = user["solde"]
+            message = f"Vous venez d'effectuer un retrait de {montant_decimal} HTG. Nouveau solde : {user['solde']} HTG"
+
+            # 5. Envoi de la notification
+            if user.get("push_subscription"):
+                envoyer_push_notification(
+                    user["push_subscription"],
+                    "Compte débité",
+                    message,
+                )
+
+            return True, "Compte débité"
+    except Exception as e:
         return False, f"Erreur lors du débit {e}"
 
 

@@ -3,6 +3,8 @@ from utils.finance import vers_centimes, depuis_centimes
 import sqlite3
 import smtplib
 from email.message import EmailMessage
+from models.emails import *
+from flask import url_for
 
 
 def valider_option_gagnante(option_id, match_id):
@@ -46,9 +48,18 @@ def fermer_match_officiellement(match_id):
             conn.execute(
                 "UPDATE matchs SET statut = 'terminé' WHERE id = ?", (match_id,)
             )
+            cur = conn.execute("SELECT push_subscription AS sub FROM parieurs")
+            users = cur.fetchall()
+            cur = conn.execute("SELECT * FROM matchs WHERE id = ?", (match_id,))
+            match = cur.fetchone()
+            for user in users:
+                if not user["sub"]:
+                    pass
+                message = f"Le match {match['equipe_a']} VS {match['equipe_b']} vient d'être fermé à tous nouveaux paris !"
+                envoyer_push_notification(user["sub"], "Match fermé", message)
             conn.commit()
             return True
-    except sqlite3.Error as e:
+    except Exception as e:
         print(f"Erreur fermeture match : {e}")
         return False
 
@@ -126,6 +137,18 @@ def executer_settlement_match(match_id):
                     (p_id,),
                 )
                 stats["gagnants"] += 1
+
+                # Notifications push
+                cur = conn.execute(
+                    "SELECT push_subscription AS sub, solde FROM parieurs WHERE id = ?",
+                    (p_id,),
+                )
+                user = cur.fetchone()
+                if not user["sub"]:
+                    pass
+                new_solde = depuis_centimes(user["solde"] + gain_c)
+                message = f"Félicitation. Vous avez gagné : {depuis_centimes(gain_c)} HTG. Solde actuel : {new_solde}"
+                envoyer_push_notification(user["sub"], "Vous avez gagné", message)
 
             # Sinon, le pari reste "En attente" (en attente d'autres matchs du combiné)
 
@@ -300,20 +323,49 @@ def supprimer_invitation(token):
         print(f"Erreur lors de la suppression de l'invitation {e}")
 
 
-def ban_ret_user(username, ban=False, ret=False):
+def ban_ret_user(username, message, ban=False, ret=False):
     try:
         with get_db_connection() as conn:
-            if ban == "ban":
+            cur = conn.execute(
+                "SELECT push_subscription AS sub, prenom, email FROM parieurs WHERE username = ?",
+                (username,),
+            )
+            user = cur.fetchone()
+            if not user:
+                return False
+
+            if ban == True:
                 conn.execute(
                     "UPDATE parieurs SET actif = 0 WHERE username = ?", (username,)
                 )
                 conn.commit()
+
+                # Notifications
+
+                if user["sub"]:
+                    message_else = "Votre compte vient d'être suspendu !"
+                    message_ban = message if message else message_else
+                    envoyer_push_notification(
+                        user["sub"],
+                        "Compte suspendu",
+                        message_ban,
+                        url=url_for("index", _external=True),
+                    )
+
+                ban_notification(user["prenom"], user["email"])
                 return True
-            elif ret == "ret":
+            elif ret == True:
                 conn.execute(
                     "UPDATE parieurs SET actif = 1 WHERE username = ?", (username,)
                 )
                 conn.commit()
+                if user["sub"]:
+                    message_else = "Félicitations, votre compte InterPam a été restauré. Vous pouvez désormais vous connecter !"
+                    message_ret = message if message else message_else
+                    envoyer_push_notification(
+                        user["sub"], "Compte rétabli", message_ret
+                    )
+                ret_notification(user["prenom"], user["email"])
                 return True
             else:
                 return False
