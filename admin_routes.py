@@ -79,6 +79,7 @@ def users():
 
 
 @users_bp.route("/find-user/<user_id>", methods=["POST", "GET"])
+@users_bp.route("/find-user", methods=["POST", "GET"])
 @admin_required
 def find_user(user_id=None):
     if request.method == "GET":

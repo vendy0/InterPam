@@ -30,11 +30,23 @@ def ajouter_parieur(user_data):
         print(f"Erreur SQL lors de l'ajout du parieur : {e}")
 
 
+def get_user_by_id(parieur_id):
+    """Récupère un utilisateur par son id."""
+    try:
+        with get_db_connection() as conn:
+            cur = conn.execute("SELECT * FROM parieurs WHERE id = ?", (parieur_id,))
+            return cur.fetchone()
+
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la récupération (id) : {e}")
+        return None
+
+
 def get_user_by_name(nom):
     """Récupère un utilisateur par son nom."""
     try:
         with get_db_connection() as conn:
-            conn.execute(
+            cur = conn.execute(
                 "SELECT * FROM parieurs WHERE prenom LIKE ? OR nom LIKE ?", (nom, nom)
             )
             rows = cur.fetchall()
@@ -324,4 +336,3 @@ def send_message(parieur_id, message, created_at):
     except sqlite3.Error as e:
         print(f"Erreur lors de l'envoie : {e}")
         return False
-
