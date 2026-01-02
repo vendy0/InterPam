@@ -73,7 +73,6 @@ __
 - Se connecter avec Google
 - Robot SEO, nom different
 - Les polices
-- L'icone 
 
 - Les balises
 ---base 
@@ -109,6 +108,7 @@ FINIS-----------------------------------
 - Ne peut pas parier sur un match déjà parié
 - Cacher la clé de Session, et mdp email, publique et privée notif key
 - Mot de passe oublié
+- L'icone 
 
 
 - Télécharger les polices
