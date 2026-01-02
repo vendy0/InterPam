@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 interpam.db
 .env
+gcom_ai.sh
+commit.sh
