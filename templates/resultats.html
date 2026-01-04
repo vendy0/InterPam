@@ -1,0 +1,53 @@
+{% extends 'base.html' %} 
+
+{% block head %}
+<link rel="stylesheet" href="{{url_for('static', filename='css/resultats.css')}}" type="text/css" media="all" />
+{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="header-box">
+        <h2>Tableau des Résultats</h2>
+        <p>Retrouvez l'issue de tous les matchs passés sur InterPam.</p>
+    </div>
+
+    {% for match in matchs %}
+    <details class="match-result-card">
+        <summary class="result-summary">
+            <div class="team-info team-left">{{ match.equipe_a }}</div>
+            
+            <div class="score-center">
+                <div class="score-box">{{ match.score_a }} - {{ match.score_b }}</div>
+                <div class="date-label">{{ set_date(match.date_match) }}</div>
+            </div>
+
+            <div class="team-info team-right">{{ match.equipe_b }}</div>
+        </summary>
+
+        <div class="result-content">
+            <span class="options-title">Détails des cotes</span>
+            <div class="res-options-list">
+                {% for opt in match.options %}
+                <div class="res-opt-item {{ 'winner' if opt.winner == 1 else 'loser' }}">
+                    <div class="opt-main-info">
+                        <span class="opt-status-icon">
+                            {{ '●' if opt.winner == 1 else '○' }}
+                        </span>
+                        <span class="opt-text">
+                            {{ opt.categorie }} : <strong>{{ opt.libelle }}</strong>
+                            {% if opt.user_played %}
+                                <span class="my-bet-badge">MON PARI</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="res-cote">@{{ opt.cote }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </details>
+    {% else %}
+    <p style="text-align: center; color: #94a3b8; margin-top: 50px;">Aucun résultat disponible pour le moment.</p>
+    {% endfor %}
+</div>
+{% endblock %}

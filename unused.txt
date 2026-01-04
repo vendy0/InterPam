@@ -83,6 +83,7 @@ __
 - Route pour atreindre l'interface adm
 - Règles obligatoire en front pour un nouvel adm
 - Promouvoir un user
+- Limite nombre de mot message
 
 
 """
