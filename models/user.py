@@ -222,7 +222,7 @@ def debit(username, montant_decimal):
         solde_centimes = vers_centimes(montant_decimal)
         with get_db_connection() as conn:
             user = get_user_by_username(username)
-            if montant_decimal > user["solde"]:
+            if user["solde"] and montant_decimal > user["solde"]:
                 return False, "Solde insuffisant !"
             conn.execute(
                 "UPDATE parieurs SET solde = solde - ? WHERE username = ?",

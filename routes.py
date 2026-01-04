@@ -283,7 +283,7 @@ def reset_password_route(token):
     if not recuperation:
         return "<h1>Lien invalide !</h1>"
     # Vérification du délai de 48h
-    expire_at = datetime.strptime(recuperation["expiration"], "%Y-%m-%d %H:%M:%S.%f")
+    expire_at = datetime.strptime(recuperation["expiration"], "%Y-%m-%d %H:%M:%S")
     if datetime.now() > expire_at:
         flash("Ce lien a expiré.", "error")
         return "<h1>Ce lien a expiré !</h1>"

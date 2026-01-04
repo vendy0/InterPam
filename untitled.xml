@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/css" href="#style_interne"?>
+<ludotheque>
+    <style id="style_interne" xmlns="http://www.w3.org/1999/xhtml">
+        ludotheque {
+            display: block;
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        jeu {
+            display: block;
+            background: white;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+        titre {
+            display: block;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        note {
+            display: block;
+            color: #e67e22;
+            font-weight: bold;
+        }
+        /* Cache la balise style elle-même pour qu'elle ne s'affiche pas à l'écran */
+        style { display: none; }
+    </style>
+
+    <jeu id="1">
+        <titre>The Witcher 3</titre>
+        <plateforme>PC</plateforme>
+        <annee>2015</annee>
+        <genre>RPG</genre>
+        <note>19/20</note>
+    </jeu>
+    
+    <jeu id="2">
+        <titre>Elden Ring</titre>
+        <plateforme>PS5</plateforme>
+        <annee>2022</annee>
+        <genre>Action-RPG</genre>
+        <note>20/20</note>
+    </jeu>
+</ludotheque>

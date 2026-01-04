@@ -16,7 +16,7 @@ def ajouter_match(equipe_a, equipe_b, date_match, type_match="foot"):
             for user in users:
                 message = f"Le match {equipe_a} VS {equipe_b} vient d'être ajouté. Cliquez ici pour commencer à parier dès maintenant !"
                 envoyer_push_notification(user["sub"], "Match ajouté", message)
-                conn.commit()
+            conn.commit()
             return cur.lastrowid
     except sqlite3.Error as e:
         print(f"Erreur lors de l'ajout du match : {e}")
