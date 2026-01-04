@@ -348,9 +348,20 @@ def send_message_route():
         return redirect(url_for("login"))
     user = get_user_by_username(session["username"])
     message_sent = request.form.get("message")
+    if len(message_sent) >= 410:
+        flash("Message trop long !", "error")
+        return redirect(request.referrer)
     created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if send_message(user["id"], message_sent, created_at):
         flash("Message envoyé !", "success")
+        sup = get_users("role", "super_admin")[0]
+        if sup["push_subscription"]:
+            envoyer_push_notification(
+                sup["push_subscription"],
+                "Nouveau message",
+                f"{user['prenom']} : {message_sent}",
+                url=url_for("admin.messagerie", _external=True),
+            )
         return redirect(request.referrer)
     else:
         flash("Il y a eu une erreur lors de l'envoi !", "error")
@@ -579,20 +590,21 @@ def fiches():
     mes_fiches = get_fiches_detaillees(user["id"])
     return render_template("fiches.html", fiches=mes_fiches)
 
+
 # ... (imports existants)
+
 
 # === Route pour l'Historique des Résultats ===
 @app.route("/resultats")
 def resultats():
     if "username" not in session:
         return redirect(url_for("login"))
-    
+
     user = get_user_by_username(session["username"])
     # ICI : On appelle la nouvelle fonction globale
     matchs_termines = get_tous_les_resultats(user["id"])
-    
-    return render_template("resultats.html", matchs=matchs_termines)
 
+    return render_template("resultats.html", matchs=matchs_termines)
 
 
 # === Route pour le Profil ===
@@ -600,6 +612,6 @@ def resultats():
 def profil():
     if "username" not in session:
         return redirect(url_for("login"))
-        
+
     user = get_user_by_username(session["username"])
     return render_template("profil.html", user=user)
