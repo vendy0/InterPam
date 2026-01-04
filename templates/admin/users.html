@@ -1,5 +1,9 @@
 {% extends 'admin/base.html' %} 
 
+{% block head %}
+<title>Gestion des joueurs</title>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <h3>Gestion des Joueurs</h3>
@@ -46,6 +50,9 @@
                 <th>Utilisateur</th>
                 <th>Solde</th>
                 <th>Classe</th>
+                {% if current_user.role == "super_admin" %}
+                <th class="email_th">Email</th>
+                {% endif %}
                 <th>Statut</th>
                 <th>Actions</th>
             </tr>
@@ -59,6 +66,9 @@
                 </td>
                 <td style="font-weight:bold; color: var(--admin-primary);">{{ user['solde'] / 100 }} HTG</td>
                 <td>{{ user['classe'] }}</td>
+                {% if current_user.role == "super_admin" %}
+                <td>{{ user["email"] }}</td>
+                {% endif %}
                 <td>
                     {% if user['actif'] == 1 %}
                     <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:10px; font-size:0.8em;">Actif</span>
@@ -111,7 +121,7 @@
 <div id="deleteModal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
     <div style="background: white; padding: 25px; border-radius: 8px; width: 350px; text-align: center;">
         <h4>Confirmation</h4>
-        <form id="deleteForm" method="POST">
+        <form id="deleteForm" method="POST" autocomplete="off">
             <input type="text" name="username" placeholder="Votre Username Admin" required style="margin:10px 0;">
             <input type="password" name="password" placeholder="Votre Mot de passe" required style="margin:10px 0;">
             <textarea name="message_ban_ret" rows="3" placeholder="Raison..." style="margin-bottom:10px;"></textarea>

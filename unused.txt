@@ -53,11 +53,7 @@
 			</div> -->
 
 _ User interface
-__Home & matchs 
-___solde (en jetons IP), nom et prénom, id..
 __Historique de fiches 
-___en cours, fini, à venir (modifier)
-__Fiches
 __Historique cash
 __
 
@@ -69,10 +65,7 @@ __
 - Rules
 - Titles
 - ...
-- Page jeu
-- Se connecter avec Google
-- Robot SEO, nom different
-- Les polices
+- Robot SEO
 
 - Les balises
 ---base 
@@ -80,18 +73,16 @@ __
 ---author
 ---keywords
 
-- MiniGames
 - Si Sum(Gain_potentiel) > Sum(Mise), annulation des derniers fiches
 - ReCaptcha 
 - Ajouter mon email comme adm
 - Insérer ReCaptcha
 - Vue détaillée des tickets : Pouvoir consulter tous les paris d'un utilisateur spécifique en cas de litige.
 - Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
-- Diviser le code
-- Double chance. Modification dans le choix des options gagnantes.
 - Partie Email de l'infterface adm
 - Route pour atreindre l'interface adm
-- Renommer les icones
+- Règles obligatoire en front pour un nouvel adm
+- Promouvoir un user
 
 
 """
@@ -109,11 +100,24 @@ FINIS-----------------------------------
 - Mot de passe oublié
 - L'icone
 - Modifier le "Créé par des élèves" par "créé sous la demande des élèves du CIF". Supprimer le Black_Hole du site.
+- Si l'admin s'est inscrit en tant que parieur entre temps.
+
+__Home & matchs 
+___solde (en jetons IP), nom et prénom, id..
+___en cours, fini, à venir (modifier)
+__Fiches
 
 
 
 - Télécharger les polices
-
+- Renommer les icones
+- Double chance. Modification dans le choix des options gagnantes.
+- Diviser le code
+- MiniGames
+- Se connecter avec Google
+- Nom différent
+- Page jeu
+- Les polices
 
 
 
@@ -150,7 +154,6 @@ ___​Clôture de match : Un bouton pour dire "Le match est fini", entrer le sco
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
 
 
-- Si l'admin s'est inscrit en tant que parizur entre temps.
 
 
 

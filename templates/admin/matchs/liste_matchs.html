@@ -1,5 +1,9 @@
 {% extends 'admin/base.html' %} 
 
+{% block head %}
+<title>Gestion des matchs</title>
+{% endblock %}
+
 {% block content %}
 <div class="header-actions">
     <h3>{{ titre }} <span style="font-size:0.8em; color:#64748b;">({{ programmes|length }})</span></h3>

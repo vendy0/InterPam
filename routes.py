@@ -246,7 +246,7 @@ def traitementRegister():
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
     ajouter_parieur(user)
-    flash("Votre compte a été créé avec succès.", "succes")
+    flash("Votre compte a été créé avec succès.", "success")
     welcome_email(prenom, email, url_for("home", _external=True))
     session.permanent = False
     session["username"] = username
@@ -266,14 +266,14 @@ def forget_password_route():
         return render_template("auth.html", forgetError=forgetError)
     token = secrets.token_urlsafe(32)
     expiration = datetime.now() + timedelta(hours=24)
-    succes = save_recuperation(email, token, expiration)
-    if not succes:
+    success = save_recuperation(email, token, expiration)
+    if not success:
         return render_template(
             "auth.html",
             forgetError="Il y a eu une erreur lors de la réinitialisation. Veuillez contacter l'assistance si l'erreur persiste.",
         )
     lien = url_for("reset_password_route", token=token, _external=True)
-    succes_mail, message = password_reset_email(user["prenom"], email, lien)
+    success_mail, message = password_reset_email(user["prenom"], email, lien)
     return "<h1>Veuillez vérifier vos emails !</h1>"
 
 
@@ -350,7 +350,7 @@ def send_message_route():
     message_sent = request.form.get("message")
     created_at = (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     if send_message(user["id"], message_sent, created_at):
-        flash("Message envoyé !", "succes")
+        flash("Message envoyé !", "success")
         return redirect(request.referrer)
     else:
         flash("Il y a eu une erreur lors de l'envoi !", "error")
@@ -446,7 +446,7 @@ def ajouter_au_ticket():
     session["ticket"][match_id] = option_id
     session.modified = True  # Important pour dire à Flask de sauvegarder la session
 
-    flash("Ajouté au ticket !", "succes")
+    flash("Ajouté au ticket !", "success")
     return redirect(
         request.referrer
     )  # On reste sur la page ou on va au panier ? Au choix.
@@ -552,7 +552,7 @@ def valider_ticket():
     # mais ce qui compte ce sont les options_ids.
     first_match_id = details[0]["match_id"]
 
-    succes, msg = placer_pari(
+    success, msg = placer_pari(
         parieur_id=user["id"],
         match_id=first_match_id,  # Technique: on lie au moins à un match
         mise_dec=mise_dec,
@@ -561,9 +561,9 @@ def valider_ticket():
         options_ids=options_ids,
     )
 
-    if succes:
+    if success:
         session.pop("ticket", None)  # On vide le panier après succès
-        flash(f"Pari validé ! Gain potentiel : {gain_dec} HTG", "succes")
+        flash(f"Pari validé ! Gain potentiel : {gain_dec} HTG", "success")
         return redirect(url_for("fiches"))
     else:
         flash(msg, "error")

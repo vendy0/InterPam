@@ -59,22 +59,19 @@ body {
 }
 
 @media (min-width: 600px) {
-  #login-section,
-  #register-section {
+  section{
     max-width: 500px;
     width: 95%;
   }
 }
 
 @media (min-width: 768px) {
-  #login-section,
-  #register-section {
+  section{
     max-width: 500px;
   }
 }
 @media (min-width: 1200px) {
-  #login-section,
-  #register-section {
+  section{
     max-width: 800px;
   }
 }
@@ -115,7 +112,7 @@ input:focus {
 }
 
 #age_and_grade,
-#name_container_inscription {
+.name_container_inscription {
   display: grid;
   grid-template-columns: 1fr 1fr;
   padding: 0;
@@ -129,7 +126,7 @@ input:focus {
   width: 100%;
 }
 
-#age_input:invalid:not(:placeholder-shown) {
+.age_input:invalid:not(:placeholder-shown) {
   border-color: #e74c3c; /* Bordure rouge */
 }
 .erreur-msg {
@@ -243,7 +240,8 @@ input:focus {
 }
 
 input#conditions_input,
-input#remember_input {
+input#remember_input,
+input#staff_conditions_input{
   transition: all 3s ease;
 }
 
@@ -343,7 +341,7 @@ input#remember_input {
 
 @media (max-width: 600px) {
   #age_and_grade,
-  #name_container_inscription {
+  .name_container_inscription {
     grid-template-columns: 1fr; /* Empile les champs l'un sur l'autre */
     gap: 15px; /* Augmente l'espace pour la lisibilité */
   }
