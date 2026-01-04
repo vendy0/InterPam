@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}" type="text/css" media="all" />
-    <title>InterPam - Login</title>
+    <title>InterPam - Connexion</title>
   </head>
   <body>
     <div id="register-section" class="hidden sections">
@@ -14,7 +14,7 @@
       {% endif %}
       <p class="title">Bienvenue</p>
       <form class="form" action="{{ url_for('traitementRegister') }}" method="POST" id="registerForm">
-        <div id="name_container_inscription">
+        <div class="name_container_inscription">
           <input type="text" name="first_name" class="first_name_input" autocomplete="given-name" placeholder="Prénom" required="required" value="{{request.form.first_name }}" />
           <input type="text" name="last_name" class="last_name_input" autocomplete="family-name" placeholder="Nom de famille" required="required" value="{{ request.form.last_name }}" />
         </div>
@@ -22,8 +22,8 @@
         <input type="email" name="email" class="email_input" placeholder="Email" required="required" value="{{ request.form.email }}" />
         
         <div id="age_and_grade">
-          <input type="number" name="age" id="age_input" min="0" max="100" placeholder="Age" required="required" value="{{ request.form.age }}" />
-          <select class="classe_input" name="classe">
+          <input type="number" name="age" class="age_input" min="0" max="100" placeholder="Age" required="required" value="{{ request.form.age }}" />
+          <select class="classe_input" name="classe" required>
             <option value="" selected="selected" disabled="disabled">Niveau scolaire</option>
             <option value="septieme" {% if request.form.classe=="septieme" %} selected="selected" {% endif %}>7e A.F.</option>
             <option value="huitieme" {% if request.form.classe=="huitieme" %} selected="selected"{%endif%}>8e A.F.</option>

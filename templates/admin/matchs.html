@@ -1,14 +1,22 @@
 {% extends 'admin/base.html' %} 
+
+
+{% block head %}
+<title>Gestion des matchs</title>
+{% endblock %}
+
+
 {% block content %}
-<div style="display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-top: 20px;">
+<h3>Gestion des matchs</h3>
+<div class="matchs-section-container">
     
-    <a href="{{ url_for('matchs.nouveau_match') }}" style="background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
+    <a href="{{ url_for('matchs.nouveau_match') }}" class="matchs-section no-col-back">
         <div style="font-size: 2rem; margin-bottom: 10px;">➕</div>
         <h3 style="margin:0; color: var(--admin-primary);">Nouveau Match</h3>
         <p style="color: #64748b; font-size: 0.9rem;">Créer une rencontre et définir les cotes</p>
     </a>
 
-    <a href="{{ url_for('matchs.show_edit_matchs') }}" style="background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
+    <a href="{{ url_for('matchs.show_edit_matchs') }}" class="matchs-section no-col-back">
         <div style="font-size: 2rem; margin-bottom: 10px;">✏️</div>
         <h3 style="margin:0; color: var(--admin-primary);">Gérer les Matchs</h3>
         <p style="color: #64748b; font-size: 0.9rem;">Modifier, clôturer ou supprimer</p>

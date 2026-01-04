@@ -1,5 +1,9 @@
 {% extends 'admin/base.html' %}
 
+{% block head %}
+<title>Match - Ajouter</title>
+{% endblock %}
+
 {% block content %}
 <div class="container" style="padding: 20px; max-width: 800px; margin: auto; background: #f4f4f4; border-radius: 8px;">
     <h2>Configuration de Match Avancée</h2>
@@ -11,7 +15,14 @@
             VS 
             <input type="text" name="equipe_b" placeholder="Équipe Extérieur" required style="width: 45%;">
             <br><br>
-            <input type="datetime-local" name="date_match" required>
+            <input type="datetime-local" name="date_match" required value="{{ request.form.date_match[:16]|replace(" ", "T") if request.form.date_match}}">
+            <br><br>
+            <select name="type_match" id="type_match" required>
+            	<option value="" selected="selected" disabled="disabled">Type de match</option>
+            	<option value="foot">Football</option>
+            	<option value="basket">Basketball</option>
+            	<option value="other">Autre</option>
+            </select>
         </div>
 
         <div style="background: white; padding: 15px; border-radius: 5px;">
