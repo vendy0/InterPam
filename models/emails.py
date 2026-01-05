@@ -115,8 +115,30 @@ def ret_notification(nom, email):
     return envoyer_email_generique(email, sujet, html, corps_texte)
 
 
+def refus_notification(nom, email, message, lien=None, texte_bouton=None):
+    sujet = "Mise à jour de transaction"
+
+    # 1. Charger le template depuis le fichier
+    with open(
+        "templates/admin/emails/refusal_notification.html", "r", encoding="utf-8"
+    ) as f:
+        template_html = f.read()
+
+    # 2. Remplacer les variables
+    j2_template = Template(template_html)
+    html = j2_template.render(nom=nom, url_for=url_for, message=message, titre=sujet)
+
+    # 3. Version texte simple (pour les vieux clients mail)
+    corps_texte = f"Votre demande a été examinée par notre service financier. Malheureusement, celle-ci a été refusée."
+
+    return envoyer_email_generique(email, sujet, html, corps_texte)
+
+
 def envoyer_notification_generale(
-    nom, email, titre, message, lien=None, texte_bouton=None
+    nom,
+    email,
+    titre,
+    message,
 ):
     """
     Envoie un email de notification flexible.

@@ -104,6 +104,25 @@ def initialiser_bdd():
                     FOREIGN KEY (parieur_id) REFERENCES parieurs(id) ON DELETE SET NULL
                     )""")
 
+            # Table Transactions (Dépôts et Retraits)
+            # setup.py (Version améliorée)
+
+            cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    admin_id INTEGER, -- ID de l'admin qui a traité la demande
+                    type TEXT NOT NULL, -- 'depot' ou 'retrait'
+                    montant INTEGER NOT NULL, 
+                    telephone TEXT NOT NULL,
+                    moncash_id TEXT UNIQUE, -- UNIQUE empêche la réutilisation d'un ID
+                    statut TEXT DEFAULT 'en_attente', 
+                    created_at TEXT NOT NULL,
+                    processed_at TEXT,
+                    raison_refus TEXT, -- Optionnel : pour expliquer pourquoi on a refusé
+                    FOREIGN KEY (user_id) REFERENCES parieurs(id) ON DELETE CASCADE,
+                    FOREIGN KEY (admin_id) REFERENCES parieurs(id)
+                )""")
+
     except sqlite3.Error as e:
         print(f"Erreur lors de l'initialisation : {e}")
 
@@ -149,3 +168,30 @@ def creer_super_admin(prenom, nom, username, email, mdp):
             return True, "Le Super Admin a été créé avec succès !"
     except sqlite3.Error as e:
         return False, f"Erreur lors de la création : {e}"
+
+
+# def create():
+#     with sqlite3.connect(DB_NAME) as conn:
+#         cur = conn.cursor()
+#         cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
+#                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+#                     user_id INTEGER NOT NULL,
+#                     admin_id INTEGER, -- ID de l'admin qui a traité la demande
+#                     type TEXT NOT NULL, -- 'depot' ou 'retrait'
+#                     montant INTEGER NOT NULL, 
+#                     telephone TEXT NOT NULL,
+#                     moncash_id TEXT UNIQUE, -- UNIQUE empêche la réutilisation d'un ID
+#                     statut TEXT DEFAULT 'en_attente', 
+#                     created_at TEXT NOT NULL,
+#                     processed_at TEXT,
+#                     raison_refus TEXT, -- Optionnel : pour expliquer pourquoi on a refusé
+#                     FOREIGN KEY (user_id) REFERENCES parieurs(id) ON DELETE CASCADE,
+#                     FOREIGN KEY (admin_id) REFERENCES parieurs(id) 
+#                  )""")
+# 
+#         print("Table créé")
+# 
+# 
+# #
+# create()
+# 

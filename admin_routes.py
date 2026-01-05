@@ -10,6 +10,7 @@ from models.match import *
 from models.bet import *
 from models.admin import *
 from models.emails import *
+from models.transaction import *
 
 users_bp = Blueprint("users", __name__, url_prefix="/admin/users")
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -594,3 +595,83 @@ def mark_as_read_route(message_id):
     if not mark_as_read(message_id):
         flash("Erreur !", "error")
     return redirect(request.referrer)
+
+
+@admin_bp.route("/transactions")
+@admin_required
+def transactions():
+    demandes = get_pending_transactions()
+    return render_template("admin/transactions.html", demandes=demandes)
+
+
+# admin_routes.py
+
+
+@admin_bp.route("/transaction/action", methods=["POST"])
+@admin_required
+def transaction_action():
+    action = request.form.get("action")
+    tx_id = request.form.get("tx_id")
+    raison = request.form.get("raison")
+
+    # On récupère l'ID de l'admin actuel via son username en session
+    admin_user = get_user_by_username(session["username"])
+    admin_id = admin_user["id"]
+
+    tx = get_transaction_by_id(tx_id)
+    if not tx or tx["statut"] != "en_attente":
+        flash("Transaction déjà traitée.", "error")
+        return redirect(url_for("admin.transactions"))
+
+    user = get_user_by_id(tx["user_id"])
+
+    if action == "valider":
+        if tx["type"] == "depot":
+            success, msg = credit(user["username"], tx["montant_dec"])
+            if success:
+                update_transaction_status(
+                    tx_id,
+                    "valide",
+                    admin_id,
+                )
+                flash(f"Dépôt de {user['username']} validé par vous.", "success")
+            else:
+                flash(msg, "error")
+        elif tx["type"] == "retrait":
+            update_transaction_status(tx_id, "valide", admin_id)
+            flash(f"Retrait validé.", "success")
+
+    elif action == "refuser":
+        raison_admin = (
+            request.form.get("raison") or "Informations de paiement incorrectes."
+        )
+        message_html = ""
+        if tx["type"] == "depot":
+            update_transaction_status(tx_id, "refuse", admin_id, raison)
+            message_html = f"""
+                Votre demande de <b>dépot</b> a été examinée par notre service financier.<br><br>
+                Malheureusement, celle-ci a été <b>refusée</b> pour la raison suivante :<br>
+                <blockquote style="color: #e67e22;"><i>"{raison_admin}"</i></blockquote>
+            """
+        elif tx["type"] == "retrait":
+            # Remboursement
+            credit(user["username"], tx["montant_dec"])
+            update_transaction_status(tx_id, "refuse", admin_id, raison)
+            message_html = f"""
+                Votre demande de <b>retrait</b> a été examinée par notre service financier.<br><br>
+                Malheureusement, celle-ci a été <b>refusée</b> pour la raison suivante :<br>
+                <blockquote style="color: #e67e22;"><i>"{raison_admin}"</i></blockquote>
+                Votre solde a été recrédité du montant correspondant.
+            """
+            # Exemple pour un retrait refusé
+
+        refus_notification(
+            nom=user["prenom"],
+            email=user["email"],
+            message=message_html,
+            lien=url_for("portefeuille", _external=True),
+            texte_bouton="Consulter mon solde",
+        )
+
+        flash("Transaction refusée et archivée.", "success")
+    return redirect(url_for("admin.transactions"))

@@ -17,10 +17,12 @@ from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
 from admin_routes import admin_bp, users_bp, matchs_bp
+
 from models.match import *
 from models.user import *
 from models.bet import *
 from models.emails import *
+from models.transaction import *
 
 app = Flask(__name__)
 app.register_blueprint(admin_bp)
@@ -605,6 +607,87 @@ def resultats():
     matchs_termines = get_tous_les_resultats(user["id"])
 
     return render_template("resultats.html", matchs=matchs_termines)
+
+@app.route("/portefeuille", methods=["GET"])
+def portefeuille():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    
+    user = get_user_by_username(session["username"])
+    historique = get_user_transactions(user["id"])
+    
+    return render_template("wallet.html", transactions=historique)
+
+@app.route("/demande-depot", methods=["POST"])
+def demande_depot():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    
+    user = get_user_by_username(session["username"])
+    try:
+        montant = float(request.form.get("montant", "0").replace(",", "."))
+        telephone = request.form.get("telephone").strip()
+        moncash_id = request.form.get("moncash_id").strip()
+        
+        if montant <= 0:
+            flash("Le montant doit être positif.", "error")
+            return redirect(url_for("portefeuille"))
+            
+        if not telephone or not moncash_id:
+            flash("Veuillez remplir tous les champs MonCash.", "error")
+            return redirect(url_for("portefeuille"))
+
+        # On crée juste la demande, pas de mouvement d'argent immédiat
+        success, msg = create_transaction(user["id"], "depot", montant, telephone, moncash_id)
+        
+        if success:
+            flash("Demande de dépôt envoyée ! En attente de validation.", "success")
+        else:
+            flash(msg, "error")
+            
+    except ValueError:
+        flash("Montant invalide.", "error")
+        
+    return redirect(url_for("portefeuille"))
+
+@app.route("/demande-retrait", methods=["POST"])
+def demande_retrait():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    
+    user = get_user_by_username(session["username"])
+    try:
+        montant = float(request.form.get("montant", "0").replace(",", "."))
+        telephone = request.form.get("telephone").strip()
+        
+        if montant <= 0:
+            flash("Le montant doit être positif.", "error")
+            return redirect(url_for("portefeuille"))
+        
+        if user["solde"] < montant:
+            flash("Solde insuffisant pour ce retrait.", "error")
+            return redirect(url_for("portefeuille"))
+
+        # LOGIQUE DE SÉCURITÉ : On débite immédiatement le compte
+        # Si l'admin refuse plus tard, on re-créditera (remboursement).
+        success_debit, msg_debit = debit(user["username"], montant)
+        
+        if success_debit:
+            # On enregistre la transaction
+            success_trans, msg_trans = create_transaction(user["id"], "retrait", montant, telephone)
+            if success_trans:
+                flash(f"Demande de retrait de {montant} HTG enregistrée.", "success")
+            else:
+                # Cas critique : Débité mais échec enregistrement DB -> On rembourse (logique de rollback manuel ici)
+                credit(user["username"], montant) 
+                flash("Erreur technique. Vous avez été remboursé.", "error")
+        else:
+            flash(msg_debit, "error")
+            
+    except ValueError:
+        flash("Montant invalide.", "error")
+        
+    return redirect(url_for("portefeuille"))
 
 
 # === Route pour le Profil ===
