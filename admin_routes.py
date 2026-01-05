@@ -372,9 +372,12 @@ def staff():
     if user["role"] != "super_admin":
         flash("Accès refusé", "error")
         return redirect(url_for("admin.dashboard"))
+       
+    staff=get_users("classe", "Direction")
+    
 
     if request.method == "GET":
-        return render_template("admin/staff.html")
+        return render_template("admin/staff.html", staff=staff)
 
     email = request.form.get("email")
     role = request.form.get("role")
@@ -401,7 +404,7 @@ def staff():
     else:
         flash(message, "error")
 
-    return redirect(url_for("admin.staff"))
+    return redirect(url_for("admin.dashboard"))
 
 
 @admin_bp.route("/setup_staff/<token>", methods=["GET", "POST"])
