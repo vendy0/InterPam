@@ -1,6 +1,6 @@
 # tests/test_auth_validation.py
 import pytest
-from app import app
+from routes import app
 
 
 @pytest.fixture
@@ -48,24 +48,31 @@ def test_register_validation_errors(client):
         follow_redirects=True,
     )
     assert (
-        b"Le nom d'utilisateur ne peut contenir que des lettres, chiffres"
+        b"Le nom d&#39;utilisateur ne peut contenir que des lettres, chiffres"
         in response.data
     )
+
 
 # tests/test_ticket_security.py
 from unittest.mock import patch
 
+
 def test_valider_ticket_match_ferme(client):
     # 1. On simule un ticket dans la session
     with client.session_transaction() as sess:
-        sess['username'] = 'testuser'
-        sess['ticket'] = {'1': 100} # Match 1, Option 100
+        sess["username"] = "testuser"
+        sess["ticket"] = {"1": 100}  # Match 1, Option 100
 
     # 2. On simule que 'verifier_matchs_ouverts' renvoie False (le match vient de fermer)
-    with patch('app.get_user_by_username'), \
-         patch('app.verifier_matchs_ouverts', return_value=False):
-        
-        response = client.post('/valider_ticket', data={"mise": "50"}, follow_redirects=True)
-        
+    with (
+        patch("routes.get_user_by_username"),
+        patch("routes.verifier_matchs_ouverts", return_value=False),
+    ):
+        response = client.post(
+            "/valider_ticket", data={"mise": "50"}, follow_redirects=True
+        )
+
         # On vérifie que l'utilisateur est bloqué avec le message d'erreur
-        assert b"Certains matchs de votre ticket ne sont plus disponibles" in response.data
+        assert (
+            b"Certains matchs de votre ticket ne sont plus disponibles" in response.data
+        )
