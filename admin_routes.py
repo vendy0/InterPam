@@ -1,5 +1,5 @@
 # admin_routes.py
-from flask import Blueprint, render_template, session, redirect, url_for, flash, request
+from flask import Blueprint, render_template, session, redirect, url_for, flash, request, jsonify
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
@@ -675,3 +675,31 @@ def transaction_action():
 
         flash("Transaction refusée et archivée.", "success")
     return redirect(url_for("admin.transactions"))
+
+from utils.ia_validator import analyser_et_comparer
+# En haut du fichier admin_routes.py
+
+# ... (reste du code)
+
+@admin_bp.route("/ia-check", methods=["POST"])
+@admin_required
+def ia_check():
+    data = request.json
+    sms = data.get("sms")
+    tx_id = data.get("tx_id")
+    
+    tx = get_transaction_by_id(tx_id)
+    
+    if not tx:
+        return jsonify({"verdict": "ERREUR", "commentaire": "Transaction introuvable"}), 404
+
+    # Appel de l'utilitaire IA
+    resultat = analyser_et_comparer(
+        sms, 
+        tx['montant_dec'], 
+        tx['moncash_id'], 
+        tx['telephone']
+    )
+    
+    return jsonify(resultat) # Transforme le dict en JSON pour le fetch JS
+
