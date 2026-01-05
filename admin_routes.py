@@ -60,11 +60,13 @@ def admin_required(f):
     return wrap
 
 
-@admin_bp.route("/")
-@admin_required
-def dashboard():
-    return render_template("admin/dashboard.html")
+# Dans admin_routes.py
 
+@admin_bp.route("/")
+@admin_required # Assure-toi que ce décorateur est présent
+def dashboard():
+    stats = get_dashboard_stats()
+    return render_template("admin/dashboard.html", stats=stats)
 
 """
 ---------------------------------------
@@ -121,15 +123,10 @@ def credit_user():
 
     donnees = request.form
     username = donnees.get("username_credit").strip()
-    solde = donnees.get("solde_credit", "0").replace(",", ".")
+    solde = float(donnees.get("solde_credit", "0").replace(",", "."))
 
-    try:
-        solde = int(solde)
-        if solde <= 0:
-            flash("Le montant doit être positif !", "error")
-            return render_template("admin/users.html")
-    except:
-        flash("Vous devez entrer un nombre !", "error")
+    if solde <= 0:
+        flash("Le montant doit être positif !", "error")
         return render_template("admin/users.html")
 
     success, message = credit(username, solde)
@@ -146,15 +143,10 @@ def debit_user():
 
     donnees = request.form
     username = donnees.get("username_debit").strip()
-    solde = donnees.get("solde_debit", "0").replace(",", ".")
+    solde = float(donnees.get("solde_debit", "0").replace(",", "."))
 
-    try:
-        solde = int(solde)
-        if solde <= 0:
-            flash("Le montant doit être positif !", "error")
-            return render_template("admin/users.html")
-    except:
-        flash("Vous devez entrer un nombre !", "error")
+    if int(solde) <= 0:
+        flash("Le montant doit être positif !", "error")
         return render_template("admin/users.html")
 
     success, message = debit(username, solde)

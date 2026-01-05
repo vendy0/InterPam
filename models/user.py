@@ -181,7 +181,7 @@ def get_user_by_grade(classe):
 
 def credit(username, montant_decimal):
     try:
-        solde_centimes = vers_centimes(montant_decimal)
+        solde_centimes = montant_decimal * 100
 
         with get_db_connection() as conn:
             # 1. Mise à jour du solde
@@ -219,7 +219,7 @@ def credit(username, montant_decimal):
 
 def debit(username, montant_decimal):
     try:
-        solde_centimes = vers_centimes(montant_decimal)
+        solde_centimes = montant_decimal * 100
         with get_db_connection() as conn:
             user = get_user_by_username(username)
             if user["solde"] and montant_decimal > user["solde"]:

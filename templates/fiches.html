@@ -61,11 +61,11 @@
 				<div class="fiche-totals">
 					<div class="total-row">
 						<span>Mise totale :</span>
-						<strong>{{ info.mise | devise }}</strong>
+						<strong>{{ format_money(info.mise / 100) }} HTG</strong>
 					</div>
 					<div class="total-row">
 						<span>Gain :</span>
-						<span class="gain-potentiel">{{ info.gain | devise }}</span>
+						<span class="gain-potentiel">{{ format_money(info.gain / 100) }} HTG</span>
 					</div>
 				</div>
 			</div>

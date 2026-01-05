@@ -79,12 +79,36 @@ def clean_input(val):
 
 
 @app.context_processor
-def inject_user():
-    user = None
-    if "username" in session:
-        user = get_user_by_username(session["username"])
-    return dict(current_user=user)
+def inject_globals():
+	user = None
+	if "username" in session:
+		user = get_user_by_username(session["username"])
+	def format_money(valeur):
+		try:
+			# On convertit en float
+			num = float(valeur)
+			# ':g' retire les .0 inutiles, '{:,}' ajoute les espaces pour les millier
+			# On combine avec un replace pour tes espaces de séparation
+			format_money = "{:,.10g}".format(num).replace(",", " ")
+			formatted_money = format_money
+			return formatted_money
+		except (ValueError, TypeError):
+			return "0"
+			
+	# On injecte tout dans le dictionnaire
+	return dict(
+		current_user=user, 
+		set_date=set_date, 
+		format_money=format_money
+		)
 
+def format_money(valeur):
+        try:
+            # On s'assure que c'est un nombre, on formate avec virgule, 
+            # puis on remplace la virgule par un espace
+            return "{:,.2f}".format(float(valeur)).replace(",", " ")
+        except (ValueError, TypeError):
+            return "0"
 
 app.jinja_env.globals.update(set_date=set_date)
 
@@ -276,7 +300,7 @@ def forget_password_route():
         )
     lien = url_for("reset_password_route", token=token, _external=True)
     success_mail, message = password_reset_email(user["prenom"], email, lien)
-    return "<h1>Veuillez vérifier vos emails !</h1>"
+    return "Veuillez vérifier vos emails !"
 
 
 @app.route("/reset_password/<token>", methods=["GET", "POST"])

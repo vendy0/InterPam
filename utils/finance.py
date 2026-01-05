@@ -9,7 +9,6 @@ def vers_centimes(montant):
         (Decimal(str(montant)) * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
     )
 
-
 def depuis_centimes(centimes):
     """Convertit un entier (centimes) en Decimal pour les calculs"""
     if centimes is None:

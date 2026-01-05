@@ -6,6 +6,57 @@ from email.message import EmailMessage
 from models.emails import *
 from flask import url_for
 
+def get_dashboard_stats():
+    """Récupère les statistiques globales pour le dashboard."""
+    stats = {
+        "mises_totales": 0,
+        "gains_distribues": 0,
+        "benefice": 0,
+        "total_joueurs": 0,
+        "joueurs_bannis": 0
+    }
+    
+    try:
+        with get_db_connection() as conn:
+            # 1. Statistiques Financières (Table paris)
+            # On somme toutes les mises, et on somme les gains seulement si le pari est 'Gagné'
+            query_finance = """
+                SELECT 
+                    SUM(mise) as total_mises,
+                    SUM(CASE WHEN statut = 'Gagné' THEN gain_potentiel ELSE 0 END) as total_gains
+                FROM paris
+            """
+            cur = conn.execute(query_finance)
+            res_finance = cur.fetchone()
+            
+            mises = res_finance["total_mises"] if res_finance["total_mises"] else 0
+            gains = res_finance["total_gains"] if res_finance["total_gains"] else 0
+            
+            # 2. Statistiques Joueurs (Table parieurs)
+            # actif = 0 signifie banni/inactif selon ton schéma
+            query_users = """
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN actif = 0 THEN 1 ELSE 0 END) as bannis
+                FROM parieurs
+                WHERE role != 'admin' AND role != 'super_admin'
+            """
+            cur = conn.execute(query_users)
+            res_users = cur.fetchone()
+
+            # Formatage des données
+            stats["mises_totales"] = depuis_centimes(mises)
+            stats["gains_distribues"] = depuis_centimes(gains)
+            stats["benefice"] = depuis_centimes(mises - gains) # Bénéfice net pour InterPam
+            stats["total_joueurs"] = res_users["total"]
+            stats["joueurs_bannis"] = res_users["bannis"] if res_users["bannis"] else 0
+            
+            return stats
+            
+    except Exception as e:
+        print(f"Erreur stats dashboard: {e}")
+        return stats
+
 
 def valider_option_gagnante(option_id, match_id):
     """
