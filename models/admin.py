@@ -6,6 +6,7 @@ from email.message import EmailMessage
 from models.emails import *
 from flask import url_for
 
+
 def get_dashboard_stats():
     """Récupère les statistiques globales pour le dashboard."""
     stats = {
@@ -13,9 +14,9 @@ def get_dashboard_stats():
         "gains_distribues": 0,
         "benefice": 0,
         "total_joueurs": 0,
-        "joueurs_bannis": 0
+        "joueurs_bannis": 0,
     }
-    
+
     try:
         with get_db_connection() as conn:
             # 1. Statistiques Financières (Table paris)
@@ -28,10 +29,10 @@ def get_dashboard_stats():
             """
             cur = conn.execute(query_finance)
             res_finance = cur.fetchone()
-            
+
             mises = res_finance["total_mises"] if res_finance["total_mises"] else 0
             gains = res_finance["total_gains"] if res_finance["total_gains"] else 0
-            
+
             # 2. Statistiques Joueurs (Table parieurs)
             # actif = 0 signifie banni/inactif selon ton schéma
             query_users = """
@@ -47,12 +48,14 @@ def get_dashboard_stats():
             # Formatage des données
             stats["mises_totales"] = depuis_centimes(mises)
             stats["gains_distribues"] = depuis_centimes(gains)
-            stats["benefice"] = depuis_centimes(mises - gains) # Bénéfice net pour InterPam
+            stats["benefice"] = depuis_centimes(
+                mises - gains
+            )  # Bénéfice net pour InterPam
             stats["total_joueurs"] = res_users["total"]
             stats["joueurs_bannis"] = res_users["bannis"] if res_users["bannis"] else 0
-            
+
             return stats
-            
+
     except Exception as e:
         print(f"Erreur stats dashboard: {e}")
         return stats
@@ -115,96 +118,6 @@ def fermer_match_officiellement(match_id):
     except Exception as e:
         print(f"Erreur fermeture match : {e}")
         return False
-
-
-def executer_settlement_match(match_id):
-    """
-    Vérifie les paris liés au match et effectue le paiement si nécessaire.
-    """
-    conn = None
-    try:
-        conn = sqlite3.connect("interpam.db")
-        # Permet d'accéder aux colonnes par nom : row['solde'] au lieu de row[1]
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-
-        # 1. Récupérer tous les paris "En attente" contenant ce match
-        cur.execute(
-            """
-            SELECT DISTINCT p.id, p.parieur_id, p.gain_potentiel
-            FROM paris p
-            JOIN matchs_paris mp ON p.id = mp.paris_id
-            WHERE mp.matchs_id = ? AND p.statut = 'En attente'
-        """,
-            (match_id,),
-        )
-
-        paris_a_verifier = cur.fetchall()
-        stats = {"gagnants": 0, "perdants": 0}
-
-        if not paris_a_verifier:
-            conn.close()
-            return True, "Aucun pari en attente pour ce match."
-
-        for pari in paris_a_verifier:
-            p_id = pari["id"]
-            u_id = pari["parieur_id"]
-            gain_c = pari["gain_potentiel"]
-
-            # 2. Vérifier l'état global du ticket
-            cur.execute(
-                """
-                SELECT 
-                    COUNT(*) as total,
-                    SUM(CASE WHEN o.winner = 2 THEN 1 ELSE 0 END) as perdues,
-                    SUM(CASE WHEN o.winner = 1 THEN 1 ELSE 0 END) as gagnees
-                FROM matchs_paris mp
-                JOIN options o ON mp.option_id = o.id
-                WHERE mp.paris_id = ?
-            """,
-                (p_id,),
-            )
-
-            res = cur.fetchone()
-            total, perdues, gagnees = (
-                res["total"],
-                res["perdues"] or 0,
-                res["gagnees"] or 0,
-            )
-
-            # --- LOGIQUE DE DÉCISION ---
-
-            if perdues > 0:
-                # Échec : Au moins un match du combiné est faux
-                cur.execute("UPDATE paris SET statut = 'Perdu' WHERE id = ?", (p_id,))
-                stats["perdants"] += 1
-
-            elif gagnees == total:
-                # Succès : Tous les matchs du ticket sont gagnés
-                # 1. Créditer le solde du parieur (Atomic update)
-                cur.execute(
-                    "UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id)
-                )
-                # 2. Marquer le ticket comme gagné
-                cur.execute("UPDATE paris SET statut = 'Gagné' WHERE id = ?", (p_id,))
-                stats["gagnants"] += 1
-
-                # 3. Notification (Optionnel mais recommandé)
-                envoi_notification_gain(cur, u_id, gain_c)
-
-        conn.commit()
-        return (
-            True,
-            f"Settlement réussi : {stats['gagnants']} gagnés, {stats['perdants']} perdus.",
-        )
-
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        return False, f"Erreur settlement : {str(e)}"
-    finally:
-        if conn:
-            conn.close()
 
 
 def get_bilan_financier_match(match_id):
@@ -335,6 +248,204 @@ def supprimer_match(match_id):
     except sqlite3.Error as e:
         print(f"Il y a eu une erreur lors de la suppression : {e}")
         return False
+
+
+def annuler_match_et_rembourser(match_id):
+    """
+    Annule un match :
+    1. Change le statut du match en 'annulé'
+    2. Change le status des options en 3 (Code pour Annulé/Void)
+    3. Recalcule le gain potentiel de tous les tickets affectés (Division par la cote)
+    """
+    try:
+        with get_db_connection() as conn:
+            # 1. Update Match Statut
+            conn.execute(
+                "UPDATE matchs SET statut = 'annulé' WHERE id = ?", (match_id,)
+            )
+
+            # 2. Récupérer les options avant de les modifier pour avoir les cotes
+            cur = conn.execute(
+                "SELECT id, cote FROM options WHERE match_id = ?", (match_id,)
+            )
+            options_du_match = cur.fetchall()
+
+            # 3. Mettre les options à winner = 3 (Annulé)
+            conn.execute(
+                "UPDATE options SET winner = 3 WHERE match_id = ?", (match_id,)
+            )
+
+            # 4. RECALCUL DES PARIS (La partie importante)
+            print(f"--- Début traitement annulation match {match_id} ---")
+
+            for option in options_du_match:
+                opt_id = option["id"]
+                cote_annulee = option["cote"]
+
+                # Trouver tous les paris 'En attente' qui contiennent cette option
+                sql_paris = """
+                    SELECT p.id, p.gain_potentiel 
+                    FROM paris p
+                    JOIN matchs_paris mp ON p.id = mp.paris_id
+                    WHERE mp.option_id = ? AND p.statut = 'En attente'
+                """
+                cur_p = conn.execute(sql_paris, (opt_id,))
+                paris_affectes = cur_p.fetchall()
+
+                for pari in paris_affectes:
+                    pari_id = pari["id"]
+                    ancien_gain = pari["gain_potentiel"]
+
+                    # Formule : Nouveau Gain = Ancien Gain / Cote Annulée
+                    # Attention : on travaille en centimes (entiers), donc division entière
+                    # Mais pour la précision, on repasse par le calcul mathématique
+
+                    if cote_annulee > 1:
+                        nouveau_gain = int(ancien_gain / cote_annulee)
+                    else:
+                        nouveau_gain = ancien_gain  # Sécurité division par 0 ou 1
+
+                    # Mise à jour du gain potentiel
+                    conn.execute(
+                        "UPDATE paris SET gain_potentiel = ? WHERE id = ?",
+                        (nouveau_gain, pari_id),
+                    )
+                    print(f"Pari #{pari_id} ajusté : {ancien_gain} -> {nouveau_gain}")
+            conn.commit()
+            cur = conn.execute(
+                "SELECT push_subscription as sub FROM parieurs WHERE push_subscription IS NOT NULL"
+            )
+            users = cur.fetchall()
+            if users:
+                for user in users:
+                    cur = conn.execute(
+                        "SELECT equipe_a, equipe_b FROM matchs WHERE id = ?",
+                        (match_id,),
+                    )
+                    match = cur.fetchone()
+                    envoyer_push_notification(
+                        user["sub"],
+                        "Match annulé",
+                        f"Le match {match["equipe_a"]} VS {match["equipe_b"]} vient d'être annulé.",
+                    )
+
+            # 5. Envoyer une notif aux joueurs concernés (Optionnel mais sympa)
+            # ... (code notification ici si tu veux)
+
+            return True
+
+    except sqlite3.Error as e:
+        print(f"Erreur lors de l'annulation du match : {e}")
+        return False
+
+
+# IL FAUT AUSSI MODIFIER 'executer_settlement_match' pour qu'il comprenne le code 3
+# Remplace ta fonction executer_settlement_match existante par celle-ci corrigée :
+def executer_settlement_match(match_id):
+    """
+    Vérifie les paris liés au match et effectue le paiement si nécessaire.
+    Gère strictement les statuts : Perdu > Annulé > Gagné > En attente.
+    """
+    conn = None
+    try:
+        conn = sqlite3.connect("interpam.db")
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        # 1. Récupérer tous les paris "En attente" qui contiennent ce match
+        cur.execute(
+            """
+            SELECT DISTINCT p.id, p.parieur_id, p.gain_potentiel, p.mise
+            FROM paris p
+            JOIN matchs_paris mp ON p.id = mp.paris_id
+            WHERE mp.matchs_id = ? AND p.statut = 'En attente'
+        """,
+            (match_id,),
+        )
+
+        paris_a_verifier = cur.fetchall()
+        stats = {"gagnants": 0, "perdants": 0, "annules": 0}
+
+        if not paris_a_verifier:
+            conn.close()
+            return True, "Aucun pari en attente affecté."
+
+        print(f"--- Settlement : Vérification de {len(paris_a_verifier)} tickets ---")
+
+        for pari in paris_a_verifier:
+            p_id = pari["id"]
+            u_id = pari["parieur_id"]
+            gain_c = pari["gain_potentiel"]
+            mise_c = pari["mise"]
+
+            # 2. Compter les statuts des options du ticket
+            # winner : 0=En cours, 1=Gagné, 2=Perdu, 3=Annulé
+            cur.execute(
+                """
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN o.winner = 2 THEN 1 ELSE 0 END) as perdus,
+                    SUM(CASE WHEN o.winner = 1 THEN 1 ELSE 0 END) as gagne_stricts,
+                    SUM(CASE WHEN o.winner = 3 THEN 1 ELSE 0 END) as annulés
+                FROM matchs_paris mp
+                JOIN options o ON mp.option_id = o.id
+                WHERE mp.paris_id = ?
+            """,
+                (p_id,),
+            )
+
+            res = cur.fetchone()
+            total = res["total"]
+            perdus = res["perdus"] or 0
+            gagne_stricts = res["gagne_stricts"] or 0
+            annules = res["annulés"] or 0
+
+            # --- LOGIQUE DE DÉCISION STRICTE ---
+
+            # CAS 1 : Au moins une option perdante -> Ticket PERDU
+            if perdus > 0:
+                cur.execute("UPDATE paris SET statut = 'Perdu' WHERE id = ?", (p_id,))
+                stats["perdants"] += 1
+
+            # CAS 2 : Toutes les options sont annulées -> Ticket ANNULÉ (Remboursement)
+            elif annules == total:
+                cur.execute("UPDATE paris SET statut = 'Annulé' WHERE id = ?", (p_id,))
+                # On rembourse la mise (ou le gain recalculé qui devrait être égal à la mise)
+                # Note: annuler_match_et_rembourser a déjà ajusté gain_potentiel vers la mise normalement
+                cur.execute(
+                    "UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id)
+                )
+                stats["annules"] += 1
+                print(f"Ticket #{p_id} -> ANNULÉ (Remboursé)")
+
+            # CAS 3 : Le ticket est complet (Gagnés + Annulés = Total) -> Ticket GAGNÉ
+            # Cela signifie qu'il n'y a pas de perdants, pas d'attente, et ce n'est pas 100% annulé
+            elif (gagne_stricts + annules) == total:
+                cur.execute("UPDATE paris SET statut = 'Gagné' WHERE id = ?", (p_id,))
+                cur.execute(
+                    "UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id)
+                )
+                stats["gagnants"] += 1
+                envoi_notification_gain(cur, u_id, gain_c)
+
+            # CAS 4 : Il reste des matchs en attente (winner = 0) -> On ne fait rien
+            else:
+                pass
+
+        conn.commit()
+        return (
+            True,
+            f"Settlement réussi : {stats['gagnants']} gagnés, {stats['perdants']} perdus, {stats['annules']} annulés.",
+        )
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"ERREUR SETTLEMENT: {e}")
+        return False, f"Erreur settlement : {str(e)}"
+    finally:
+        if conn:
+            conn.close()
 
 
 """

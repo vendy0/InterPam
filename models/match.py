@@ -127,7 +127,7 @@ def get_matchs_actifs():
             cur = conn.execute("""
                 SELECT id AS match_id, equipe_a, equipe_b, date_match, statut, type_match 
                 FROM matchs 
-                WHERE statut != 'terminé'
+                WHERE statut != 'terminé' AND statut != 'annulé'
                 ORDER BY date_match ASC
             """)
             matchs = cur.fetchall()
@@ -144,7 +144,7 @@ def get_historique_matchs():
             cur = conn.execute("""
                 SELECT id AS match_id, equipe_a, equipe_b, date_match, statut, type_match 
                 FROM matchs 
-                WHERE statut = 'terminé'
+                WHERE statut = 'terminé' OR statut = 'annulé'
                 ORDER BY date_match DESC
             """)
             matchs = cur.fetchall()
@@ -236,7 +236,7 @@ def get_tous_les_resultats(user_id):
                 JOIN paris p ON mp.paris_id = p.id
                 WHERE p.parieur_id = ?
             """
-            
+
             try:
                 cur_user = conn.execute(user_options_query, (user_id,))
                 user_played_ids = {row["option_id"] for row in cur_user.fetchall()}
@@ -264,7 +264,6 @@ def get_tous_les_resultats(user_id):
     except sqlite3.Error as e:
         print(f"Erreur historique : {e}")
         return []
-
 
 
 def verifier_matchs_ouverts(liste_option_ids):

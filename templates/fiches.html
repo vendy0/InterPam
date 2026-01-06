@@ -1,152 +1,1 @@
-<!-- @format -->
-
-{% extends 'base.html' %} {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/fiches.css') }}" type="text/css" media="all" />
-<title>Fiches</title>
-{% endblock %} {% block content %}
-<div class="fiches-container">
-	<h2 class="section-title">Mes Paris</h2>
-	{% if not fiches %}
-	<div style="text-align: center; margin-top: 50px;">
-		<p>Vous n'avez pas encore placé de paris.</p>
-		<a href="{{ url_for('home') }}" class="btn-parier" style="display:inline-block; margin-top:15px; padding:10px 20px; background:#007bff; color:white; border-radius:5px; text-decoration:none;">Commencer à parier</a>
-	</div>
-	{% else %}
-    <div class="filter-container">
-        <button class="filter-btn active" data-filter="tous">
-            Tous <span class="filter-count" id="count-tous"></span>
-        </button>
-        <button class="filter-btn" data-filter="gagne">
-            Gagnés <span class="filter-count" id="count-gagne"></span>
-        </button>
-        <button class="filter-btn" data-filter="perdu">
-            Perdus <span class="filter-count" id="count-perdu"></span>
-        </button>
-        <button class="filter-btn" data-filter="en-attente">
-            En attente <span class="filter-count" id="count-en-attente"></span>
-        </button>
-    </div>
-
-
-	<div class="fiches-list">
-		{# On boucle sur le dictionnaire 'fiches' (regroupé par ID) #} 
-		{% for id_pari, info in fiches.items() %}
-		<details class="pari-card" data-statut="{{ info.statut.lower().replace(' ', '-').replace('é', 'e') if info.statut else 'indetermine' }}">
-			<summary>
-				<div class="ticket-info">
-					<span class="ticket-id">Ticket #{{ id_pari }}</span>
-					<span class="ticket-date">{{ set_date(info.date) }}</span>
-				</div>
-
-				{# Détermination automatique de la classe du badge selon le statut #}
-
-				<span class="statut-badge statut-{{ info.statut.lower().replace(' ', '-').replace('é', 'e') if info.statut else 'indetermine' }}"> {{ info.statut if info.statut else 'Indéterminé' }} </span>
-			</summary>
-
-			<div class="details-content">
-				{# Liste des sélections (matchs) dans ce ticket #}
-				{% for sel in info.selections %} 
-				{# Logique pour déterminer la classe CSS de l'option #} 
-				{% set row_class = '' %}
-				{% if sel.status_option == 1 %} {% set row_class = 'gagnant' %} 
-				{% elif sel.status_option == 2 %} 
-				{% set row_class = 'perdant' %} 
-				{% endif %}
-				<div class="selection-item {{ row_class }}">
-					<span class="match-name">{{ sel.equipe_a }} vs {{ sel.equipe_b }}</span>
-					<div class="option-details">{{ sel.categorie }} : <strong>{{ sel.option }}</strong> | Cote : <span class="cote-badge">{{ sel.cote }}</span></div>
-				</div>
-				{% endfor %}
-
-				<div class="fiche-totals">
-					<div class="total-row">
-						<span>Mise totale :</span>
-						<strong>{{ format_money(info.mise / 100) }} HTG</strong>
-					</div>
-					<div class="total-row">
-						<span>Gain :</span>
-						<span class="gain-potentiel">{{ format_money(info.gain / 100) }} HTG</span>
-					</div>
-				</div>
-			</div>
-		</details>
-		{% endfor %}
-	</div>
-	{% endif %}
-</div>
-{% endblock %}
-{% block js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const filters = document.querySelectorAll('.filter-btn');
-    const cards = document.querySelectorAll('.pari-card');
-
-    filters.forEach(button => {
-        button.addEventListener('click', () => {
-            // 1. Gérer l'état actif des boutons
-            filters.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-
-            const filterValue = button.getAttribute('data-filter');
-
-            // 2. Filtrer les cartes
-            cards.forEach(card => {
-                const cardStatut = card.getAttribute('data-statut');
-                
-                if (filterValue === 'tous' || cardStatut === filterValue) {
-                    card.classList.remove('hidden');
-                } else {
-                    card.classList.add('hidden');
-                }
-            });
-        });
-    });
-    
-    // --- FONCTION POUR METTRE À JOUR LES COMPTEURS ---
-    function updateCounts() {
-        const counts = {
-            'tous': cards.length,
-            'gagne': 0,
-            'perdu': 0,
-            'en-attente': 0
-        };
-
-        cards.forEach(card => {
-            const statut = card.getAttribute('data-statut');
-            if (counts.hasOwnProperty(statut)) {
-                counts[statut]++;
-            }
-        });
-
-        document.getElementById('count-tous').textContent = `(${counts['tous']})`;
-        document.getElementById('count-gagne').textContent = `(${counts['gagne']})`;
-        document.getElementById('count-perdu').textContent = `(${counts['perdu']})`;
-        document.getElementById('count-en-attente').textContent = `(${counts['en-attente']})`;
-    }
-
-    // Initialisation des compteurs au chargement
-    updateCounts();
-
-    // --- LOGIQUE DE FILTRAGE ---
-    filters.forEach(button => {
-        button.addEventListener('click', () => {
-            filters.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-
-            const filterValue = button.getAttribute('data-filter');
-
-            cards.forEach(card => {
-                const cardStatut = card.getAttribute('data-statut');
-                
-                if (filterValue === 'tous' || cardStatut === filterValue) {
-                    card.classList.remove('hidden');
-                } else {
-                    card.classList.add('hidden');
-                }
-            });
-        });
-    });
-});
-</script>
-
-{% endblock %}
+{% extends 'base.html' %} {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fiches.css') }}" type="text/css" media="all" /><title>Fiches - Mes Paris</title>{% endblock %} {% block content %}<div class="fiches-container">    <h2 class="section-title">Mes Paris</h2>    {% if not fiches %}    <div style="text-align: center; margin-top: 50px">        <p>Vous n'avez pas encore placé de paris.</p>        <a href="{{ url_for('home') }}" class="btn-parier" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #007bff; color: white; border-radius: 5px; text-decoration: none">Commencer à parier</a>    </div>    {% else %}    <div class="filter-container">        <button class="filter-btn active" data-filter="tous">            Tous            <span class="filter-count" id="count-tous"></span>        </button>        <button class="filter-btn" data-filter="gagne">            Gagnés            <span class="filter-count" id="count-gagne"></span>        </button>        <button class="filter-btn" data-filter="perdu">            Perdus            <span class="filter-count" id="count-perdu"></span>        </button>        <button class="filter-btn" data-filter="en-attente">            En attente            <span class="filter-count" id="count-en-attente"></span>        </button>        <button class="filter-btn" data-filter="annule">            Annulés            <span class="filter-count" id="count-annule"></span>        </button>    </div>    <div class="fiches-list">        {# On boucle sur le dictionnaire 'fiches' (regroupé par ID) #} {% for id_pari, info in fiches.items() %} {# Normalisation du statut pour les classes CSS (ex: 'En attente' -> 'en-attente') #} {% set statut_normalise = info.statut.lower().replace(' ', '-').replace('é', 'e') if info.statut else 'indetermine' %}        <details class="pari-card" data-statut="{{ statut_normalise }}">            <summary>                <div class="ticket-info">                    <span class="ticket-id">Ticket #{{ id_pari }}</span>                    <span class="ticket-date">{{ set_date(info.date) }}</span>                </div>                {# Badge de statut global du ticket #}                <span class="statut-badge statut-{{ statut_normalise }}">{{ info.statut if info.statut else 'Indéterminé' }}</span>            </summary>            <div class="details-content">                {# Liste des sélections (matchs) dans ce ticket #} {% for sel in info.selections %} {# Logique de couleur par match #} {% set row_class = '' %} {% if sel.status_option == 1 %} {% set row_class = 'gagnant' %} {% elif sel.status_option == 2 %} {% set row_class = 'perdant' %} {% elif sel.status_option == 3 %} {% set row_class = 'annule' %} {% endif %}                <div class="selection-item {{ row_class }}">                    <span class="match-name">{{ sel.equipe_a }} vs {{ sel.equipe_b }}</span>                    <div class="option-details">                        {{ sel.categorie }} :                        <strong>{{ sel.option }}</strong>                        | Cote : {% if sel.status_option == 3 %} {# Affichage spécifique pour match annulé (Cote barrée -> 1.00) #}                        <span class="cote-badge" style="text-decoration: line-through">{{ sel.cote }}</span>                        <span class="cote-badge" style="background: #9ca3af; color: white">1.00</span>                        <span class="text-annule" style="font-size: 0.85em; margin-left: 5px; color: #6b7280; font-weight: bold">(ANNULÉ)</span>                        {% else %}                        <span class="cote-badge">{{ sel.cote }}</span>                        {% endif %}                    </div>                </div>                {% endfor %}                <div class="fiche-totals">                    <div class="total-row">                        <span>Mise totale :</span>                        <strong>{{ format_money(info.mise / 100) }} HTG</strong>                    </div>                    <div class="total-row">                        <span>{{ 'Remboursement' if statut_normalise == 'annule' else 'Gain' }} :</span>                        <span class="gain-potentiel">{{ format_money(info.gain / 100) }} HTG</span>                    </div>                </div>            </div>        </details>        {% endfor %}    </div>    {% endif %}</div>{% endblock %} {% block js %}<script>    document.addEventListener("DOMContentLoaded", function () {        const filters = document.querySelectorAll(".filter-btn");        const cards = document.querySelectorAll(".pari-card");        // --- FONCTION POUR METTRE À JOUR LES COMPTEURS DANS LES BOUTONS ---        function updateCounts() {            const counts = {                tous: cards.length,                gagne: 0,                perdu: 0,                "en-attente": 0,                annule: 0            };            cards.forEach(card => {                const statut = card.getAttribute("data-statut");                if (counts.hasOwnProperty(statut)) {                    counts[statut]++;                }            });            // Mise à jour du texte des compteurs            document.getElementById("count-tous").textContent = `(${counts["tous"]})`;            document.getElementById("count-gagne").textContent = `(${counts["gagne"]})`;            document.getElementById("count-perdu").textContent = `(${counts["perdu"]})`;            document.getElementById("count-en-attente").textContent = `(${counts["en-attente"]})`;            document.getElementById("count-annule").textContent = `(${counts["annule"]})`;        }        // --- LOGIQUE DE FILTRAGE ---        filters.forEach(button => {            button.addEventListener("click", () => {                // Gérer l'état actif des boutons                filters.forEach(btn => btn.classList.remove("active"));                button.classList.add("active");                const filterValue = button.getAttribute("data-filter");                // Afficher/Masquer les cartes                cards.forEach(card => {                    const cardStatut = card.getAttribute("data-statut");                    if (filterValue === "tous" || cardStatut === filterValue) {                        card.style.display = "block"; // Utilisation de style.display pour plus de fiabilité                        card.classList.remove("hidden");                    } else {                        card.style.display = "none";                        card.classList.add("hidden");                    }                });            });        });        // Initialisation au chargement        updateCounts();    });</script>{% endblock %}

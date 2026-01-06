@@ -1,5 +1,14 @@
 # admin_routes.py
-from flask import Blueprint, render_template, session, redirect, url_for, flash, request, jsonify
+from flask import (
+    Blueprint,
+    render_template,
+    session,
+    redirect,
+    url_for,
+    flash,
+    request,
+    jsonify,
+)
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
@@ -62,11 +71,13 @@ def admin_required(f):
 
 # Dans admin_routes.py
 
+
 @admin_bp.route("/")
-@admin_required # Assure-toi que ce décorateur est présent
+@admin_required  # Assure-toi que ce décorateur est présent
 def dashboard():
     stats = get_dashboard_stats()
     return render_template("admin/dashboard.html", stats=stats)
+
 
 """
 ---------------------------------------
@@ -234,7 +245,7 @@ def nouveau_match():
                 )
 
         flash("Match ajouté avec succès !", "success")
-        return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("matchs.matchs"))
 
 
 @matchs_bp.route("/modifier", methods=["GET"])
@@ -335,27 +346,31 @@ def cloturer_match(match_id):
 @matchs_bp.route("/supprimer/<int:match_id>", methods=["POST"])
 @admin_required
 def supprimer_match_route(match_id):
+    # Sécurité mot de passe (ton code existant)
     username = request.form.get("username").strip()
     password = request.form.get("password")
 
     if username != session["username"]:
         flash("Nom d'utilisateur incorrect !", "error")
-        return redirect(url_for("matchs.show_edit_matchs"))
+        return redirect(request.referrer)
 
     user = get_user_by_username(username)
-    if (
-        user
-        and user["role"] != "parieur"
-        and check_password_hash(user["mdp"], password)
-    ):
-        if supprimer_match(match_id):
-            flash("Match supprimé avec succès", "success")
+    if user and check_password_hash(user["mdp"], password):
+        # --- CHANGEMENT ICI ---
+        # Au lieu de supprimer_match(match_id), on annule
+        if annuler_match_et_rembourser(match_id):
+            # Une fois annulé, on vérifie si ça déclenche des gains immédiats
+            # (Exemple : Si c'était le dernier match restant d'un ticket)
+            executer_settlement_match(match_id)
+            flash("Match annulé et paris remboursés/ajustés avec succès !", "success")
         else:
-            flash("Erreur lors de la suppression", "error")
-    else:
-        flash("Mot de passe incorrect. Suppression annulée.", "error")
+            flash("Erreur lors de l'annulation", "error")
+        # ----------------------
 
-    return redirect(url_for("matchs.show_edit_matchs"))
+    else:
+        flash("Mot de passe incorrect.", "error")
+
+    return redirect(request.referrer)
 
 
 """
@@ -372,9 +387,8 @@ def staff():
     if user["role"] != "super_admin":
         flash("Accès refusé", "error")
         return redirect(url_for("admin.dashboard"))
-       
-    staff=get_users("classe", "Direction")
-    
+
+    staff = get_users("classe", "Direction")
 
     if request.method == "GET":
         return render_template("admin/staff.html", staff=staff)
@@ -591,20 +605,29 @@ def mark_as_read_route(message_id):
         flash("Erreur !", "error")
     return redirect(request.referrer)
 
+
 # Dans admin_routes.py
-from utils.finance import depuis_centimes, vers_centimes # Assurez-vous d'importer ces outils
+from utils.finance import (
+    depuis_centimes,
+    vers_centimes,
+)  # Assurez-vous d'importer ces outils
+
 
 @admin_bp.route("/transactions")
 @admin_required
 def transactions():
     demandes = get_pending_transactions()
     # RÉPARATION : Ajout de la récupération de l'historique
-    historique = get_transaction_history() # Vous devez créer cette fonction (voir point 2)
-    
+    historique = (
+        get_transaction_history()
+    )  # Vous devez créer cette fonction (voir point 2)
+
     # On passe format_money (depuis_centimes) pour que le template puisse afficher les HTG
-    return render_template("admin/transactions.html", 
-                           demandes=demandes, 
-                           historique=historique,)
+    return render_template(
+        "admin/transactions.html",
+        demandes=demandes,
+        historique=historique,
+    )
 
 
 # admin_routes.py
@@ -679,10 +702,12 @@ def transaction_action():
         flash("Transaction refusée et archivée.", "success")
     return redirect(url_for("admin.transactions"))
 
+
 from utils.ia_validator import analyser_et_comparer
 # En haut du fichier admin_routes.py
 
 # ... (reste du code)
+
 
 @admin_bp.route("/ia-check", methods=["POST"])
 @admin_required
@@ -690,19 +715,17 @@ def ia_check():
     data = request.json
     sms = data.get("sms")
     tx_id = data.get("tx_id")
-    
+
     tx = get_transaction_by_id(tx_id)
-    
+
     if not tx:
-        return jsonify({"verdict": "ERREUR", "commentaire": "Transaction introuvable"}), 404
+        return jsonify(
+            {"verdict": "ERREUR", "commentaire": "Transaction introuvable"}
+        ), 404
 
     # Appel de l'utilitaire IA
     resultat = analyser_et_comparer(
-        sms, 
-        tx['montant_dec'], 
-        tx['moncash_id'], 
-        tx['telephone']
+        sms, tx["montant_dec"], tx["moncash_id"], tx["telephone"]
     )
-    
-    return jsonify(resultat) # Transforme le dict en JSON pour le fetch JS
 
+    return jsonify(resultat)  # Transforme le dict en JSON pour le fetch JS
