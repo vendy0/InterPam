@@ -302,6 +302,9 @@ def forget_password_route():
     success_mail, message = password_reset_email(user["prenom"], email, lien)
     return "Veuillez vérifier vos emails !"
 
+@app.route("/Conditions")
+def legal():
+	return render_template("legal.html")
 
 @app.route("/reset_password/<token>", methods=["GET", "POST"])
 def reset_password_route(token):

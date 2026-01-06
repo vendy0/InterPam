@@ -72,7 +72,7 @@
                             <br>
                             <a href="{{ url_for('matchs.cloturer_match', match_id=match['match_id']) }}" style="color: var(--admin-success);">🏁 Clôturer</a>
                             <br>
-                            <a href="javascript:void(0)" onclick="confirmDelete({{ match['match_id'] }})" class="text-delete">🗑️ Supprimer</a>
+                            <a href="javascript:void(0)" onclick="confirmDelete({{ match['match_id'] }})" style="color: red;" class="text-delete">🗑️ Supprimer</a>
                         {% endif %}
                     </td>
                 </tr>

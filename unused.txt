@@ -5,6 +5,7 @@
 - Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
 - Partie Email de l'infterface adm
 - Règles obligatoire en front pour un nouvel adm
+- Ajouter le numéro sur la page wallet et sur la page Rules
 
 
 """
