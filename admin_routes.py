@@ -591,12 +591,20 @@ def mark_as_read_route(message_id):
         flash("Erreur !", "error")
     return redirect(request.referrer)
 
+# Dans admin_routes.py
+from utils.finance import depuis_centimes, vers_centimes # Assurez-vous d'importer ces outils
 
 @admin_bp.route("/transactions")
 @admin_required
 def transactions():
     demandes = get_pending_transactions()
-    return render_template("admin/transactions.html", demandes=demandes)
+    # RÉPARATION : Ajout de la récupération de l'historique
+    historique = get_transaction_history() # Vous devez créer cette fonction (voir point 2)
+    
+    # On passe format_money (depuis_centimes) pour que le template puisse afficher les HTG
+    return render_template("admin/transactions.html", 
+                           demandes=demandes, 
+                           historique=historique,)
 
 
 # admin_routes.py
@@ -622,7 +630,7 @@ def transaction_action():
 
     if action == "valider":
         if tx["type"] == "depot":
-            success, msg = credit(user["username"], tx["montant_dec"])
+            success, msg = credit(user["username"], float(tx["montant_dec"]))
             if success:
                 update_transaction_status(
                     tx_id,

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InterPam - Centre d'aide & Légal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Kanit:wght@500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>InterPam Légal</h1>
+        <p>Tout savoir sur le fonctionnement, les règles et vos droits.</p>
+        <a href="javascript:history.back()" class="back-link">← Retour</a>
+    </header>
+
+    <details id="conditions">
+        <summary>Conditions d'Utilisation</summary>
+        <div class="content">
+            <p>Bienvenue sur InterPam. En utilisant notre plateforme, vous acceptez les conditions suivantes :</p>
+            <h3>1. Admissibilité</h3>
+            <p>L'accès est réservé aux élèves et membres du personnel du Collège Inter Familia. Toute tentative de connexion par une personne extérieure entraînera la suspension du compte.</p>
+            
+            <h3>2. Fair-play</h3>
+            <p>Toute tentative de fraude, d'exploitation de bug ou de collusion pour manipuler les résultats des paris entraînera un bannissement immédiat et la perte des gains.</p>
+            
+            <h3>3. Responsabilité</h3>
+            <p>InterPam est une plateforme ludique interne. Les "Gourdes" virtuelles n'ont de valeur qu'au sein de l'écosystème scolaire défini par l'administration.</p>
+        </div>
+    </details>
+
+    <details id="privacy">
+        <summary>Politique de Confidentialité</summary>
+        <div class="content">
+            <p>Nous prenons la sécurité de vos données très au sérieux.</p>
+            <ul>
+                <li><strong>Données collectées :</strong> Nom, Prénom, Classe, Age, Email et historique de paris.</li>
+                <li><strong>Usage :</strong> Ces données servent uniquement au fonctionnement du jeu et aux classements internes.</li>
+                <li><strong>Visibilité :</strong> Vos résultats peuvent apparaître dans les classements publics de l'école. Votre mot de passe est crypté et inaccessible, même pour les administrateurs.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details id="rules">
+        <summary>Règles de la Plateforme</summary>
+        <div class="content">
+            <h3>Fonctionnement des cotes</h3>
+            <p>Les cotes sont fixées par l'équipe InterPam. Une fois un pari validé, la cote est verrouillée pour votre ticket, même si elle change par la suite pour les autres joueurs.</p>
+            
+            <h3>Validité des matchs</h3>
+            <p>Si un match est annulé ou reporté de plus de 48h, les paris concernés seront annulés et les mises remboursées.</p>
+            
+            <h3>Bannissement</h3>
+            <p>L'administration se réserve le droit de bannir tout compte ne respectant pas l'esprit de camaraderie du CIF.</p>
+        </div>
+    </details>
+
+    <details id="transferts">
+        <summary>Dépôts & Retraits (MonCash)</summary>
+        <div class="content">
+            <p>Voici comment gérer votre solde InterPam :</p>
+            
+            <h3>📥 Effectuer un Dépôt</h3>
+            <ol>
+                <li>Envoyez le montant souhaité via MonCash au numéro officiel : <strong>XXX-XXXX</strong>.</li>
+                <li>Notez l'<strong>ID de Transaction</strong> reçu par SMS.</li>
+                <li>Dans votre espace InterPam, allez sur "Portefeuille" > "Dépôt".</li>
+                <li>Entrez le montant et l'ID de transaction.</li>
+                <li>Un administrateur validera votre demande sous peu.</li>
+            </ol>
+
+            <h3>📤 Effectuer un Retrait</h3>
+            <ol>
+                <li>Allez sur "Portefeuille" > "Retrait".</li>
+                <li>Indiquez le montant à retirer (doit être inférieur ou égal à votre solde).</li>
+                <li>Confirmez votre numéro de téléphone MonCash.</li>
+                <li>Une fois validé par l'admin, vous recevrez les fonds sur votre compte MonCash.</li>
+            </ol>
+        </div>
+    </details>
+</div>
+
+<script>
+    // Script pour ouvrir automatiquement la section si l'URL contient une ancre (ex: legal.html#transferts)
+    document.addEventListener("DOMContentLoaded", () => {
+        const hash = window.location.hash;
+        if (hash) {
+            const element = document.querySelector(hash);
+            if (element && element.tagName === 'DETAILS') {
+                element.open = true;
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

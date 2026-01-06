@@ -1,89 +1,10 @@
-      <!-- <p class="sign-up-label">
-				Don't have an account?<span class="sign-up-link">Sign up</span>
-			</p>
-			<div class="buttons-container">
-				<div class="apple-login-button">
-					<svg
-						stroke="currentColor"
-						fill="currentColor"
-						stroke-width="0"
-						class="apple-icon"
-						viewBox="0 0 1024 1024"
-						height="1em"
-						width="1em"
-						xmlns="http://www.w3.org/2000/svg">
-						<path
-							d="M747.4 535.7c-.4-68.2 30.5-119.6 92.9-157.5-34.9-50-87.7-77.5-157.3-82.8-65.9-5.2-138 38.4-164.4 38.4-27.9 0-91.7-36.6-141.9-36.6C273.1 298.8 163 379.8 163 544.6c0 48.7 8.9 99 26.7 150.8 23.8 68.2 109.6 235.3 199.1 232.6 46.8-1.1 79.9-33.2 140.8-33.2 59.1 0 89.7 33.2 141.9 33.2 90.3-1.3 167.9-153.2 190.5-221.6-121.1-57.1-114.6-167.2-114.6-170.7zm-105.1-305c50.7-60.2 46.1-115 44.6-134.7-44.8 2.6-96.6 30.5-126.1 64.8-32.5 36.8-51.6 82.3-47.5 133.6 48.4 3.7 92.6-21.2 129-63.7z"></path>
-					</svg>
-					<span>Log in with Apple</span>
-				</div>
-				<div class="google-login-button">
-					<svg
-						stroke="currentColor"
-						fill="currentColor"
-						stroke-width="0"
-						version="1.1"
-						x="0px"
-						y="0px"
-						class="google-icon"
-						viewBox="0 0 48 48"
-						height="1em"
-						width="1em"
-						xmlns="http://www.w3.org/2000/svg">
-						<path
-							fill="#FFC107"
-							d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12
-				c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24
-				c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
-						<path
-							fill="#FF3D00"
-							d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657
-				C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
-						<path
-							fill="#4CAF50"
-							d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36
-				c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
-						<path
-							fill="#1976D2"
-							d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571
-				c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
-					</svg>
-					<span>Log in with Google</span>
-				</div>
-			</div> -->
-
-_ User interface
-__Historique de fiches 
-__Historique cash
-__
-
-
-- User & Admin
-
-- Se connecter avec google
-- Supprimer les commentaires 
-- Rules
-- Titles
-- ...
-- Robot SEO
-
-- Les balises
----base 
----meta : og ou Open Graph (title, description, image...), twitter:card
----author
----keywords
-
-- Si Sum(Gain_potentiel) > Sum(Mise), annulation des derniers fiches
 - ReCaptcha 
 - Ajouter mon email comme adm
 - Insérer ReCaptcha
 - Vue détaillée des tickets : Pouvoir consulter tous les paris d'un utilisateur spécifique en cas de litige.
 - Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
 - Partie Email de l'infterface adm
-- Route pour atreindre l'interface adm
 - Règles obligatoire en front pour un nouvel adm
-- Promouvoir un user
-- Limite nombre de mot message
 
 
 """
@@ -102,12 +23,29 @@ FINIS-----------------------------------
 - L'icone
 - Modifier le "Créé par des élèves" par "créé sous la demande des élèves du CIF". Supprimer le Black_Hole du site.
 - Si l'admin s'est inscrit en tant que parieur entre temps.
+- Limite nombre de mot message
+- Route pour atteindre l'interface adm
+- Supprimer les commentaires 
+- Rules
+- Titles
+- ...
+- Robot SEO
+- Si Sum(Gain_potentiel) > Sum(Mise), annulation des derniers fiches
+
+
+- Les balises
+---base 
+---meta : og ou Open Graph (title, description, image...), twitter:card
+---author
+---keywords
 
 __Home & matchs 
 ___solde (en jetons IP), nom et prénom, id..
 ___en cours, fini, à venir (modifier)
 __Fiches
-
+_ User interface
+__Historique de fiches 
+__Historique cash
 
 
 - Télécharger les polices
@@ -119,6 +57,8 @@ __Fiches
 - Nom différent
 - Page jeu
 - Les polices
+- Se connecter avec google
+- Promouvoir un user
 
 
 
@@ -153,50 +93,3 @@ ___​Clôture de match : Un bouton pour dire "Le match est fini", entrer le sco
 ​Rechargement de compte : C'est ce qui rend ton site "réel", car sans argent crédité par un admin, les parieurs ne pourront bientôt plus jouer.
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
 ​Laquelle de ces fonctionnalités veux-tu que je prépare avec toi pour ton nouveau fichier admin_routes.py ?
-
-
-
-
-
-
-<br /><br />
-<hr>
-<br /><br />
-{% if messages %}
-<h3>Messages : ({{ messages|length }})</h3>
-<div class="results-table" style="background: white; padding: 20px; border-radius: 8px">
-    <table border="1" style="width: 100%; border-collapse: collapse">
-        <thead style="background-color: #1e3a8a; color: white">
-            <tr>
-                <th>Id message</th>
-                <td>Nom</td>
-                <th>Message</th>
-                <th>Date</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for message in messages %}
-            {% if message["read"] != 0 %}
-            
-            <tr>
-                <td>{{ message['id'] }}</td>
-                <td>
-                    {% if message.prenom and message.nom %}
-                        {{ message.prenom }} {{ message.nom }}
-                    {% else %}
-                        <span class="text-muted"><i>Utilisateur supprimé</i></span>
-                    {% endif %}
-                </td>
-                <td>{{ message['message'] }}</td>
-                <td>{{ set_date(message['created_at']) }}</td>
-                <td>                        <a href="{{ url_for('users.find_user', user_id=message['parieur_id']) }}" style="color: #1e3a8a; font-weight: bold; text-decoration: underline; cursor: pointer">Rechercher</a>
-</td>
-            {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-    <h3>Aucun message pour le moment.</h3>
-{% endif %}

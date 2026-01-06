@@ -114,3 +114,22 @@ def get_transaction_by_id(tx_id):
             return None
     except Exception as e:
         return None
+
+def get_transaction_history():
+    """Récupère toutes les transactions traitées (validées/refusées)."""
+    try:
+        with get_db_connection() as conn:
+            query = """
+                SELECT t.*, p.username, admin.prenom as admin_prenom, admin.nom as admin_nom
+                FROM transactions t
+                JOIN parieurs p ON t.user_id = p.id
+                LEFT JOIN parieurs admin ON t.admin_id = admin.id
+                WHERE t.statut != 'en_attente'
+                ORDER BY t.processed_at DESC
+            """
+            cur = conn.execute(query)
+            res = cur.fetchall()
+            return [{**r, "montant": depuis_centimes(r["montant"])} for r in res]
+    except sqlite3.Error as e:
+        print(f"Erreur get_transaction_history: {e}")
+        return []

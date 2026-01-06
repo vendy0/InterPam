@@ -1,0 +1,126 @@
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --text: #1e293b;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-family: 'Kanit', sans-serif;
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--secondary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Style des accordéons (Summary/Details) */
+        details {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        details[open] {
+            border-color: var(--secondary);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        }
+
+        summary {
+            background-color: #fff;
+            padding: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            list-style: none; /* Cache la flèche par défaut */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--primary);
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        summary::after {
+            content: '+';
+            font-size: 1.5rem;
+            font-weight: 300;
+            transition: transform 0.2s;
+        }
+
+        details[open] summary::after {
+            transform: rotate(45deg);
+        }
+
+        details[open] summary {
+            border-bottom: 1px solid var(--border);
+            background-color: #f1f5f9;
+        }
+
+        .content {
+            padding: 20px;
+            color: #475569;
+            font-size: 0.95rem;
+        }
+
+        .content h3 {
+            color: var(--text);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .content ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .content li {
+            margin-bottom: 5px;
+        }
+
+        /* Highlight section targeted by URL hash */
+        details:target {
+            border: 2px solid var(--secondary);
+            animation: highlight 1s ease;
+        }
+
+        @keyframes highlight {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }

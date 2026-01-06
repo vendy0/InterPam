@@ -238,7 +238,7 @@ def debit(username, montant_decimal):
             # 4. Préparation du message avec le nouveau solde
             # Note : Assurez-vous que user['solde'] est converti de centimes vers HTG pour l'affichage
             nouveau_solde_htg = user["solde"]
-            message = f"Vous venez d'effectuer un retrait de {montant_decimal} HTG. Nouveau solde : {user['solde']} HTG"
+            message = f"Votre retrait de {montant_decimal} HTG a été effectué. Nouveau solde : {user['solde']} HTG"
 
             # 5. Envoi de la notification
             if user.get("push_subscription"):
