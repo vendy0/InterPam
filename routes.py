@@ -80,35 +80,34 @@ def clean_input(val):
 
 @app.context_processor
 def inject_globals():
-	user = None
-	if "username" in session:
-		user = get_user_by_username(session["username"])
-	def format_money(valeur):
-		try:
-			# On convertit en float
-			num = float(valeur)
-			# ':g' retire les .0 inutiles, '{:,}' ajoute les espaces pour les millier
-			# On combine avec un replace pour tes espaces de séparation
-			format_money = "{:,.10g}".format(num).replace(",", " ")
-			formatted_money = format_money
-			return formatted_money
-		except (ValueError, TypeError):
-			return "0"
-			
-	# On injecte tout dans le dictionnaire
-	return dict(
-		current_user=user, 
-		set_date=set_date, 
-		format_money=format_money
-		)
+    user = None
+    if "username" in session:
+        user = get_user_by_username(session["username"])
 
-def format_money(valeur):
+    def format_money(valeur):
         try:
-            # On s'assure que c'est un nombre, on formate avec virgule, 
-            # puis on remplace la virgule par un espace
-            return "{:,.2f}".format(float(valeur)).replace(",", " ")
+            # On convertit en float
+            num = float(valeur)
+            # ':g' retire les .0 inutiles, '{:,}' ajoute les espaces pour les millier
+            # On combine avec un replace pour tes espaces de séparation
+            format_money = "{:,.10g}".format(num).replace(",", " ")
+            formatted_money = format_money
+            return formatted_money
         except (ValueError, TypeError):
             return "0"
+
+    # On injecte tout dans le dictionnaire
+    return dict(current_user=user, set_date=set_date, format_money=format_money)
+
+
+def format_money(valeur):
+    try:
+        # On s'assure que c'est un nombre, on formate avec virgule,
+        # puis on remplace la virgule par un espace
+        return "{:,.2f}".format(float(valeur)).replace(",", " ")
+    except (ValueError, TypeError):
+        return "0"
+
 
 app.jinja_env.globals.update(set_date=set_date)
 
@@ -302,9 +301,11 @@ def forget_password_route():
     success_mail, message = password_reset_email(user["prenom"], email, lien)
     return "Veuillez vérifier vos emails !"
 
+
 @app.route("/Conditions")
 def legal():
-	return render_template("legal.html")
+    return render_template("legal.html")
+
 
 @app.route("/reset_password/<token>", methods=["GET", "POST"])
 def reset_password_route(token):
@@ -486,10 +487,8 @@ def ajouter_au_ticket():
     session["ticket"][match_id] = option_id
     session.modified = True  # Important pour dire à Flask de sauvegarder la session
 
-    flash("Ajouté au ticket !", "success")
-    return redirect(
-        request.referrer
-    )  # On reste sur la page ou on va au panier ? Au choix.
+    flash("Ajouté au ticket ! \n N'oubliez pas de valider le ticket.", "success")
+    return redirect(url_for('home'))  # On reste sur la page ou on va au panier ? Au choix.
 
 
 @app.route("/mon_ticket")
@@ -635,62 +634,67 @@ def resultats():
 
     return render_template("resultats.html", matchs=matchs_termines)
 
+
 @app.route("/portefeuille", methods=["GET"])
 def portefeuille():
     if "username" not in session:
         return redirect(url_for("login"))
-    
+
     user = get_user_by_username(session["username"])
     historique = get_user_transactions(user["id"])
-    
+
     return render_template("wallet.html", transactions=historique)
+
 
 @app.route("/demande-depot", methods=["POST"])
 def demande_depot():
     if "username" not in session:
         return redirect(url_for("login"))
-    
+
     user = get_user_by_username(session["username"])
     try:
         montant = float(request.form.get("montant", "0").replace(",", "."))
         telephone = request.form.get("telephone").strip()
         moncash_id = request.form.get("moncash_id").strip()
-        
+
         if montant <= 0:
             flash("Le montant doit être positif.", "error")
             return redirect(url_for("portefeuille"))
-            
+
         if not telephone or not moncash_id:
             flash("Veuillez remplir tous les champs MonCash.", "error")
             return redirect(url_for("portefeuille"))
 
         # On crée juste la demande, pas de mouvement d'argent immédiat
-        success, msg = create_transaction(user["id"], "depot", montant, telephone, moncash_id)
-        
+        success, msg = create_transaction(
+            user["id"], "depot", montant, telephone, moncash_id
+        )
+
         if success:
             flash("Demande de dépôt envoyée ! En attente de validation.", "success")
         else:
             flash(msg, "error")
-            
+
     except ValueError:
         flash("Montant invalide.", "error")
-        
+
     return redirect(url_for("portefeuille"))
+
 
 @app.route("/demande-retrait", methods=["POST"])
 def demande_retrait():
     if "username" not in session:
         return redirect(url_for("login"))
-    
+
     user = get_user_by_username(session["username"])
     try:
         montant = float(request.form.get("montant", "0").replace(",", "."))
         telephone = request.form.get("telephone").strip()
-        
+
         if montant <= 0:
             flash("Le montant doit être positif.", "error")
             return redirect(url_for("portefeuille"))
-        
+
         if user["solde"] < montant:
             flash("Solde insuffisant pour ce retrait.", "error")
             return redirect(url_for("portefeuille"))
@@ -698,22 +702,24 @@ def demande_retrait():
         # LOGIQUE DE SÉCURITÉ : On débite immédiatement le compte
         # Si l'admin refuse plus tard, on re-créditera (remboursement).
         success_debit, msg_debit = debit(user["username"], montant)
-        
+
         if success_debit:
             # On enregistre la transaction
-            success_trans, msg_trans = create_transaction(user["id"], "retrait", montant, telephone)
+            success_trans, msg_trans = create_transaction(
+                user["id"], "retrait", montant, telephone
+            )
             if success_trans:
                 flash(f"Demande de retrait de {montant} HTG enregistrée.", "success")
             else:
                 # Cas critique : Débité mais échec enregistrement DB -> On rembourse (logique de rollback manuel ici)
-                credit(user["username"], montant) 
+                credit(user["username"], montant)
                 flash("Erreur technique. Vous avez été remboursé.", "error")
         else:
             flash(msg_debit, "error")
-            
+
     except ValueError:
         flash("Montant invalide.", "error")
-        
+
     return redirect(url_for("portefeuille"))
 
 

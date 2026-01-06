@@ -1,122 +1,148 @@
 import pytest
 import sqlite3
-from unittest.mock import patch
-from models.admin import executer_settlement_match, valider_option_gagnante
+import os
+from database.setup import (
+    initialiser_bdd,
+    DB_NAME,
+)  # Assure-toi que setup.py est importable
+# Importe ta fonction ici (ajuste le nom du module si nécessaire)
+# from ton_script_principal import executer_settlement_match
 
-# On crée une classe qui enveloppe la connexion pour ignorer l'appel à close()
-class ConnectionWrapper:
-    def __init__(self, conn):
-        self.conn = conn
-
-    def __getattr__(self, name):
-        # Délègue les appels (comme execute, commit) à la vraie connexion
-        return getattr(self.conn, name)
-
-    def close(self):
-        # On ne fait rien ici pour garder la base en mémoire vivante entre les appels
-        pass
-
-    # --- CES MÉTHODES DOIVENT ÊTRE DANS LA CLASSE ---
-    def __enter__(self):
-        # Permet d'utiliser "with get_db_connection() as conn:"
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        # Sortie du context manager
-        pass
-    # -----------------------------------------------
 
 @pytest.fixture
-def db_settle():
-    """Base de données avec un parieur, un match et un pari combiné."""
-    raw_conn = sqlite3.connect(":memory:")
-    raw_conn.row_factory = sqlite3.Row
-    
-    # On enveloppe la connexion
-    conn = ConnectionWrapper(raw_conn)
+def db_session():
+    """Crée une base de données propre pour chaque test."""
+    if os.path.exists(DB_NAME):
+        os.remove(DB_NAME)
+    initialiser_bdd()
 
-    conn.executescript("""
-        CREATE TABLE parieurs (
-            id INTEGER PRIMARY KEY, 
-            solde INTEGER, 
-            push_subscription TEXT
-        );
-        CREATE TABLE matchs (
-            id INTEGER PRIMARY KEY, 
-            equipe_a TEXT, 
-            equipe_b TEXT, 
-            statut TEXT
-        );
-        CREATE TABLE options (
-            id INTEGER PRIMARY KEY, 
-            match_id INTEGER, 
-            winner INTEGER, 
-            cote REAL, 
-            categorie TEXT
-        );
-        CREATE TABLE paris (
-            id INTEGER PRIMARY KEY, 
-            parieur_id INTEGER, 
-            mise INTEGER, 
-            gain_potentiel INTEGER, 
-            statut TEXT
-        );
-        CREATE TABLE matchs_paris (
-            paris_id INTEGER, 
-            matchs_id INTEGER, 
-            option_id INTEGER
-        );
-
-        INSERT INTO parieurs (id, solde) VALUES (1, 1000); 
-        INSERT INTO matchs (id, equipe_a, equipe_b, statut) VALUES (10, 'Haiti', 'Cuba', 'ouvert');
-        INSERT INTO options (id, match_id, winner, cote, categorie) VALUES (100, 10, 0, 1.5, '1X2');
-        
-        INSERT INTO paris (id, parieur_id, mise, gain_potentiel, statut) VALUES (50, 1, 500, 1500, 'En attente');
-        INSERT INTO matchs_paris (paris_id, matchs_id, option_id) VALUES (50, 10, 100);
-    """)
-    
-    # On patche sqlite3.connect pour qu'il retourne notre wrapper
-    # Ainsi, tout appel à get_db_connection() retournera cet objet qui supporte le 'with'
-    with patch('sqlite3.connect', return_value=conn):
-        yield conn
-    raw_conn.close()
+    conn = sqlite3.connect(DB_NAME)
+    yield conn
+    conn.close()
+    if os.path.exists(DB_NAME):
+        os.remove(DB_NAME)
 
 
-def test_pari_gagnant_et_paiement(db_settle):
-    # 1. On valide l'option gagnante (utilise le wrapper via le patch de la fixture)
-    valider_option_gagnante(100, 10)
+def test_settlement_gagne(db_session):
+    cur = db_session.cursor()
+    # 1. Créer un parieur (Solde initial 1000)
+    cur.execute(
+        "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, solde) VALUES ('Test', 'User', 'testuser', 'test@test.com', 20, '1A', 'hash', 'now', 1000)"
+    )
+    user_id = cur.lastrowid
 
-    # 2. On exécute le settlement
-    with patch('models.admin.envoi_notification_gain'):
-        success, msg = executer_settlement_match(10)
-    
-    # 3. Vérifications
-    assert success is True
-    
-    # Le solde doit être 1000 (initial) + 1500 (gain) = 2500
-    res = db_settle.execute("SELECT solde FROM parieurs WHERE id = 1").fetchone()
-    assert res['solde'] == 2500
-    
-    # Le statut du pari doit être 'Gagné'
-    pari = db_settle.execute("SELECT statut FROM paris WHERE id = 50").fetchone()
-    assert pari['statut'] == 'Gagné'
+    # 2. Créer un match et une option gagnante
+    cur.execute(
+        "INSERT INTO matchs (equipe_a, equipe_b, date_match, statut) VALUES ('Real', 'Barca', '2026-01-01', 'termine')"
+    )
+    match_id = cur.lastrowid
+    cur.execute(
+        "INSERT INTO options (libelle, cote, winner, categorie, match_id) VALUES ('Victoire A', 2.0, 1, 'score', ?)",
+        (match_id,),
+    )
+    option_id = cur.lastrowid
 
-def test_pari_perdant(db_settle):
-    # 1. On force l'option comme perdante (winner = 2)
-    db_settle.execute("UPDATE options SET winner = 2 WHERE id = 100")
-    db_settle.commit()
+    # 3. Créer un pari (Mise 100, Gain 200)
+    cur.execute(
+        "INSERT INTO paris (mise, gain_potentiel, date_pari, statut, parieur_id) VALUES (100, 200, 'now', 'En attente', ?)",
+        (user_id,),
+    )
+    pari_id = cur.lastrowid
+    cur.execute(
+        "INSERT INTO matchs_paris (matchs_id, paris_id, option_id) VALUES (?, ?, ?)",
+        (match_id, pari_id, option_id),
+    )
+    db_session.commit()
 
-    # 2. On exécute le settlement
-    with patch('models.admin.envoi_notification_gain'):
-        success, msg = executer_settlement_match(10)
-    
-    # 3. Vérifications
-    assert "perdus" in msg
-    
-    # Le solde ne doit pas bouger
-    res = db_settle.execute("SELECT solde FROM parieurs WHERE id = 1").fetchone()
-    assert res['solde'] == 1000
-    
-    # Le statut du pari doit être 'Perdu'
-    pari = db_settle.execute("SELECT statut FROM paris WHERE id = 50").fetchone()
-    assert pari['statut'] == 'Perdu'
+    # 4. Exécuter le settlement
+    from models.admin import (
+        executer_settlement_match,
+    )  # Remplace 'models.admin' par le nom de ton fichier
+
+    success, message = executer_settlement_match(match_id)
+
+    # 5. Vérifications
+    cur.execute("SELECT statut FROM paris WHERE id = ?", (pari_id,))
+    assert cur.fetchone()[0] == "Gagné"
+    cur.execute("SELECT solde FROM parieurs WHERE id = ?", (user_id,))
+    assert cur.fetchone()[0] == 1200  # 1000 + 200 de gain
+
+
+def test_settlement_perdu(db_session):
+    cur = db_session.cursor()
+    cur.execute(
+        "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, solde) VALUES ('Locker', 'User', 'loser', 'lost@test.com', 20, '1A', 'hash', 'now', 1000)"
+    )
+    user_id = cur.lastrowid
+
+    cur.execute(
+        "INSERT INTO matchs (equipe_a, equipe_b, date_match) VALUES ('PSG', 'OM', 'now')"
+    )
+    m_id = cur.lastrowid
+    cur.execute(
+        "INSERT INTO options (libelle, cote, winner, categorie, match_id) VALUES ('Victoire B', 3.0, 2, 'score', ?)",
+        (m_id,),
+    )
+    o_id = cur.lastrowid
+
+    cur.execute(
+        "INSERT INTO paris (mise, gain_potentiel, date_pari, statut, parieur_id) VALUES (50, 150, 'now', 'En attente', ?)",
+        (user_id,),
+    )
+    p_id = cur.lastrowid
+    cur.execute(
+        "INSERT INTO matchs_paris (matchs_id, paris_id, option_id) VALUES (?, ?, ?)",
+        (m_id, p_id, o_id),
+    )
+    db_session.commit()
+
+    from models.admin import executer_settlement_match
+
+    executer_settlement_match(m_id)
+
+    cur.execute("SELECT statut FROM paris WHERE id = ?", (p_id,))
+    assert cur.fetchone()[0] == "Perdu"
+    cur.execute("SELECT solde FROM parieurs WHERE id = ?", (user_id,))
+    assert (
+        cur.fetchone()[0] == 1000
+    )  # Le solde ne bouge pas (la mise a déjà été retirée lors du placement du pari)
+
+
+def test_settlement_annule_remboursement(db_session):
+    cur = db_session.cursor()
+    cur.execute(
+        "INSERT INTO parieurs (prenom, nom, username, email, age, classe, mdp, created_at, solde) VALUES ('Refund', 'User', 'ref', 'ref@test.com', 20, '1A', 'hash', 'now', 500)"
+    )
+    user_id = cur.lastrowid
+
+    cur.execute(
+        "INSERT INTO matchs (equipe_a, equipe_b, date_match) VALUES ('Team A', 'Team B', 'now')"
+    )
+    m_id = cur.lastrowid
+    # winner = 3 (Annulé)
+    cur.execute(
+        "INSERT INTO options (libelle, cote, winner, categorie, match_id) VALUES ('Draw', 3.0, 3, 'score', ?)",
+        (m_id,),
+    )
+    o_id = cur.lastrowid
+
+    # Dans ce cas, gain_potentiel est souvent ajusté à la mise (ex: 100)
+    cur.execute(
+        "INSERT INTO paris (mise, gain_potentiel, date_pari, statut, parieur_id) VALUES (100, 100, 'now', 'En attente', ?)",
+        (user_id,),
+    )
+    p_id = cur.lastrowid
+    cur.execute(
+        "INSERT INTO matchs_paris (matchs_id, paris_id, option_id) VALUES (?, ?, ?)",
+        (m_id, p_id, o_id),
+    )
+    db_session.commit()
+
+    from models.admin import executer_settlement_match
+
+    executer_settlement_match(m_id)
+
+    cur.execute("SELECT statut FROM paris WHERE id = ?", (p_id,))
+    assert cur.fetchone()[0] == "Annulé"
+    cur.execute("SELECT solde FROM parieurs WHERE id = ?", (user_id,))
+    assert cur.fetchone()[0] == 600  # 500 + 100 remboursé

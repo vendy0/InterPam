@@ -3,25 +3,6 @@ import sqlite3
 from models.emails import envoyer_push_notification
 
 
-def ajouter_match(equipe_a, equipe_b, date_match, type_match="foot"):
-    try:
-        with get_db_connection() as conn:
-            cur = conn.execute(
-                "INSERT INTO matchs (equipe_a, equipe_b, date_match, statut, type_match) VALUES (?, ?, ?, 'ouvert', ?)",
-                (equipe_a, equipe_b, date_match, type_match),
-            )
-            cur = conn.execute(
-                "SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL"
-            )
-            users = cur.fetchall()
-            for user in users:
-                message = f"Le match {equipe_a} VS {equipe_b} vient d'être ajouté. Cliquez ici pour commencer à parier dès maintenant !"
-                envoyer_push_notification(user["sub"], "Match ajouté", message)
-            conn.commit()
-            return cur.lastrowid
-    except sqlite3.Error as e:
-        print(f"Erreur lors de l'ajout du match : {e}")
-
 
 def get_options_by_match_id(match_id):
     """Récupère toutes les options liées à un match."""

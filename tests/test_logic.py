@@ -28,12 +28,13 @@ from unittest.mock import patch, MagicMock
 
 # On importe les fonctions depuis ton fichier models/match.py
 from models.match import (
-    ajouter_match,
     get_programmes,
     get_matchs_actifs,
     get_historique_matchs,
     verifier_matchs_ouverts,
 )
+
+from models.admin import ajouter_match
 
 
 # --- LA FIXTURE (Configuration de la base temporaire) ---
