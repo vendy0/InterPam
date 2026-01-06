@@ -177,6 +177,24 @@ def envoi_notification_gain(cursor, user_id, gain_c):
             pass  # Ne pas bloquer le paiement si la notification échoue
 
 
+def ajouter_match(equipe_a, equipe_b, date_match, type_match):
+    """Ajoute un match."""
+    try:
+        with get_db_connection() as conn:
+            conn.execute("PRAGMA foreign_keys = ON")
+            cur = conn.execute(
+                "INSERT INTO matchs (equipe_a, equipe_b, date_match, type_match) VALUES (?, ?, ?, ?)",
+                (equipe_a, equipe_b, date_match, type_match),
+            )
+            id_match = cur.lastrowid
+            print(
+                f"Match ajouté avec succès : {equipe_a} VS {equipe_b}, id : {id_match}"
+            )
+            return id_match
+    except sqlite3.Error as e:
+        print(f"Erreur lors de l'ajout du match : {e}")
+
+
 def ajouter_option(libelle, cote, categorie, match_id):
     try:
         with get_db_connection() as conn:

@@ -407,7 +407,7 @@ def staff():
 
     if success:
         lien = url_for("admin.setup_staff", token=token, _external=True)
-        (success_mail,)  # message_mail = envoyer_invitation_admin(nom, email, lien)
+        success_mail, message_mail = envoyer_invitation_admin(nom, email, lien)
         if success_mail:
             flash(
                 f"Invitation envoyée à {nom} ! ({email}) pour le rôle : {role}",
