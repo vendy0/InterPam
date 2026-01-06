@@ -326,7 +326,7 @@ def annuler_match_et_rembourser(match_id):
                     envoyer_push_notification(
                         user["sub"],
                         "Match annulé",
-                        f"Le match {match["equipe_a"]} VS {match["equipe_b"]} vient d'être annulé.",
+                        f"Le match {match['equipe_a']} VS {match['equipe_b']} vient d'être annulé.",
                     )
 
             # 5. Envoyer une notif aux joueurs concernés (Optionnel mais sympa)
@@ -346,106 +346,110 @@ def executer_settlement_match(match_id):
     Vérifie les paris liés au match et effectue le paiement si nécessaire.
     Gère strictement les statuts : Perdu > Annulé > Gagné > En attente.
     """
-    conn = None
+    conn = None  # <--- AJOUT IMPORTANT : Initialisation pour éviter UnboundLocalError
+
     try:
-        conn = sqlite3.connect("interpam.db")
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
+        with get_db_connection() as conn:
+            cur = conn.cursor()
 
-        # 1. Récupérer tous les paris "En attente" qui contiennent ce match
-        cur.execute(
-            """
-            SELECT DISTINCT p.id, p.parieur_id, p.gain_potentiel, p.mise
-            FROM paris p
-            JOIN matchs_paris mp ON p.id = mp.paris_id
-            WHERE mp.matchs_id = ? AND p.statut = 'En attente'
-        """,
-            (match_id,),
-        )
-
-        paris_a_verifier = cur.fetchall()
-        stats = {"gagnants": 0, "perdants": 0, "annules": 0}
-
-        if not paris_a_verifier:
-            conn.close()
-            return True, "Aucun pari en attente affecté."
-
-        print(f"--- Settlement : Vérification de {len(paris_a_verifier)} tickets ---")
-
-        for pari in paris_a_verifier:
-            p_id = pari["id"]
-            u_id = pari["parieur_id"]
-            gain_c = pari["gain_potentiel"]
-            mise_c = pari["mise"]
-
-            # 2. Compter les statuts des options du ticket
-            # winner : 0=En cours, 1=Gagné, 2=Perdu, 3=Annulé
+            # 1. Récupérer tous les paris "En attente" qui contiennent ce match
             cur.execute(
                 """
-                SELECT 
-                    COUNT(*) as total,
-                    SUM(CASE WHEN o.winner = 2 THEN 1 ELSE 0 END) as perdus,
-                    SUM(CASE WHEN o.winner = 1 THEN 1 ELSE 0 END) as gagne_stricts,
-                    SUM(CASE WHEN o.winner = 3 THEN 1 ELSE 0 END) as annulés
-                FROM matchs_paris mp
-                JOIN options o ON mp.option_id = o.id
-                WHERE mp.paris_id = ?
+                SELECT DISTINCT p.id, p.parieur_id, p.gain_potentiel, p.mise
+                FROM paris p
+                JOIN matchs_paris mp ON p.id = mp.paris_id
+                WHERE mp.matchs_id = ? AND p.statut = 'En attente'
             """,
-                (p_id,),
+                (match_id,),
             )
 
-            res = cur.fetchone()
-            total = res["total"]
-            perdus = res["perdus"] or 0
-            gagne_stricts = res["gagne_stricts"] or 0
-            annules = res["annulés"] or 0
+            paris_a_verifier = cur.fetchall()
+            stats = {"gagnants": 0, "perdants": 0, "annules": 0}
 
-            # --- LOGIQUE DE DÉCISION STRICTE ---
+            if not paris_a_verifier:
+                # Pas besoin de conn.close() ici, le 'with' s'en charge
+                return True, "Aucun pari en attente affecté."
 
-            # CAS 1 : Au moins une option perdante -> Ticket PERDU
-            if perdus > 0:
-                cur.execute("UPDATE paris SET statut = 'Perdu' WHERE id = ?", (p_id,))
-                stats["perdants"] += 1
+            print(
+                f"--- Settlement : Vérification de {len(paris_a_verifier)} tickets ---"
+            )
 
-            # CAS 2 : Toutes les options sont annulées -> Ticket ANNULÉ (Remboursement)
-            elif annules == total:
-                cur.execute("UPDATE paris SET statut = 'Annulé' WHERE id = ?", (p_id,))
-                # On rembourse la mise (ou le gain recalculé qui devrait être égal à la mise)
-                # Note: annuler_match_et_rembourser a déjà ajusté gain_potentiel vers la mise normalement
+            for pari in paris_a_verifier:
+                p_id = pari["id"]
+                u_id = pari["parieur_id"]
+                gain_c = pari["gain_potentiel"]
+
+                # 2. Compter les statuts des options du ticket
                 cur.execute(
-                    "UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id)
+                    """
+                    SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN o.winner = 2 THEN 1 ELSE 0 END) as perdus,
+                        SUM(CASE WHEN o.winner = 1 THEN 1 ELSE 0 END) as gagne_stricts,
+                        SUM(CASE WHEN o.winner = 3 THEN 1 ELSE 0 END) as annulés
+                    FROM matchs_paris mp
+                    JOIN options o ON mp.option_id = o.id
+                    WHERE mp.paris_id = ?
+                """,
+                    (p_id,),
                 )
-                stats["annules"] += 1
-                print(f"Ticket #{p_id} -> ANNULÉ (Remboursé)")
 
-            # CAS 3 : Le ticket est complet (Gagnés + Annulés = Total) -> Ticket GAGNÉ
-            # Cela signifie qu'il n'y a pas de perdants, pas d'attente, et ce n'est pas 100% annulé
-            elif (gagne_stricts + annules) == total:
-                cur.execute("UPDATE paris SET statut = 'Gagné' WHERE id = ?", (p_id,))
-                cur.execute(
-                    "UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id)
-                )
-                stats["gagnants"] += 1
-                envoi_notification_gain(cur, u_id, gain_c)
+                res = cur.fetchone()
+                total = res["total"]
+                perdus = res["perdus"] or 0
+                gagne_stricts = res["gagne_stricts"] or 0
+                annules = res["annulés"] or 0
 
-            # CAS 4 : Il reste des matchs en attente (winner = 0) -> On ne fait rien
-            else:
-                pass
+                # --- LOGIQUE DE DÉCISION STRICTE ---
 
-        conn.commit()
-        return (
-            True,
-            f"Settlement réussi : {stats['gagnants']} gagnés, {stats['perdants']} perdus, {stats['annules']} annulés.",
-        )
+                # CAS 1 : Au moins une option perdante -> Ticket PERDU
+                if perdus > 0:
+                    cur.execute(
+                        "UPDATE paris SET statut = 'Perdu' WHERE id = ?", (p_id,)
+                    )
+                    stats["perdants"] += 1
+
+                # CAS 2 : Toutes les options sont annulées -> Ticket ANNULÉ (Remboursement)
+                elif annules == total:
+                    cur.execute(
+                        "UPDATE paris SET statut = 'Annulé' WHERE id = ?", (p_id,)
+                    )
+                    cur.execute(
+                        "UPDATE parieurs SET solde = solde + ? WHERE id = ?",
+                        (gain_c, u_id),
+                    )
+                    stats["annules"] += 1
+                    print(f"Ticket #{p_id} -> ANNULÉ (Remboursé)")
+
+                # CAS 3 : Le ticket est complet (Gagnés + Annulés = Total) -> Ticket GAGNÉ
+                elif (gagne_stricts + annules) == total:
+                    cur.execute(
+                        "UPDATE paris SET statut = 'Gagné' WHERE id = ?", (p_id,)
+                    )
+                    cur.execute(
+                        "UPDATE parieurs SET solde = solde + ? WHERE id = ?",
+                        (gain_c, u_id),
+                    )
+                    stats["gagnants"] += 1
+                    envoi_notification_gain(cur, u_id, gain_c)
+
+                # CAS 4 : En attente -> On ne fait rien
+                else:
+                    pass
+
+            conn.commit()
+            return (
+                True,
+                f"Settlement réussi : {stats['gagnants']} gagnés, {stats['perdants']} perdus, {stats['annules']} annulés.",
+            )
 
     except Exception as e:
-        if conn:
+        if (
+            conn
+        ):  # Maintenant 'conn' est soit None, soit une connexion, mais elle existe
             conn.rollback()
         print(f"ERREUR SETTLEMENT: {e}")
         return False, f"Erreur settlement : {str(e)}"
-    finally:
-        if conn:
-            conn.close()
 
 
 """

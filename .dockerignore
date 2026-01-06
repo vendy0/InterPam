@@ -1,0 +1,20 @@
+# Gestion des versions
+.git
+.gitignore
+
+# Environnements virtuels
+venv/
+.venv/
+env/
+
+# Cache Python
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Tests et Documentation
+tests/
+docs/
+
+# Secrets
+.env

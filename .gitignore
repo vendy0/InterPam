@@ -1,7 +1,29 @@
 __pycache__/
 *.pyc
 interpam.db
-.env
 gcom_ai.sh
 commit.sh
 test_key.py
+
+
+# Gestion des versions
+# .git
+# .gitignore
+
+# Environnements virtuels
+interpam_env/
+venv/
+.venv/
+env/
+# 
+# Cache Python
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Tests et Documentation
+tests/
+docs/
+
+# Secrets
+.env

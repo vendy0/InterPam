@@ -1,161 +1,1 @@
-<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}" type="text/css" media="all" />
-    <title>InterPam - Connexion</title>
-  </head>
-  <body>
-    <div id="register-section" class="hidden sections">
-      {% if error%}
-      <div class="erreur-msg">{{error}}</div>
-      {% endif %}
-      <p class="title">Bienvenue</p>
-      <form class="form" action="{{ url_for('traitementRegister') }}" method="POST" id="registerForm">
-        <div class="name_container_inscription">
-          <input type="text" name="first_name" class="first_name_input" autocomplete="given-name" placeholder="Prénom" required="required" value="{{request.form.first_name }}" />
-          <input type="text" name="last_name" class="last_name_input" autocomplete="family-name" placeholder="Nom de famille" required="required" value="{{ request.form.last_name }}" />
-        </div>
-        <input type="text" name="username" autocomplete="off" class="username_input" placeholder="Username" required="required" value="{{ request.form.username }}" />
-        <input type="email" name="email" class="email_input" placeholder="Email" required="required" value="{{ request.form.email }}" />
-        
-        <div id="age_and_grade">
-          <input type="number" name="age" class="age_input" min="0" max="100" placeholder="Age" required="required" value="{{ request.form.age }}" />
-          <select class="classe_input" name="classe" required>
-            <option value="" selected="selected" disabled="disabled">Niveau scolaire</option>
-            <option value="septieme" {% if request.form.classe=="septieme" %} selected="selected" {% endif %}>7e A.F.</option>
-            <option value="huitieme" {% if request.form.classe=="huitieme" %} selected="selected"{%endif%}>8e A.F.</option>
-            <option value="neuvieme" {% if request.form.classe=="neuvieme" %} selected="selected" {%endif%}>9e A.F.</option>
-            <option value="secondaire 1" {% if request.form.classe=="secondaire 1" %} selected="selected" {%endif%}>NS1</option>
-            <option value="secondaire 2" {% if request.form.classe=="secondaire 2" %} selected="selected" {%endif%}>NS2</option>
-            <option value="secondaire 3" {% if request.form.classe=="secondaire 3" %} selected="selected" {%endif%}>NS3</option>
-            <option value="secondaire 4" {% if request.form.classe=="secondaire 4" %} selected="selected" {%endif%}>NS4</option>
-          </select>
-        </div>
-		<div class="password-wrapper">
-		    <input type="password" class="input" name="mdp" id="mdp_input" placeholder="Créez un nouveau mot de passe" minlength="8" autocomplete="new-password" required="required" value="{{ request.form.mdp }}" />
-		    <span class="toggle-password-icon">
-		        <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-		            <path d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-		            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-		        </svg>
-		    </span>
-		</div>
-
-		<div class="password-wrapper">
-		    <input type="password" class="input" name="mdpConfirm" id="mdp_confirmation_input" placeholder="Confirmer le mot de passe" autocomplete="new-password" required="required" value="{{ request.form.mdpConfirm }}" />
-		    <span class="toggle-password-icon">
-		        <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-		            <path d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-		            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-		        </svg>
-		    </span>
-		</div>
-
-
-
-        <div class="checkbox-container">
-          <div class="container">
-            <input type="checkbox" id="conditions_input" name="rules" class="check_input" style="display: none" />
-            <label for="conditions_input" class="check">
-              <svg width="18px" height="18px" viewBox="0 0 18 18">
-                <path d="M 1 9 L 1 9 c 0 -5 3 -8 8 -8 L 9 1 C 14 1 17 5 17 9 L 17 9 c 0 4 -4 8 -8 8 L 9 17 C 5 17 1 14 1 9 L 1 9 Z"></path>
-                <polyline points="1 9 7 14 15 4"></polyline>
-              </svg>
-            </label>
-          </div>
-          <label for="conditions_input">
-          	J'ai lu et j'accepte les <a href="{{ url_for('legal') }}#conditions" target="_blank">conditions d'utilisation</a> et la <a href="{{ url_for('legal') }}#privacy" target="_blank">politique de confidentialité</a>.
-          </label>
-
-          
-        </div>
-        <button class="form-btn">S'inscrire</button>
-      </form>
-      <p class="page-link">
-        Déjà un compte ?
-        <a class="page-link-label center" onclick="showLogin()">Se connecter.</a>
-      </p>
-    </div>
-
-    <div id="login-section" class="sections">
-      {% if loginError %}
-      <div class="erreur-msg">{{loginError}}</div>
-      {% endif %}
-      <p class="title">Ravie de vous revoir</p>
-      <form class="form" action="{{ url_for('traitementLogin') }}" method="POST" id="loginForm">
-        <input type="text" name="email_username" class="email_input" placeholder="Email ou Nom d'utilisateur" required="required" value="{{ request.form.email_username }}"/>
-<div class="password-wrapper">
-    <input type="password" class="mdp_input" id="mdp_log" name="mdp" placeholder="Mot de passe" required="required" autocomplete="current-password" value="{{ request.form.mdp }}" />
-    <span class="toggle-password-icon">
-        <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-    </span>
-</div>
-
-
-        <p class="page-link">
-            <span class="page-link-label" id="forget" onclick="showForget()">Mot de passe oublié ?</span>
-        </p>
-
-        <div class="checkbox-container">
-            <div class="container">
-                <input type="checkbox"
-       id="remember_input"
-       name="remember"
-       class="check_input"
-       {% if request.form.get('remember') %}checked{% endif %}
-       style="display: none" />
-                <label for="remember_input" class="check">
-                     <svg width="18px" height="18px" viewBox="0 0 18 18">
-                        <path d="M 1 9 L 1 9 c 0 -5 3 -8 8 -8 L 9 1 C 14 1 17 5 17 9 L 17 9 c 0 4 -4 8 -8 8 L 9 17 C 5 17 1 14 1 9 L 1 9 Z"></path>
-                        <polyline points="1 9 7 14 15 4"></polyline>
-                    </svg>
-                </label>
-            </div>
-            <label for="remember_input">Se souvenir de moi.</label>
-        </div>
-        <button class="form-btn">Se connecter</button>
-      </form>
-      <p class="page-link center">
-        Pas encore inscrit ?
-        <a class="page-link-label" href="#" onclick="showRegister()">Créer un compte.</a>
-      </p>
-    </div>
-
-    <div id="forget-section" class="hidden sections">
-      {% if forgetError %}
-      <div class="erreur-msg">{{forgetError}}</div>
-      {% endif %}
-      <p class="title">Mot de passe oublié</p>
-      <p>Rentrez l'email avec laquelle vous avez créé votre compte précédemment :</p>
-      <form class="form" action="{{ url_for('forget_password_route') }}" method="POST" id="forgetForm">
-        <input type="email" name="forget_email" class="email_input" placeholder="Email" required="required" value="{{ request.form.forget_email }}"/>
-        <button class="form-btn">Envoyer</button>
-      </form>
-      <p class="page-link">
-        <a class="page-link-label" href="#" onclick="showLogin()">Retour à la page de connexion</a>
-      </p>
-    </div>
-
-    <script src="{{ url_for('static', filename='js/login.js') }}" type="text/javascript" charset="utf-8"></script>
-    
-    {% if error or register %}
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        showRegister();
-      });
-    </script>
-    {% elif forgetError %}
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        showForget();
-      });
-    </script>
-    {% endif %}
-  </body>
-</html>
+<!doctype html><html lang="fr">    <head>        <meta charset="UTF-8" />        <meta name="viewport" content="width=device-width, initial-scale=1.0" />        <meta http-equiv="X-UA-Compatible" content="ie=edge" />        <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}" type="text/css" media="all" />        <title>InterPam - Connexion</title>    </head>    <body>        <div id="register-section" class="hidden sections">            {% if error%}            <div class="erreur-msg">{{error}}</div>            {% endif %}            <p class="title">Bienvenue</p>            <form class="form" action="{{ url_for('traitementRegister') }}" method="POST" id="registerForm">                <div class="name_container_inscription">                    <input type="text" name="first_name" class="first_name_input" autocomplete="given-name" placeholder="Prénom" required="required" value="{{request.form.first_name }}" />                    <input type="text" name="last_name" class="last_name_input" autocomplete="family-name" placeholder="Nom de famille" required="required" value="{{ request.form.last_name }}" />                </div>                <input type="text" name="username" autocomplete="off" class="username_input" placeholder="Username" required="required" value="{{ request.form.username }}" />                <input type="email" name="email" class="email_input" placeholder="Email" required="required" value="{{ request.form.email }}" />                <div id="age_and_grade">                    <input type="number" name="age" class="age_input" min="0" max="100" placeholder="Age" required="required" value="{{ request.form.age }}" />                    <select class="classe_input" name="classe" required>                        <option value="" selected="selected" disabled="disabled">Niveau scolaire</option>                        <option value="septieme" {% if request.form.classe=="septieme" %} selected="selected" {% endif %}>7e A.F.</option>                        <option value="huitieme" {% if request.form.classe=="huitieme" %} selected="selected" {%endif%}>8e A.F.</option>                        <option value="neuvieme" {% if request.form.classe=="neuvieme" %} selected="selected" {%endif%}>9e A.F.</option>                        <option value="secondaire 1" {% if request.form.classe=="secondaire 1" %} selected="selected" {%endif%}>NS1</option>                        <option value="secondaire 2" {% if request.form.classe=="secondaire 2" %} selected="selected" {%endif%}>NS2</option>                        <option value="secondaire 3" {% if request.form.classe=="secondaire 3" %} selected="selected" {%endif%}>NS3</option>                        <option value="secondaire 4" {% if request.form.classe=="secondaire 4" %} selected="selected" {%endif%}>NS4</option>                    </select>                </div>                <div class="password-wrapper">                    <input type="password" class="input" name="mdp" id="mdp_input" placeholder="Créez un nouveau mot de passe" minlength="8" autocomplete="new-password" required="required" value="{{ request.form.mdp }}" />                    <span class="toggle-password-icon">                        <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">                            <path d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />                        </svg>                    </span>                </div>                <div class="password-wrapper">                    <input type="password" class="input" name="mdpConfirm" id="mdp_confirmation_input" placeholder="Confirmer le mot de passe" autocomplete="new-password" required="required" value="{{ request.form.mdpConfirm }}" />                    <span class="toggle-password-icon">                        <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">                            <path d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />                        </svg>                    </span>                </div>                <div class="checkbox-container">                    <div class="container">                        <input type="checkbox" id="conditions_input" name="rules" class="check_input" style="display: none" />                        <label for="conditions_input" class="check">                            <svg width="18px" height="18px" viewBox="0 0 18 18">                                <path d="M 1 9 L 1 9 c 0 -5 3 -8 8 -8 L 9 1 C 14 1 17 5 17 9 L 17 9 c 0 4 -4 8 -8 8 L 9 17 C 5 17 1 14 1 9 L 1 9 Z"></path>                                <polyline points="1 9 7 14 15 4"></polyline>                            </svg>                        </label>                    </div>                    <label for="conditions_input">                        J'ai lu et j'accepte les                        <a href="{{ url_for('legal') }}#conditions">conditions d'utilisation</a>                        et les                        <a href="{{ url_for('legal') }}#reglement">règlements liés aux paris</a>                        .                    </label>                </div>                <button class="form-btn">S'inscrire</button>            </form>            <p class="page-link">                Déjà un compte ?                <a class="page-link-label center" onclick="showLogin()">Se connecter.</a>            </p>        </div>        <div id="login-section" class="sections">            {% if loginError %}            <div class="erreur-msg">{{loginError}}</div>            {% endif %}            <p class="title">Ravie de vous revoir</p>            <form class="form" action="{{ url_for('traitementLogin') }}" method="POST" id="loginForm">                <input type="text" name="email_username" class="email_input" placeholder="Email ou Nom d'utilisateur" required="required" value="{{ request.form.email_username }}" />                <div class="password-wrapper">                    <input type="password" class="mdp_input" id="mdp_log" name="mdp" placeholder="Mot de passe" required="required" autocomplete="current-password" value="{{ request.form.mdp }}" />                    <span class="toggle-password-icon">                        <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">                            <path d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />                        </svg>                    </span>                </div>                <p class="page-link">                    <span class="page-link-label" id="forget" onclick="showForget()">Mot de passe oublié ?</span>                </p>                <div class="checkbox-container">                    <div class="container">                        <input type="checkbox" id="remember_input" name="remember" class="check_input" {{ 'checked' if request.form.get("remember") }} style="display: none" />                        <label for="remember_input" class="check">                            <svg width="18px" height="18px" viewBox="0 0 18 18">                                <path d="M 1 9 L 1 9 c 0 -5 3 -8 8 -8 L 9 1 C 14 1 17 5 17 9 L 17 9 c 0 4 -4 8 -8 8 L 9 17 C 5 17 1 14 1 9 L 1 9 Z"></path>                                <polyline points="1 9 7 14 15 4"></polyline>                            </svg>                        </label>                    </div>                    <label for="remember_input">Se souvenir de moi.</label>                </div>                <button class="form-btn">Se connecter</button>            </form>            <p class="page-link center">                Pas encore inscrit ?                <a class="page-link-label" href="#" onclick="showRegister()">Créer un compte.</a>            </p>        </div>        <div id="forget-section" class="hidden sections">            {% if forgetError %}            <div class="erreur-msg">{{forgetError}}</div>            {% endif %}            <p class="title">Mot de passe oublié</p>            <p>Rentrez l'email avec laquelle vous avez créé votre compte précédemment :</p>            <form class="form" action="{{ url_for('forget_password_route') }}" method="POST" id="forgetForm">                <input type="email" name="forget_email" class="email_input" placeholder="Email" required="required" value="{{ request.form.forget_email }}" />                <button class="form-btn">Envoyer</button>            </form>            <p class="page-link">                <a class="page-link-label" href="#" onclick="showLogin()">Retour à la page de connexion</a>            </p>        </div>        <script src="{{ url_for('static', filename='js/login.js') }}" type="text/javascript" charset="utf-8"></script>        {% if error or register %}        <script>            document.addEventListener("DOMContentLoaded", function () {                showRegister();            });        </script>        {% elif forgetError %}        <script>            document.addEventListener("DOMContentLoaded", function () {                showForget();            });        </script>        {% endif %}    </body></html>
