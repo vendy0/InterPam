@@ -45,12 +45,19 @@ def placer_pari(parieur_id, match_id, mise_dec, gain_dec, date_pari, options_ids
             pari_id = cur.lastrowid
 
             # --- Liaison options ---
+            # Remplacez la boucle actuelle (ligne approximative 48-53) par :
             for opt_id in options_ids:
+                # récupérer le match réel lié à l'option
+                cur_opt = conn.execute(
+                    "SELECT match_id FROM options WHERE id = ?", (opt_id,)
+                )
+                row_opt = cur_opt.fetchone()
+                real_match_id = row_opt[0] if row_opt else None
+
                 conn.execute(
                     "INSERT INTO matchs_paris (paris_id, matchs_id, option_id) VALUES (?, ?, ?)",
-                    (pari_id, match_id, opt_id),
+                    (pari_id, real_match_id, opt_id),
                 )
-
             conn.commit()
             return True, "Pari placé avec succès"
 
@@ -73,7 +80,6 @@ def obtenir_cotes_par_ids(liste_ids):
     except sqlite3.Error as e:
         print(f"Erreur SQL : {e}")
         return []
-
 
 
 def get_fiches_detaillees(parieur_id):
@@ -141,5 +147,3 @@ def get_details_options_panier(liste_option_ids):
     except sqlite3.Error as e:
         print(f"Erreur panier : {e}")
         return []
-
-
