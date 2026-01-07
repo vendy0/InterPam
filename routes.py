@@ -16,6 +16,8 @@ from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
+from functools import wraps
+
 from admin_routes import admin_bp, users_bp, matchs_bp
 
 from models.match import *
@@ -50,6 +52,20 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 
 
 app.secret_key = os.getenv("SECRET_KEY_SESSION")
+
+
+def active_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "username" in session:
+            user = get_user_by_username(session["username"])
+            if not user or not bool(user["actif"]):
+                session.clear()
+                flash("Votre compte a été suspendu.", "error")
+                return redirect(url_for("login"))
+        return f(*args, **kwargs)
+
+    return decorated_function
 
 
 def set_date(date_a_tester):
@@ -364,6 +380,7 @@ def about():
 
 
 @app.route("/home")
+@active_required
 def home():
     if "username" in session:
         user = get_user_by_username(session["username"])
@@ -373,6 +390,7 @@ def home():
 
 
 @app.route("/send_message", methods=["POST"])
+@active_required
 def send_message_route():
     if "username" not in session:
         return redirect(url_for("login"))
@@ -415,6 +433,7 @@ def serve_sw():
 
 # Dans routes.py
 @app.route("/match/<int:match_id>")
+@active_required
 def details_match(match_id):
     if "username" not in session:
         return redirect(url_for("login"))
@@ -458,6 +477,7 @@ def details_match(match_id):
 
 
 @app.route("/ajouter_au_ticket", methods=["POST"])
+@active_required
 def ajouter_au_ticket():
     """Ajoute une sélection au panier (session). Écrase si le match existe déjà."""
     if "username" not in session:
@@ -488,10 +508,13 @@ def ajouter_au_ticket():
     session.modified = True  # Important pour dire à Flask de sauvegarder la session
 
     flash("Ajouté au ticket ! \n N'oubliez pas de valider le ticket.", "success")
-    return redirect(url_for('home'))  # On reste sur la page ou on va au panier ? Au choix.
+    return redirect(
+        url_for("home")
+    )  # On reste sur la page ou on va au panier ? Au choix.
 
 
 @app.route("/mon_ticket")
+@active_required
 def mon_ticket():
     """Affiche le récapitulatif avant validation"""
     if "username" not in session:
@@ -514,6 +537,7 @@ def mon_ticket():
 
 
 @app.route("/supprimer_du_ticket/<match_id>")
+@active_required
 def supprimer_du_ticket(match_id):
     """Retire un match spécifique du ticket"""
     if "ticket" in session:
@@ -524,12 +548,14 @@ def supprimer_du_ticket(match_id):
 
 
 @app.route("/vider_ticket")
+@active_required
 def vider_ticket():
     session.pop("ticket", None)
     return redirect(url_for("home"))
 
 
 @app.route("/valider_ticket", methods=["POST"])
+@active_required
 def valider_ticket():
     if "username" not in session:
         return redirect(url_for("login"))
@@ -610,6 +636,7 @@ def valider_ticket():
 
 
 @app.route("/fiches")
+@active_required
 def fiches():
     if "username" not in session:
         return redirect(url_for("login"))
@@ -624,6 +651,7 @@ def fiches():
 
 # === Route pour l'Historique des Résultats ===
 @app.route("/resultats")
+@active_required
 def resultats():
     if "username" not in session:
         return redirect(url_for("login"))
@@ -636,6 +664,7 @@ def resultats():
 
 
 @app.route("/portefeuille", methods=["GET"])
+@active_required
 def portefeuille():
     if "username" not in session:
         return redirect(url_for("login"))
@@ -647,6 +676,7 @@ def portefeuille():
 
 
 @app.route("/demande-depot", methods=["POST"])
+@active_required
 def demande_depot():
     if "username" not in session:
         return redirect(url_for("login"))
@@ -682,6 +712,7 @@ def demande_depot():
 
 
 @app.route("/demande-retrait", methods=["POST"])
+@active_required
 def demande_retrait():
     if "username" not in session:
         return redirect(url_for("login"))
@@ -725,6 +756,7 @@ def demande_retrait():
 
 # === Route pour le Profil ===
 @app.route("/profil")
+@active_required
 def profil():
     if "username" not in session:
         return redirect(url_for("login"))

@@ -59,10 +59,15 @@ def admin_required(f):
             return redirect(url_for("login"))
 
         user = get_user_by_username(session["username"])
+        if not user:
+            flash("utilisateur introuvable !", "error")
+            return redirect(url_for("login"))
         if user["classe"] != "Direction":
             flash("Accès interdit", "error")
             return redirect(url_for("home"))
-
+        if not bool(user["actif"]):
+            flash("Votre compte a été suspendu !", "error")
+            return redirect(url_for("login"))
         return f(*args, **kwargs)
 
     wrap.__name__ = f.__name__
