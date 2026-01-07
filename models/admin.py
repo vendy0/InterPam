@@ -109,10 +109,12 @@ def fermer_match_officiellement(match_id):
             cur = conn.execute("SELECT * FROM matchs WHERE id = ?", (match_id,))
             match = cur.fetchone()
             for user in users:
-                message = (
-                    f"Le match {match['equipe_a']} VS {match['equipe_b']} est terminé !"
-                )
-                envoyer_push_notification(user["sub"], "Match terminé", message)
+                try:
+                    message = f"Le match {match['equipe_a']} VS {match['equipe_b']} est terminé !"
+                    envoyer_push_notification(user["sub"], "Match terminé", message)
+                except Exception as e:
+                    print(f"Échec envoi notification pour un utilisateur: {e}")
+                    # On continue la boucle pour les autres et pour finir la fonction
             conn.commit()
             return True
     except Exception as e:
