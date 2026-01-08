@@ -229,6 +229,23 @@ def ban_user_route(action, username):
 	return redirect(url_for("admin.dashboard"))
 
 
+@users_bp.route("/fiches/<int:user_id>")
+@admin_required
+def fiches(user_id):
+	try:
+		user_id = int(user_id)
+	except Exception as e:
+		print(f"Erreur id {e}")
+		flash("Erreur de conversion id !", "error")
+		return redirect(request.referrer)
+
+	user = get_users("id", user_id)[0]
+
+	# On utilise la nouvelle fonction de regroupement
+	fiches = get_fiches_detaillees(user_id)
+	return render_template("fiches.html", fiches=fiches, admin_face=True, user=user)
+
+
 """
 ---------------------------------------
 ROUTES DES MATCHS
