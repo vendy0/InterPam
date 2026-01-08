@@ -392,7 +392,7 @@ def staff():
     user = get_user_by_username(session["username"])
     if user["role"] != "super_admin":
         flash("Accès refusé", "error")
-        return redirect(url_for("admin.dashboard"))
+        return redirect(request.referrer)
 
     staff = get_users("classe", "Direction")
 

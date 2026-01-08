@@ -41,6 +41,30 @@ def envoyer_invitation_admin(nom, email, lien):
     return envoyer_email_generique(email, sujet, html, corps_texte)
 
 
+def envoyer_mail_verification(nom, email, lien):
+    """Envoie l'email de validation de compte (style InterPam)."""
+    sujet = "Validez votre inscription - InterPam"
+
+    # 1. Charger le nouveau template
+    try:
+        with open("templates/admin/emails/verify_email.html", "r", encoding="utf-8") as f:
+            template_html = f.read()
+    except FileNotFoundError:
+        # Fallback au cas où le dossier est différent
+        with open("templates/verify_email.html", "r", encoding="utf-8") as f:
+            template_html = f.read()
+
+    j2_template = Template(template_html)
+
+    # 2. Rendre le HTML
+    html = j2_template.render(nom=nom, lien=lien)
+
+    # 3. Version texte brut pour les vieux clients mail
+    corps_texte = f"Bonjour {nom},\n\nMerci de vous être inscrit sur InterPam. Veuillez valider votre compte en cliquant sur ce lien : {lien}\n Note : Ce lien est valable pour 24h. \n\nL'équipe InterPam. "
+
+    return envoyer_email_generique(email, sujet, html, corps_texte)
+
+
 def welcome_email(nom, email, lien):
     sujet = "Bienvenue sur InterPam !"
 

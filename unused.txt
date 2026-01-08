@@ -4,8 +4,8 @@
 - Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
 - Partie Email de l'infterface adm
 - Règles obligatoire en front pour un nouvel adm
-- Ajouter le numéro sur la page wallet et sur la page Rules
 - Règlement du staff
+- Déduire un frais de retrait
 
 """
 ========================================
@@ -30,7 +30,7 @@ FINIS-----------------------------------
 - Titles
 - ...
 - Robot SEO
-- Si Sum(Gain_potentiel) > Sum(Mise), annulation des derniers fiches
+- Ajouter le numéro sur la page wallet et sur la page Rules
 
 
 - Les balises
@@ -60,6 +60,7 @@ __Historique cash
 - Se connecter avec google
 - Promouvoir un user
 - Insérer ReCaptcha
+- Si Sum(Gain_potentiel) > Sum(Mise), annulation des derniers fiches
 
 
 

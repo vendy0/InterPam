@@ -5,6 +5,71 @@ import secrets
 from models.emails import envoyer_push_notification
 
 
+def save_pending_registration(user_data, token, expiration):
+    """Sauvegarde temporaire de l'inscription."""
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                """INSERT INTO pending_registrations 
+                   (prenom, nom, username, email, age, classe, mdp, token, expiration, created_at) 
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    user_data["prenom"],
+                    user_data["nom"],
+                    user_data["username"],
+                    user_data["email"],
+                    user_data["age"],
+                    user_data["classe"],
+                    user_data["mdp"],
+                    token,
+                    expiration,
+                    user_data["created_at"],
+                ),
+            )
+            return True
+    except sqlite3.Error as e:
+        print(f"Erreur save_pending : {e}")
+        return False
+
+def check_pending_duplicates(username, email):
+    """Vérifie si username ou email est déjà en attente de validation."""
+    try:
+        with get_db_connection() as conn:
+            cur = conn.execute(
+                "SELECT * FROM pending_registrations WHERE username = ? OR email = ?", 
+                (username, email)
+            )
+            return cur.fetchone() is not None
+    except sqlite3.Error:
+        return False
+
+
+def get_pending_by_token(token):
+    """Récupère une inscription en attente via le token."""
+    try:
+        with get_db_connection() as conn:
+            # On utilise row_factory pour avoir un dictionnaire
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute(
+                "SELECT * FROM pending_registrations WHERE token = ?", (token,)
+            )
+            res = cur.fetchone()
+            return dict(res) if res else None
+    except sqlite3.Error as e:
+        print(f"Erreur get_pending : {e}")
+        return None
+
+
+def delete_pending(token):
+    """Supprime l'inscription temporaire après validation."""
+    try:
+        with get_db_connection() as conn:
+            conn.execute("DELETE FROM pending_registrations WHERE token = ?", (token,))
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"Erreur delete_pending : {e}")
+
+
 def ajouter_parieur(user_data):
     """Ajoute un parieur avec gestion d'exception et tabulation."""
     try:

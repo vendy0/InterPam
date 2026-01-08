@@ -112,17 +112,32 @@ def initialiser_bdd():
             cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     user_id INTEGER NOT NULL,
-                    admin_id INTEGER, -- ID de l'admin qui a traité la demande
-                    type TEXT NOT NULL, -- 'depot' ou 'retrait'
+                    admin_id INTEGER, 
+                    type TEXT NOT NULL, 
                     montant INTEGER NOT NULL, 
                     telephone TEXT NOT NULL,
-                    moncash_id TEXT UNIQUE, -- UNIQUE empêche la réutilisation d'un ID
+                    moncash_id TEXT UNIQUE,
                     statut TEXT DEFAULT 'en_attente', 
                     created_at TEXT NOT NULL,
                     processed_at TEXT,
-                    raison_refus TEXT, -- Optionnel : pour expliquer pourquoi on a refusé
+                    raison_refus TEXT, 
                     FOREIGN KEY (user_id) REFERENCES parieurs(id) ON DELETE CASCADE,
                     FOREIGN KEY (admin_id) REFERENCES parieurs(id)
+                )""")
+
+            # Table des inscriptions avant confirmation
+            cur.execute("""CREATE TABLE IF NOT EXISTS pending_registrations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    prenom TEXT NOT NULL,
+                    nom TEXT NOT NULL,
+                    username TEXT NOT NULL UNIQUE,
+                    email TEXT NOT NULL UNIQUE,
+                    age INT NOT NULL,
+                    classe TEXT NOT NULL,
+                    mdp TEXT NOT NULL,
+                    token TEXT NOT NULL,
+                    expiration TEXT NOT NULL,
+                    created_at TEXT NOT NULL
                 )""")
 
     except sqlite3.Error as e:

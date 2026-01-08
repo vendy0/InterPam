@@ -274,9 +274,21 @@ def traitementRegister():
         rulesError = "Vous n'avez pas accepté les règles d'utilisation."
         return render_template("auth.html", error=rulesError)
 
+    if check_pending_duplicates(username, email):
+        return render_template(
+            "auth.html",
+            error="Ce compte est en attente de validation. Vérifiez vos emails.",
+        )
+
     hashed_password = generate_password_hash(mdp)
 
-    user = {
+    # 1. Générer le token
+    token = secrets.token_urlsafe(32)
+    expiration = datetime.now() + timedelta(hours=24)
+    created_at = (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+    # 2. Préparer les données
+    user_data = {
         "prenom": prenom,
         "nom": nom,
         "username": username,
@@ -284,13 +296,86 @@ def traitementRegister():
         "age": age,
         "classe": classe,
         "mdp": hashed_password,
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "created_at": created_at,
     }
-    ajouter_parieur(user)
-    flash("Votre compte a été créé avec succès.", "success")
-    welcome_email(prenom, email, url_for("home", _external=True))
+
+    # 3. Sauvegarder dans pending_registrations
+    if save_pending_registration(user_data, token, expiration):
+        # 4. Envoyer l'email
+        lien = url_for("confirm_email", token=token, _external=True)
+        # Assurez-vous d'importer envoyer_mail_verification depuis vos modèles
+        try:
+            envoyer_mail_verification(prenom, email, lien)
+            flash(
+                "Inscription enregistrée ! Un email de confirmation vous a été envoyé.",
+                "success",
+            )
+        except Exception as e:
+            print(e)
+            flash("Erreur lors de l'envoi de l'email.", "error")
+
+        return render_template(
+            "auth.html"
+        )  # On reste sur la page de login avec le message
+    else:
+        return render_template(
+            "auth.html", error="Erreur technique lors de l'inscription."
+        )
+
+
+# Dans routes.py
+
+from models.user import get_pending_by_token, delete_pending, ajouter_parieur
+
+
+@app.route("/confirm-email/<token>")
+def confirm_email(token):
+    # 1. Récupérer les données temporaires
+    pending_user = get_pending_by_token(token)
+
+    if not pending_user:
+        flash("Lien de confirmation invalide ou déjà utilisé.", "error")
+        return redirect(url_for("login"))
+
+    # 2. Vérifier l'expiration
+    expire_at = datetime.strptime(pending_user["expiration"], "%Y-%m-%d %H:%M:%S.%f")
+    if datetime.now() > expire_at:
+        delete_pending(token)  # On nettoie
+        flash("Ce lien a expiré. Veuillez vous réinscrire.", "error")
+        return redirect(url_for("register"))
+
+    # 3. Transférer vers la table principale (parieurs)
+    # On nettoie le dictionnaire pour enlever id, token et expiration qui ne vont pas dans 'parieurs'
+    final_user_data = {
+        "prenom": pending_user["prenom"],
+        "nom": pending_user["nom"],
+        "username": pending_user["username"],
+        "email": pending_user["email"],
+        "age": pending_user["age"],
+        "classe": pending_user["classe"],
+        "mdp": pending_user["mdp"],  # Déjà hashé
+        "created_at": pending_user["created_at"],
+        "role": "parieur",  # Par défaut
+    }
+
+    ajouter_parieur(final_user_data)
+
+    # 4. Supprimer de la table temporaire
+    delete_pending(token)
+
+    # 5. Connecter l'utilisateur (Optionnel, ou juste rediriger vers login)
+    session["username"] = final_user_data["username"]
     session.permanent = False
-    session["username"] = username
+
+    flash("Votre compte a été activé avec succès ! Bienvenue.", "success")
+    welcome_email(
+        final_user_data["prenom"],
+        final_user_data["email"],
+        url_for("home", _external=True),
+    )
+
+    session.permanent = False
+    session["username"] = pending_user["username"]
     return redirect(url_for("home"))
 
 

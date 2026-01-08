@@ -23,16 +23,25 @@
 
                 <div id="age_and_grade">
                     <input type="number" name="age" class="age_input" min="0" max="100" placeholder="Age" required="required" value="{{ request.form.age }}" />
-                    <select class="classe_input" name="classe" required>
-                        <option value="" selected="selected" disabled="disabled">Niveau scolaire</option>
-                        <option value="septieme" {% if request.form.classe=="septieme" %} selected="selected" {% endif %}>7e A.F.</option>
-                        <option value="huitieme" {% if request.form.classe=="huitieme" %} selected="selected" {%endif%}>8e A.F.</option>
-                        <option value="neuvieme" {% if request.form.classe=="neuvieme" %} selected="selected" {%endif%}>9e A.F.</option>
-                        <option value="secondaire 1" {% if request.form.classe=="secondaire 1" %} selected="selected" {%endif%}>NS1</option>
-                        <option value="secondaire 2" {% if request.form.classe=="secondaire 2" %} selected="selected" {%endif%}>NS2</option>
-                        <option value="secondaire 3" {% if request.form.classe=="secondaire 3" %} selected="selected" {%endif%}>NS3</option>
-                        <option value="secondaire 4" {% if request.form.classe=="secondaire 4" %} selected="selected" {%endif%}>NS4</option>
-                    </select>
+                {% set classes = [
+                    ('Septième A.F.', '7e A.F.'),
+                    ('Huitième A.F.', '8e A.F.'),
+                    ('Neuvième A.F.', '9e A.F.'),
+                    ('Secondaire 1', 'NS1'),
+                    ('Secondaire 2', 'NS2'),
+                    ('Secondaire 3', 'NS3'),
+                    ('Secondaire 4', 'NS4')
+                ] %}
+                
+                <select class="classe_input" name="classe" required>
+                    <option value="" selected disabled>Niveau scolaire</option>
+                    {% for val, label in classes %}
+                        <option value="{{ val }}" {% if request.form.classe == val %} selected {% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+
                 </div>
                 <div class="password-wrapper">
                     <input type="password" class="input" name="mdp" id="mdp_input" placeholder="Créez un nouveau mot de passe" minlength="8" autocomplete="new-password" required="required" value="{{ request.form.mdp }}" />
