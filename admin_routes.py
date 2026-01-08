@@ -341,7 +341,8 @@ def cloturer_match(match_id):
     for opt_id in options_gagnantes:
         valider_option_gagnante(opt_id, match_id)
 
-    fermer_match_officiellement(match_id)
+    admin_id = get_user_by_username(session["username"])["id"]
+    fermer_match_officiellement(match_id, admin_id)
     executer_settlement_match(match_id)
 
     flash("Résultats enregistrés et match clôturé !", "success")

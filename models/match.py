@@ -123,8 +123,9 @@ def get_historique_matchs():
     try:
         with get_db_connection() as conn:
             cur = conn.execute("""
-                SELECT id AS match_id, equipe_a, equipe_b, date_match, statut, type_match 
-                FROM matchs 
+                SELECT m.id AS match_id, m.equipe_a, m.equipe_b, m.date_match, m.statut, m.type_match, p.prenom AS admin_prenom, p.nom AS admin_nom
+                FROM matchs  m
+                LEFT JOIN parieurs p ON m.admin_id = p.id
                 WHERE statut = 'terminé' OR statut = 'annulé'
                 ORDER BY date_match DESC
             """)

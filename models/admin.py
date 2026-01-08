@@ -95,12 +95,17 @@ def valider_option_gagnante(option_id, match_id):
         return False
 
 
-def fermer_match_officiellement(match_id):
+def fermer_match_officiellement(match_id, admin_id):
     """Change le statut du match pour qu'il ne soit plus modifiable."""
+    print(admin_id)
     try:
         with get_db_connection() as conn:
             conn.execute(
-                "UPDATE matchs SET statut = 'terminé' WHERE id = ?", (match_id,)
+                "UPDATE matchs SET statut = 'terminé', admin_id = ? WHERE id = ?",
+                (
+                    admin_id,
+                    match_id,
+                ),
             )
             cur = conn.execute(
                 "SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL"
@@ -108,13 +113,14 @@ def fermer_match_officiellement(match_id):
             users = cur.fetchall()
             cur = conn.execute("SELECT * FROM matchs WHERE id = ?", (match_id,))
             match = cur.fetchone()
-            for user in users:
-                try:
-                    message = f"Le match {match['equipe_a']} VS {match['equipe_b']} est terminé !"
-                    envoyer_push_notification(user["sub"], "Match terminé", message)
-                except Exception as e:
-                    print(f"Échec envoi notification pour un utilisateur: {e}")
-                    # On continue la boucle pour les autres et pour finir la fonction
+            if users:
+                for user in users:
+                    try:
+                        message = f"Le match {match['equipe_a']} VS {match['equipe_b']} est terminé !"
+                        envoyer_push_notification(user["sub"], "Match terminé", message)
+                    except Exception as e:
+                        print(f"Échec envoi notification pour un utilisateur: {e}")
+                        # On continue la boucle pour les autres et pour finir la fonction
             conn.commit()
             return True
     except Exception as e:
