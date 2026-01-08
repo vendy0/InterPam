@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="page-header">
-    <h2 class="header-actions">Gestion des Joueurs</h3>
+    <h2 class="header-actions">Gestion des Joueurs</h2>
 </div>
 
 <details class="admin-filter" {{ 'open' if request.method == 'POST' else '' }}>
@@ -33,11 +33,11 @@
                     <option value="secondaire 2" {% if request.form.classe=="secondaire 2" %} selected {%endif%}>NS2</option>
                     <option value="secondaire 3" {% if request.form.classe=="secondaire 3" %} selected {%endif%}>NS3</option>
                     <option value="secondaire 4" {% if request.form.classe=="secondaire 4" %} selected {%endif%}>NS4</option>
-                    <option value="Direction" {% if request.form.fclasse=="Direction" %} selected {%endif%}>Direction</option>
+                    <option value="Direction" {% if request.form.classe=="Direction" %} selected {%endif%}>Direction</option>
                 </select>
             </div>
             
-            <button type="submit" class="btn-primary">Lancer la recherche</button>
+            <button type="submit" class="btn-primary btn-dang">Lancer la recherche</button>
         </form>
     </div>
 </details>
@@ -101,7 +101,7 @@
             <form action="{{ url_for('users.credit_user') }}" method="POST">
                 <input type="text" name="username_credit" id="username_credit" placeholder="Username" required style="margin-bottom:10px;">
                 <input type="number" name="solde_credit" id="solde_credit" step="any" placeholder="Montant à ajouter" required style="margin-bottom:10px;">
-                <button type="submit" class="btn-success" style="width:100%">Valider Crédit</button>
+                <button type="submit" class="btn-success btn-dang" style="width:100%">Valider Crédit</button>
             </form>
         </div>
     </details>
@@ -112,7 +112,7 @@
             <form action="{{ url_for('users.debit_user') }}" method="POST">
                 <input type="text" name="username_debit" id="username_debit" placeholder="Username" required style="margin-bottom:10px;">
                 <input type="number" name="solde_debit" id="solde_debit" step="any" placeholder="Montant à retirer" required style="margin-bottom:10px;">
-                <button type="submit" class="btn-danger" style="width:100%">Valider Débit</button>
+                <button type="submit" class="btn-danger btn-dang" style="width:100%">Valider Débit</button>
             </form>
         </div>
     </details>
@@ -127,7 +127,7 @@
             <textarea name="message_ban_ret" rows="3" placeholder="Raison..." style="margin-bottom:10px;"></textarea>
             <div style="display:flex; gap:10px;">
                 <button type="button" onclick="closeDeleteModal()" style="background:#ccc; flex:1;">Annuler</button>
-                <button type="submit" class="btn-danger" style="flex:1;">Confirmer</button>
+                <button type="submit" class="btn-danger btn-dang" style="flex:1;">Confirmer</button>
             </div>
         </form>
     </div>

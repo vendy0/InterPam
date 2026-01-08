@@ -9,10 +9,12 @@ from flask import (
     request,
     jsonify,
 )
+import uuid
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from re import match as re_match
+from functools import wraps
 
 from models.user import *
 from models.match import *
@@ -135,15 +137,39 @@ def find_user(user_id=None):
 @admin_required
 def credit_user():
     if request.method == "GET":
+        #         token = str(uuid.uuid4())
+        #         session["token"] = token
+        # Assure-toi de passer le token au template pour l'insérer dans un <input type="hidden">
+        #         return render_template("admin/users.html", token=token)
         return render_template("admin/users.html")
 
     donnees = request.form
-    username = donnees.get("username_credit").strip()
-    solde = float(donnees.get("solde_credit", "0").replace(",", "."))
+    username = donnees.get("username_credit", "").strip()
 
-    if solde <= 0:
-        flash("Le montant doit être positif !", "error")
-        return render_template("admin/users.html")
+    # Sécurité : Gérer l'erreur si solde n'est pas un nombre
+    try:
+        solde_brut = donnees.get("solde_credit", "0").replace(",", ".")
+        solde = float(solde_brut)
+    except ValueError:
+        flash("Format de montant invalide.", "error")
+        return redirect(url_for("users.users"))
+
+    # token_form = donnees.get("token")
+    # token_session = session.get("token")
+
+    # 1. Vérification du Token (Double clic / Refresh)
+    # if not token_form or token_form != token_session:
+    #     flash("Action déjà traitée ou session expirée.", "error")
+    #     return redirect(url_for("users.users"))
+
+    # 2. Consommer le token immédiatement pour qu'il ne soit plus réutilisable
+    # session.pop("token", None)
+
+    # 3. Validation métier.users"))
+
+    # 4. Exécution en base de données
+    # C'est ici que tu appelles ta fonction de data.py
+    # ex: succes, message = data.crediter_joueur(username, solde, admin_id=current_user.id)
 
     success, message = credit(username, solde)
 

@@ -6,6 +6,7 @@
 - Règles obligatoire en front pour un nouvel adm
 - Règlement du staff
 - Déduire un frais de retrait
+- Ajouter le numéro sur la page wallet et sur la page Rules
 
 """
 ========================================
@@ -30,7 +31,6 @@ FINIS-----------------------------------
 - Titles
 - ...
 - Robot SEO
-- Ajouter le numéro sur la page wallet et sur la page Rules
 
 
 - Les balises

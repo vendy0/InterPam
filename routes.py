@@ -12,11 +12,12 @@ from flask import (
     send_from_directory,
 )
 from re import match as re_match
+import uuid
+from functools import wraps
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
-from functools import wraps
 
 from admin_routes import admin_bp, users_bp, matchs_bp
 
@@ -285,7 +286,7 @@ def traitementRegister():
     # 1. Générer le token
     token = secrets.token_urlsafe(32)
     expiration = datetime.now() + timedelta(hours=24)
-    created_at = (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # 2. Préparer les données
     user_data = {
@@ -615,9 +616,15 @@ def mon_ticket():
     cote_totale = Decimal("1")
     for ligne in details:
         cote_totale *= Decimal(str(ligne["cote"]))
-
+    # On génère un token unique pour ce chargement de page "mon_ticket"
+    token_pari = str(uuid.uuid4())
+    session["token_pari"] = token_pari
     return render_template(
-        "ticket.html", selections=details, cote_totale=cote_totale, user=user
+        "ticket.html",
+        selections=details,
+        cote_totale=cote_totale,
+        user=user,
+        token=token_pari,
     )
 
 
@@ -644,6 +651,20 @@ def vider_ticket():
 def valider_ticket():
     if "username" not in session:
         return redirect(url_for("login"))
+
+    # --- SÉCURITÉ ANTI-REPLAY ---
+    token_form = request.form.get("token")
+    token_session = session.get("token_pari")
+
+    # Si pas de token ou token différent -> On bloque
+    if not token_form or token_form != token_session:
+        flash("Transaction annulée : double-clic détecté ou page expirée.", "error")
+        # On redirige vers l'accueil ou le ticket vide pour éviter de re-submit
+        return redirect(url_for("home"))
+
+    # On supprime le token pour qu'il ne soit plus jamais réutilisable
+    session.pop("token_pari", None)
+    # ----------------------------
 
     ticket = session.get("ticket", {})
     if not ticket:
