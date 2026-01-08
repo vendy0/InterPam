@@ -3,7 +3,6 @@ import sqlite3
 from models.emails import envoyer_push_notification
 
 
-
 def get_options_by_match_id(match_id):
     """Récupère toutes les options liées à un match."""
     try:
@@ -31,8 +30,9 @@ def get_matchs_en_cours():
 
 def get_programmes():
     donnees = get_matchs_en_cours()
+    if not donnees:
+        return None
     programme = {}
-
     for ligne in donnees:
         m_id = ligne["match_id"]
         if m_id not in programme:

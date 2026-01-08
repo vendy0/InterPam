@@ -249,8 +249,8 @@ def nouveau_match():
                     match_id,
                 )
 
-        flash("Match ajouté avec succès !", "success")
-        return redirect(url_for("matchs.matchs"))
+    flash("Match ajouté avec succès !", "success")
+    return redirect(url_for("matchs.matchs"))
 
 
 @matchs_bp.route("/modifier", methods=["GET"])

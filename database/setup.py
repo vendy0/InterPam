@@ -52,9 +52,9 @@ def initialiser_bdd():
                     equipe_b TEXT NOT NULL,
                     date_match TEXT NOT NULL,
                     statut TEXT DEFAULT 'ouvert',
-                    type_match TEXT DEFAULT 'foot'
+                    type_match TEXT DEFAULT 'foot',
                     admin_id INTEGER,
-                    FOREIGN KEY (admin_id) REFERENCES admin(id) ON DELETE SET NULL
+                    FOREIGN KEY (admin_id) REFERENCES parieurs(id) ON DELETE SET NULL
                 )""")
 
             # Table Options
