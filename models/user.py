@@ -31,13 +31,14 @@ def save_pending_registration(user_data, token, expiration):
         print(f"Erreur save_pending : {e}")
         return False
 
+
 def check_pending_duplicates(username, email):
     """Vérifie si username ou email est déjà en attente de validation."""
     try:
         with get_db_connection() as conn:
             cur = conn.execute(
-                "SELECT * FROM pending_registrations WHERE username = ? OR email = ?", 
-                (username, email)
+                "SELECT * FROM pending_registrations WHERE username = ? OR email = ?",
+                (username, email),
             )
             return cur.fetchone() is not None
     except sqlite3.Error:
@@ -282,7 +283,7 @@ def credit(username, montant_decimal):
         return False, f"Erreur lors du crédit : {str(e)}"
 
 
-def debit(username, montant_decimal):
+def debit(username, montant_decimal, message=False):
     try:
         solde_centimes = montant_decimal * 100
         with get_db_connection() as conn:
@@ -303,15 +304,15 @@ def debit(username, montant_decimal):
             # 4. Préparation du message avec le nouveau solde
             # Note : Assurez-vous que user['solde'] est converti de centimes vers HTG pour l'affichage
             nouveau_solde_htg = user["solde"]
-            message = f"Votre retrait de {montant_decimal} HTG a été effectué. Nouveau solde : {user['solde']} HTG"
 
             # 5. Envoi de la notification
-            if user.get("push_subscription"):
-                envoyer_push_notification(
-                    user["push_subscription"],
-                    "Compte débité",
-                    message,
-                )
+            if message:
+                if user.get("push_subscription"):
+                    envoyer_push_notification(
+                        user["push_subscription"],
+                        "Compte débité",
+                        f"Votre compte vient d'être débité de {solde} HTG. Nouveau solde : {user['solde']}",
+                    )
 
             return True, "Compte débité"
     except Exception as e:

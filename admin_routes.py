@@ -191,7 +191,7 @@ def debit_user():
         flash("Le montant doit être positif !", "error")
         return render_template("admin/users.html")
 
-    success, message = debit(username, solde)
+    success, message = debit(username, solde, message=True)
 
     flash(message)
     return redirect(url_for("admin.dashboard"))
@@ -698,6 +698,12 @@ def transaction_action():
         elif tx["type"] == "retrait":
             update_transaction_status(tx_id, "valide", admin_id)
             flash(f"Retrait validé.", "success")
+            if user["push_subscription"]:
+                envoyer_push_notification(
+                    user["push_subscription"],
+                    "Retrait validé",
+                    f"Votre retrait de {float(tx['montant_dec'])} HTG a été valide !",
+                )
 
     elif action == "refuser":
         raison_admin = (

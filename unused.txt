@@ -7,7 +7,7 @@
 - Règlement du staff
 - Déduire un frais de retrait
 - Ajouter le numéro sur la page wallet et sur la page Rules
-
+- Voir les fiches
 """
 ========================================
 FINIS-----------------------------------
@@ -31,6 +31,7 @@ FINIS-----------------------------------
 - Titles
 - ...
 - Robot SEO
+- prévention contre les doubles cliques
 
 
 - Les balises

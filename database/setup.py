@@ -114,7 +114,9 @@ def initialiser_bdd():
                     user_id INTEGER NOT NULL,
                     admin_id INTEGER, 
                     type TEXT NOT NULL, 
-                    montant INTEGER NOT NULL, 
+                    montant INTEGER NOT NULL,      -- Montant Brut (en centimes)
+                    frais INTEGER DEFAULT 0,       -- Frais appliqués (en centimes)
+                    montant_net INTEGER DEFAULT 0, -- Montant à envoyer réellement (en centimes)
                     telephone TEXT NOT NULL,
                     moncash_id TEXT UNIQUE,
                     statut TEXT DEFAULT 'en_attente', 
