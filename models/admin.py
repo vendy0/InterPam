@@ -38,14 +38,14 @@ def get_dashboard_stats():
 					COUNT(*) as total,
 					SUM(CASE WHEN actif = 0 THEN 1 ELSE 0 END) as bannis
 				FROM parieurs
-				WHERE classe != Direction
+				WHERE classe != "Direction"
 			"""
             cur = conn.execute(query_users)
             res_users = cur.fetchone()
 
             # Formatage des données
             stats["mises_totales"] = depuis_centimes(mises)
-            stats["gains_distribues"] = depuis_centimes(gains)
+            stats["stats"] = depuis_centimes(gains)
             stats["benefice"] = depuis_centimes(mises - gains)
             stats["total_joueurs"] = res_users["total"]
             stats["joueurs_bannis"] = res_users["bannis"] if res_users["bannis"] else 0
@@ -403,6 +403,63 @@ def creer_invitation_admin(email, role, token, expiration):
         return False, str(e)
 
 
+def get_invitation_by_token(token):
+    try:
+        with get_db_connection() as conn:
+            # 1. Permet l'accès par nom de colonne (ex: recuperation["email"])
+            conn.row_factory = sqlite3.Row
+
+            # 2. Correction du nom de la table : 'recuperations' au lieu de 'recuperation'
+            cur = conn.execute("SELECT * FROM invitations WHERE token = ?", (token,))
+            invitation = cur.fetchone()
+
+            if invitation:
+                # Retourne l'objet Row (qui se comporte comme un dictionnaire)
+                return invitation
+            else:
+                return None  # Il est préférable de retourner None si rien n'est trouvé
+
+    except sqlite3.Error as e:
+        # Correction de la f-string (manquait le 'f')
+        print(f"Erreur lors de la récupération : {e}")
+        return None
+
+
+def supprimer_invitation(email):
+    try:
+        with get_db_connection() as conn:
+            # 1. Permet l'accès par nom de colonne (ex: recuperation["email"])
+            conn.row_factory = sqlite3.Row
+
+            # 2. Correction du nom de la table : 'recuperations' au lieu de 'recuperation'
+            cur = conn.execute("Delete FROM recuperations WHERE email = ?", (email,))
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"Erreur lors de la suppression : {e}")
+        
+
+def get_recuperation_by_token(token):
+    try:
+        with get_db_connection() as conn:
+            # 1. Permet l'accès par nom de colonne (ex: recuperation["email"])
+            conn.row_factory = sqlite3.Row
+
+            # 2. Correction du nom de la table : 'recuperations' au lieu de 'recuperation'
+            cur = conn.execute("SELECT * FROM recuperations WHERE token = ?", (token,))
+            recuperation = cur.fetchone()
+
+            if recuperation:
+                # Retourne l'objet Row (qui se comporte comme un dictionnaire)
+                return recuperation
+            else:
+                return None  # Il est préférable de retourner None si rien n'est trouvé
+
+    except sqlite3.Error as e:
+        # Correction de la f-string (manquait le 'f')
+        print(f"Erreur lors de la récupération : {e}")
+        return None
+                
+                
 def ban_ret_user(username, message, ban=False, ret=False):
     try:
         with get_db_connection() as conn:

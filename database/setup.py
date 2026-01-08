@@ -53,6 +53,8 @@ def initialiser_bdd():
                     date_match TEXT NOT NULL,
                     statut TEXT DEFAULT 'ouvert',
                     type_match TEXT DEFAULT 'foot'
+                    admin_id INTEGER,
+                    FOREIGN KEY (admin_id) REFERENCES admin(id) ON DELETE SET NULL
                 )""")
 
             # Table Options

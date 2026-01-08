@@ -1,12 +1,11 @@
 - ReCaptcha 
 - Ajouter mon email comme adm
-- Insérer ReCaptcha
 - Vue détaillée des tickets : Pouvoir consulter tous les paris d'un utilisateur spécifique en cas de litige.
 - Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
 - Partie Email de l'infterface adm
 - Règles obligatoire en front pour un nouvel adm
 - Ajouter le numéro sur la page wallet et sur la page Rules
-
+- Règlement du staff
 
 """
 ========================================
@@ -60,6 +59,7 @@ __Historique cash
 - Les polices
 - Se connecter avec google
 - Promouvoir un user
+- Insérer ReCaptcha
 
 
 

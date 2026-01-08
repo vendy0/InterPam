@@ -514,7 +514,7 @@ def setup_staff(token):
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
     ajouter_parieur(user_data)
-    supprimer_invitation(token)
+    supprimer_invitation(email)
 
     session["username"] = username
     flash(f"Votre compte a été créé avec succès. Bienvenue Adm {prenom}", "success")
