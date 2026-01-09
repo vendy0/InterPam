@@ -123,6 +123,18 @@
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
                         </a>
+                        
+                        <a href="{{ url_for('users.user_details', user_id=user.id) }}" class="btn-icon history-handly" title="Historique Transactions Manuelles">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="5"></circle>
+                                <line x1="12" y1="5" x2="12" y2="11"></line>
+                                <path d="M14 6h-3a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3h-3"></path>
+                                
+                                <path d="M17 21H7a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2z"></path>
+                                <path d="M12 14v-2"></path>
+                            </svg>
+
+                        </a>
                     
                         <a href="{{ url_for('users.fiches', user_id=user.id) }}" class="btn-icon list" title="Voir les paris">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

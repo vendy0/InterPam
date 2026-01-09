@@ -141,6 +141,18 @@ def initialiser_bdd():
                     expiration TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 )""")
+                
+                            # Table des interventions manuelles (Crédit/Débit par admin)
+            cur.execute("""CREATE TABLE IF NOT EXISTS admin_transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    admin_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    type TEXT NOT NULL, -- 'credit' ou 'debit'
+                    montant INTEGER NOT NULL, -- En centimes
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (admin_id) REFERENCES parieurs(id),
+                    FOREIGN KEY (user_id) REFERENCES parieurs(id)
+                )""")
 
     except sqlite3.Error as e:
         print(f"Erreur lors de l'initialisation : {e}")

@@ -146,38 +146,25 @@ def credit_user():
 
     donnees = request.form
     username = donnees.get("username_credit", "").strip()
-
-    # Sécurité : Gérer l'erreur si solde n'est pas un nombre
     try:
-        solde_brut = donnees.get("solde_credit", "0").replace(",", ".")
-        solde = float(solde_brut)
+        solde = float(donnees.get("solde_credit", "0").replace(",", "."))
     except ValueError:
-        flash("Format de montant invalide.", "error")
+        flash("Format invalide", "error")
         return redirect(url_for("users.users"))
 
-    # token_form = donnees.get("token")
-    # token_session = session.get("token")
+    # Récupérer l'admin ID via la session
+    current_admin = get_user_by_username(session["username"])
 
-    # 1. Vérification du Token (Double clic / Refresh)
-    # if not token_form or token_form != token_session:
-    #     flash("Action déjà traitée ou session expirée.", "error")
-    #     return redirect(url_for("users.users"))
+    # Appel modifié
+    success, message = credit(
+        username, solde, message=True, admin_id=current_admin["id"]
+    )
 
-    # 2. Consommer le token immédiatement pour qu'il ne soit plus réutilisable
-    # session.pop("token", None)
-
-    # 3. Validation métier.users"))
-
-    # 4. Exécution en base de données
-    # C'est ici que tu appelles ta fonction de data.py
-    # ex: succes, message = data.crediter_joueur(username, solde, admin_id=current_user.id)
-
-    success, message = credit(username, solde)
     if success:
         flash(message, "success")
     else:
         flash(message, "error")
-    return redirect(url_for("admin.dashboard"))
+    return redirect(url_for("admin.dashboard"))  # Ou retour vers users
 
 
 @users_bp.route("/debit", methods=["GET", "POST"])
@@ -190,11 +177,12 @@ def debit_user():
     username = donnees.get("username_debit").strip()
     solde = float(donnees.get("solde_debit", "0").replace(",", "."))
 
-    if int(solde) <= 0:
-        flash("Le montant doit être positif !", "error")
-        return render_template("admin/users.html")
+    current_admin = get_user_by_username(session["username"])
 
-    success, message = debit(username, solde, message=True)
+    # Appel modifié
+    success, message = debit(
+        username, solde, message=True, admin_id=current_admin["id"]
+    )
 
     flash(message)
     return redirect(url_for("admin.dashboard"))
@@ -280,7 +268,19 @@ def user_transactions(user_id):
         flash("Erreur lors de la récupération des transactions.", "error")
         return redirect(url_for("users.users"))
 
+# Route pour voir les détails d'un user (et son historique manuel)
+@users_bp.route("/details/<int:user_id>")
+@admin_required
+def user_details(user_id):
+    user = get_user_by_id(user_id)
+    # On récupère l'historique manuel
+    historique_admin = get_admin_transactions_by_user(user_id)
+    
+    # On convertit les montants centimes -> décimal pour l'affichage
+    for h in historique_admin:
+        h['montant'] = depuis_centimes(h['montant'])
 
+    return render_template("admin/users/details.html", user=user, history=historique_admin)
 """
 ---------------------------------------
 ROUTES DES MATCHS
