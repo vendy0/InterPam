@@ -99,8 +99,11 @@ def get_user_by_id(parieur_id):
 	try:
 		with get_db_connection() as conn:
 			cur = conn.execute("SELECT * FROM parieurs WHERE id = ?", (parieur_id,))
-			return cur.fetchone()
-
+			user = cur.fetchone()
+			if user:
+				user_dict = dict(user)
+				user_dict["solde"] = depuis_centimes(user_dict["solde"])
+			return user_dict
 	except sqlite3.Error as e:
 		print(f"Erreur lors de la récupération (id) : {e}")
 		return None

@@ -449,11 +449,10 @@ def reset_password_route(token):
 			recuperation["email"],
 			"Réinitialisation réussie",
 			message,
-			lien,
 		)
 		session.permanent = False
 		session["username"] = user["username"]
-		return redirect(url_for("login"))
+		return redirect(url_for("home"))
 	else:
 		return "<h1>Il y a eu une erreur lors de la réinitialisation du mot de passe !</h1>"
 

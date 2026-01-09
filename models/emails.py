@@ -47,7 +47,9 @@ def envoyer_mail_verification(nom, email, lien):
 
     # 1. Charger le nouveau template
     try:
-        with open("templates/admin/emails/verify_email.html", "r", encoding="utf-8") as f:
+        with open(
+            "templates/admin/emails/verify_email.html", "r", encoding="utf-8"
+        ) as f:
             template_html = f.read()
     except FileNotFoundError:
         # Fallback au cas où le dossier est différent
@@ -158,12 +160,7 @@ def refus_notification(nom, email, message, lien=None, texte_bouton=None):
     return envoyer_email_generique(email, sujet, html, corps_texte)
 
 
-def envoyer_notification_generale(
-    nom,
-    email,
-    titre,
-    message,
-):
+def envoyer_notification_generale(nom, email, titre, message, lien=None, texte_bouton=None):
     """
     Envoie un email de notification flexible.
     'message' peut contenir du HTML simple.
@@ -187,7 +184,7 @@ def envoyer_notification_generale(
             message
         ),  # Permet d'interpréter le HTML dans le template
         lien_action=url_finale,
-        texte_bouton=texte_bouton or "Accéder à InterPam",
+        texte_bouton=texte_bouton if texte_bouton else "Accéder à InterPam",
     )
 
     # 2. Préparer la version texte brut (sans balises HTML)
