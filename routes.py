@@ -218,7 +218,7 @@ def traitementRegister():
 	prenom = clean_input(donnees.get("first_name", ""))
 	nom = clean_input(donnees.get("last_name", ""))
 	username = clean_input(donnees.get("username", ""))
-	email = clean_input(donnees.get("email", ""))
+	email = clean_input(donnees.get("email", "").lower())
 	age = donnees.get("age", "")
 	classe = clean_input(donnees.get("classe", ""))
 	mdp = clean_input(donnees.get("mdp_inscription", ""))

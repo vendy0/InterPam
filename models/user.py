@@ -27,6 +27,7 @@ def save_pending_registration(user_data, token, expiration):
                     user_data["created_at"],
                 ),
             )
+            conn.commit()
             return True
     except sqlite3.Error as e:
         print(f"Erreur save_pending : {e}")
@@ -92,6 +93,7 @@ def ajouter_parieur(user_data):
                     user_data["created_at"],
                 ),
             )
+            conn.commit()
             print(f"Utilisateur {user_data['username']} ajouté.")
     except sqlite3.Error as e:
         print(f"Erreur SQL lors de l'ajout du parieur : {e}")

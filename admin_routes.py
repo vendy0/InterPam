@@ -116,7 +116,7 @@ def find_user(user_id=None):
     criteres = {
         "nom": request.form.get("nom", "").strip(),
         "username": request.form.get("username_finding", "").strip(),
-        "email": request.form.get("email", "").strip(),
+        "email": request.form.get("email", "").strip().lower(),
         "age": request.form.get("age", "").strip(),
         "classe": request.form.get("classe", "").strip(),
         "notif": request.form.get("notif", "").strip(),
@@ -268,6 +268,7 @@ def user_transactions(user_id):
         flash("Erreur lors de la récupération des transactions.", "error")
         return redirect(url_for("users.users"))
 
+
 # Route pour voir les détails d'un user (et son historique manuel)
 @users_bp.route("/details/<int:user_id>")
 @admin_required
@@ -275,12 +276,16 @@ def user_details(user_id):
     user = get_user_by_id(user_id)
     # On récupère l'historique manuel
     historique_admin = get_admin_transactions_by_user(user_id)
-    
+
     # On convertit les montants centimes -> décimal pour l'affichage
     for h in historique_admin:
-        h['montant'] = depuis_centimes(h['montant'])
+        h["montant"] = depuis_centimes(h["montant"])
 
-    return render_template("admin/users/details.html", user=user, history=historique_admin)
+    return render_template(
+        "admin/users/details.html", user=user, history=historique_admin
+    )
+
+
 """
 ---------------------------------------
 ROUTES DES MATCHS
@@ -477,7 +482,7 @@ def staff():
     if request.method == "GET":
         return render_template("admin/staff.html", staff=staff)
 
-    email = request.form.get("email")
+    email = request.form.get("email").lower()
     role = request.form.get("role")
     nom = request.form.get("nom")
 
