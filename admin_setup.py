@@ -1,27 +1,63 @@
 # setup_admin.py
-from database.setup import creer_super_admin, initialiser_bdd
+import sqlite3
+from werkzeug.security import generate_password_hash
+from datetime import datetime
+from database.setup import initialiser_bdd
+
+DB_NAME = "database.db"  # chemin exact
 
 
 def main():
     print("--- INSTALLATION DU SUPER ADMIN INTERPAM ---")
 
-    # On s'assure que la BDD existe
     initialiser_bdd()
 
-    # Remplace par tes vraies infos
-    prenom = "Admin Test"
-    nom = "Testing"
-    username = "Anonymous"
-    email = "test@gmail.com"
-    mdp = "genetique"  # Change-le !
+    prenom = "Andy V."
+    nom = "Descartes"
+    username = "Black_Hole"
+    email = "andyvenson99@gmail.com"
+    mdp = "naruto"
 
-    succes, message = creer_super_admin(prenom, nom, username, email, mdp)
+    try:
+        with sqlite3.connect("interpam.db") as conn:
+            cur = conn.cursor()
 
-    if succes:
-        print(f"✅ {message}")
-        print(f"Identifiants : {username} / {mdp}")
-    else:
-        print(f"❌ {message}")
+            # Vérifier s'il existe déjà
+            cur.execute("SELECT id FROM parieurs WHERE role = 'super_admin' LIMIT 1")
+            if cur.fetchone():
+                print("❌ Un super admin existe déjà. Abandon.")
+                return
+
+            hash_mdp = generate_password_hash(mdp)
+            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            cur.execute(
+                """
+                INSERT INTO parieurs
+                (prenom, nom, username, email, age, classe, mdp, created_at, role, solde)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    prenom,
+                    nom,
+                    username,
+                    email,
+                    99,
+                    "Direction",
+                    hash_mdp,
+                    created_at,
+                    "super_admin",
+                    200000,
+                ),
+            )
+
+            conn.commit()
+
+        print("✅ Super admin créé avec succès")
+        print(f"➡️ Identifiants : {username} / {mdp}")
+
+    except sqlite3.Error as e:
+        print(f"❌ Erreur BDD : {e}")
 
 
 if __name__ == "__main__":

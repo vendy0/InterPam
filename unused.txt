@@ -1,7 +1,6 @@
 - ReCaptcha 
 - Ajouter mon email comme adm
 - Vue détaillée des tickets : Pouvoir consulter tous les paris d'un utilisateur spécifique en cas de litige.
-- Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
 - Partie Email de l'infterface adm
 - Règles obligatoire en front pour un nouvel adm
 - Règlement du staff
@@ -33,6 +32,7 @@ FINIS-----------------------------------
 - prévention contre les doubles cliques
 - Voir les fiches
 - Déduire un frais de retrait
+- Journal d'audit (Logs) : Voir qui a modifié quel match ou validé quel score (pour éviter les fraudes internes).
 
 
 
