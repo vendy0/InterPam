@@ -172,9 +172,12 @@ def credit_user():
 	# ex: succes, message = data.crediter_joueur(username, solde, admin_id=current_user.id)
 
 	success, message = credit(username, solde)
-
-	flash(message)
+	if success:
+	    flash(message, "success")
+	else:
+	    flash(message, "error")
 	return redirect(url_for("admin.dashboard"))
+        
 
 
 @users_bp.route("/debit", methods=["GET", "POST"])
@@ -244,6 +247,33 @@ def fiches(user_id):
 	# On utilise la nouvelle fonction de regroupement
 	fiches = get_fiches_detaillees(user_id)
 	return render_template("fiches.html", fiches=fiches, admin_face=True, user=user)
+
+# admin_routes.py
+
+# ... (après la route fiches)
+
+@users_bp.route("/transactions/<int:user_id>")
+@admin_required
+def user_transactions(user_id):
+    try:
+        # On récupère l'user
+        user = get_user_by_id(user_id)
+        if not user:
+            flash("Utilisateur introuvable.", "error")
+            return redirect(url_for('users.users'))
+            
+        # On récupère ses transactions (fonction déjà existante dans transaction.py)
+        transactions = get_user_transactions(user_id)
+        
+        return render_template(
+            "admin/users/transactions.html", 
+            transactions=transactions, 
+            user=user
+        )
+    except Exception as e:
+        print(f"Erreur route user_transactions: {e}")
+        flash("Erreur lors de la récupération des transactions.", "error")
+        return redirect(url_for('users.users'))
 
 
 """
@@ -703,7 +733,7 @@ def transaction_action():
 				envoyer_push_notification(
 					user["push_subscription"],
 					"Retrait validé",
-					f"Votre retrait de {float(tx['montant_dec'])} HTG a été valide !",
+					f"Votre retrait de {float(tx['montant_dec'])} HTG a été validé !",
 				)
 
 	elif action == "refuser":

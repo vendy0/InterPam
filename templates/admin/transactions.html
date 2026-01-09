@@ -1,1 +1,540 @@
-{% extends 'admin/base.html' %} {% block head %}<style>    /* Styles spécifiques pour les onglets */    .tabs-container {        margin-bottom: 20px;        border-bottom: 2px solid #e2e8f0;    }    .tab-btn {        background: none;        border: none;        padding: 10px 20px;        font-size: 1rem;        font-weight: 600;        color: #64748b;        cursor: pointer;        position: relative;    }    .tab-btn.active {        color: var(--admin-primary);    }    .tab-btn.active::after {        content: "";        position: absolute;        bottom: -2px;        left: 0;        width: 100%;        height: 2px;        background: var(--admin-primary);    }    .tab-content {        display: none;        animation: fadeIn 0.3s ease;    }    .tab-content.active {        display: block;    }    @keyframes fadeIn {        from {            opacity: 0;            transform: translateY(5px);        }        to {            opacity: 1;            transform: translateY(0);        }    }    .badge {        padding: 4px 8px;        border-radius: 4px;        font-size: 0.8rem;        font-weight: bold;    }    .badge-success {        background: #dcfce7;        color: #166534;    }    .badge-danger {        background: #fee2e2;        color: #991b1b;    }    .badge-warning {        background: #fef9c3;        color: #854d0e;    }</style>{% endblock %} {% block content %}<div class="admin-container" style="padding: 20px">    <h2 class="header-actions">Gestion Financière</h2>    <div class="tabs-container">        <button class="tab-btn active" onclick="switchTab('pending', event)">⏳ En attente</button>        <button class="tab-btn" onclick="switchTab('history', event)">📜 Historique des Opérations</button>    </div>    <div id="tab-pending" class="tab-content active">        {% if demandes %}        <div style="overflow-x: auto">            <table class="table-responsive">                <thead>                    <tr>                        <th>Utilisateur</th>                        <th>Type</th>                        <th>Montant (Détails)</th>                         <th>Infos (MonCash/Tél)</th>                        <th>Date</th>                        <th>Action</th>                        <th>Vérification</th>                    </tr>                </thead>                <tbody>                    {% for d in demandes %}                    <tr style="border-bottom: 1px solid #ddd">                                                <td style="padding: 10px">                            <strong>{{ d.username }}</strong>                            <br />                            <small>{{ d.prenom }} {{ d.nom }}</small>                        </td>                        <td>                            <span style="font-weight:bold; color: {{ 'green' if d.type == 'depot' else 'red' }};">{{ d.type|upper }}</span>                        </td>                        <td>                            {% if d.type == 'depot' %}                                <span style="font-weight:bold; color: green; font-size: 1.1em;">+ {{ format_money(d.montant) }} HTG</span>                            {% else %}                                <div style="display: flex; flex-direction: column;">                                    <span style="color: #666; font-size: 0.9em;">Débité: {{ format_money(d.montant) }} G</span>                                    <span style="color: #d32f2f; font-size: 0.8em;">Frais: -{{ format_money(d.frais) }} G</span>                                    <strong style="color: #000; border-top: 1px solid #ccc; margin-top: 2px;">                                        À ENVOYER : {{ format_money(d.montant_net) }} HTG                                    </strong>                                </div>                            {% endif %}                        </td>                        <td>{{ d.created_at }}</td>                        <td style="padding: 10px">                            <form action="{{ url_for('admin.transaction_action') }}" method="POST" style="display: flex; gap: 5px">                                <input type="hidden" name="tx_id" value="{{ d.id }}" />                                <button type="submit" class="btn-dang" name="action" value="valider" style="background: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer" onclick="return confirm('Confirmer cette transaction ?');">✓ Valider</button>                                <button type="button" onclick="showReject('{{ d.id }}')" style="background: red; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer">X Refuser</button>                                <input type="text" name="raison" id="raison_{{d.id}}" placeholder="Raison refus" style="display: none; width: 100px" />                                <button type="submit" name="action" value="refuser" id="btn_refuse_{{d.id}}" style="display: none; background: #d32f2f; color: white; border: none; padding: 5px">Confirmer Refus</button>                            </form>                        </td>                        <td style="background: #f9f9f9; border: 1px dashed #ccc; padding: 10px">                            <textarea id="sms_input_{{ d.id }}" placeholder="Coller le SMS MonCash ici..." style="width: 100%; height: 40px; font-size: 11px"></textarea>                            <button type="button" onclick="checkWithIA('{{ d.id }}')" style="font-size: 10px; margin-top: 5px; background: #6c5ce7; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer">🤖 Vérifier par IA</button>                            <div id="result_ia_{{ d.id }}" style="margin-top: 5px; font-size: 11px; font-weight: bold"></div>                        </td>                    </tr>                    {% endfor %}                </tbody>            </table>        </div>        {% else %}        <div style="text-align: center; padding: 40px; color: #94a3b8">            <p>✅ Aucune transaction en attente.</p>        </div>        {% endif %}    </div>    <div id="tab-history" class="tab-content">        {% if historique %}        <div style="overflow-x: auto">            <table class="table-responsive">                <thead>                    <tr>                        <th>Date Traitement</th>                        <th>Parieur</th>                        <th>Type</th>                        <th>Montant</th>                        <th>Statut</th>                        <th>Traité par (Admin)</th>                        <th>Note/Raison</th>                    </tr>                </thead>                <tbody>                    {% for h in historique %}                    <tr>                        <td>{{ h.processed_at }}</td>                        <td>{{ h.username }}</td>                        <td style="font-weight: bold; color: {{ 'green' if h.type == 'depot' else 'red' }}">{{ h.type|upper }}</td>                        <td>{{ format_money(h.montant) }} HTG</td>                        <td>                            {% if h.statut == 'valide' %}                            <span class="badge badge-success">Validé</span>                            {% else %}                            <span class="badge badge-danger">Refusé</span>                            {% endif %}                        </td>                        <td style="font-weight: bold; color: var(--admin-primary)">👮 {{ h.admin_prenom }} {{ h.admin_nom }}</td>                        <td style="font-size: 0.9em; color: #666">{{ h.raison_refus if h.raison_refus else '-' }}</td>                    </tr>                    {% endfor %}                </tbody>            </table>        </div>        {% else %}        <p style="text-align: center; padding: 20px">L'historique est vide pour le moment.</p>        {% endif %}    </div></div><script>    function switchTab(tabName, evt) {        // 1. Cacher tous les contenus d'onglets        document.querySelectorAll(".tab-content").forEach(el => {            el.classList.remove("active");        });        // 2. Retirer la classe 'active' de tous les boutons        document.querySelectorAll(".tab-btn").forEach(el => {            el.classList.remove("active");        });        // 3. Afficher le contenu de l'onglet sélectionné        const targetContent = document.getElementById("tab-" + tabName);        if (targetContent) {            targetContent.classList.add("active");        }        // 4. Ajouter la classe 'active' au bouton cliqué        if (evt && evt.currentTarget) {            evt.currentTarget.classList.add("active");        }    }    // Gestion Refus    function showReject(id) {        // On cible le champ texte "Raison"        const input = document.getElementById("raison_" + id);        // On cible le bouton "Confirmer Refus"        const btn = document.getElementById("btn_refuse_" + id);        // Vérification de sécurité        if (!input || !btn) {            console.error("Éléments introuvables pour l'ID transaction : " + id);            return;        }        // Bascule de l'affichage        if (input.style.display === "none") {            input.style.display = "inline-block";            btn.style.display = "inline-block";            input.focus(); // Place le curseur directement dans le champ        } else {            input.style.display = "none";            btn.style.display = "none";            input.value = ""; // Optionnel : efface la raison si on annule        }    }    function checkWithIA(txId) {        const sms = document.getElementById("sms_input_" + txId).value;        const resultDiv = document.getElementById("result_ia_" + txId);        if (!sms) return alert("Collez le SMS d'abord !");        resultDiv.innerHTML = "⌛ Analyse en cours...";        resultDiv.style.color = "blue";        fetch("/admin/ia-check", {            method: "POST",            headers: { "Content-Type": "application/json" },            body: JSON.stringify({ sms: sms, tx_id: txId })        })            .then(response => response.json())            .then(data => {                if (data.verdict === "VALIDE") {                    resultDiv.innerHTML = "✅ " + data.commentaire + " (Confiance: " + data.confiance + "%)";                    resultDiv.style.color = "green";                } else {                    resultDiv.innerHTML = "❌ " + data.commentaire;                    resultDiv.style.color = "red";                }            })            .catch(err => {                resultDiv.innerHTML = "⚠️ Erreur de connexion";            });    }</script>{% endblock %}
+{% extends 'admin/base.html' %} 
+
+{% block head %}
+<style>
+    /* --- STYLES SPÉCIFIQUES TRANSACTIONS --- */
+
+    /* Onglets */
+    .tabs-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 25px;
+        border-bottom: 1px solid var(--admin-border);
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        padding: 12px 24px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+        position: relative;
+        transition: color 0.3s;
+    }
+
+    .tab-btn.active {
+        color: var(--admin-primary);
+    }
+
+    .tab-btn.active::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: var(--admin-primary);
+        border-radius: 3px 3px 0 0;
+    }
+
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Badges & Textes */
+    .text-success { color: var(--admin-success); }
+    .text-danger { color: var(--admin-danger); }
+    .text-muted { color: #64748b; font-size: 0.85em; }
+    
+    .badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .badge-depot { background: #dcfce7; color: #166534; }
+    .badge-retrait { background: #fee2e2; color: #991b1b; }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+
+    /* Layout Montant */
+    .amount-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    .amount-final {
+        font-weight: 700;
+        color: var(--admin-text);
+        font-size: 1.05em;
+    }
+    .fee-calc {
+        font-size: 0.8em;
+        color: #ef4444;
+        background: #fef2f2;
+        padding: 0 4px;
+        border-radius: 4px;
+    }
+
+    /* Info Paiement (ID / Tel) */
+    .payment-info {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        display: inline-block;
+        color: #334155;
+    }
+    .payment-label {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        margin-right: 5px;
+    }
+
+    /* Actions & IA */
+    .actions-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+    
+    .btn-icon {
+        border: none;
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: transform 0.1s;
+    }
+    .btn-icon:active { transform: scale(0.95); }
+    .btn-validate { background: var(--admin-success); color: white; }
+    .btn-reject { background: #fff; border: 1px solid var(--admin-danger); color: var(--admin-danger); }
+    .btn-reject:hover { background: #fef2f2; }
+    
+    .reject-form {
+        display: none; /* Caché par défaut */
+        margin-top: 5px;
+    }
+    .reject-input {
+        padding: 5px;
+        border: 1px solid var(--admin-danger);
+        border-radius: 4px;
+        font-size: 0.8rem;
+        width: 120px;
+    }
+    .btn-confirm-reject {
+        background: var(--admin-danger);
+        color: white;
+        border: none;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+
+    /* IA Box */
+    .ia-box {
+        background: #f8fafc;
+        border: 1px dashed var(--admin-border);
+        border-radius: 8px;
+        padding: 8px;
+        width: 100%;
+        min-width: 200px;
+    }
+    .ia-input {
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        padding: 6px;
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+        height: 35px;
+        transition: height 0.2s;
+    }
+    .ia-input:focus { height: 60px; }
+    .btn-ia {
+        background: #6366f1; /* Indigo */
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+    }
+    .ia-result {
+        margin-top: 5px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        min-height: 15px;
+    }
+
+    /* --- RESPONSIVE CARD VIEW (MOBILE) --- */
+    .mobile-only { display: none; }
+    .desktop-only { display: table; }
+
+    @media (max-width: 768px) {
+        .desktop-only { display: none; }
+        .mobile-only { display: block; }
+        
+        .tx-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            border: 1px solid var(--admin-border);
+        }
+        .tx-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .tx-user { font-weight: 700; font-size: 1rem; }
+        .tx-date { font-size: 0.8rem; color: #94a3b8; }
+        
+        .tx-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+        .tx-label { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+        
+        .tx-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        /* Style spécifique pour les infos de paiement mobile */
+        .mobile-payment-details {
+            text-align: right;
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .mp-id { font-family: monospace; font-weight: 700; color: #334155; }
+        .mp-phone { font-size: 0.85rem; color: #64748b; }
+    }
+</style>
+{% endblock %} 
+
+{% block content %}
+<div class="dashboard-container">
+    <h2 class="header-actions">Gestion Financière</h2>
+
+    <div class="tabs-wrapper">
+        <button class="tab-btn active" onclick="switchTab('pending', event)">
+            ⏳ En attente
+        </button>
+        <button class="tab-btn" onclick="switchTab('history', event)">
+            📜 Historique
+        </button>
+    </div>
+
+    <div id="tab-pending" class="tab-content active">
+        {% if demandes %}
+        
+        <div class="table-responsive desktop-only">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Type</th>
+                        <th>Montant</th>
+                        <th>Infos Paiement</th> <th>Vérification IA</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in demandes %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">{{ d.username }}</div>
+                            <div class="text-muted">{{ d.prenom }} {{ d.nom }}</div>
+                            <div class="text-muted" style="font-size: 0.75em;">{{ d.created_at }}</div>
+                        </td>
+                        <td>
+                            {% if d.type == 'depot' %}
+                                <span class="badge badge-depot">DÉPÔT</span>
+                            {% else %}
+                                <span class="badge badge-retrait">RETRAIT</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="amount-stack">
+                                {% if d.type == 'depot' %}
+                                    <span class="text-success" style="font-weight: 700;">+ {{ format_money(d.montant) }} G</span>
+                                {% else %}
+                                    <span class="text-muted" style="text-decoration: line-through;">{{ format_money(d.montant) }} G</span>
+                                    <span class="fee-calc">Frais: -{{ format_money(d.frais) }} G</span>
+                                    <span class="amount-final">NET: {{ format_money(d.montant_net) }} G</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="margin-bottom: 4px;">
+                                <span class="payment-label">ID:</span>
+                                <span class="payment-info">{{ d.moncash_id if d.moncash_id else 'N/A' }}</span>
+                            </div>
+                            <div>
+                                <span class="payment-label">Tél:</span>
+                                <strong>{{ d.telephone }}</strong>
+                            </div>
+                        </td>
+                        <td width="200">
+                            <div class="ia-box">
+                                <textarea id="sms_input_{{ d.id }}" class="ia-input" placeholder="Coller SMS MonCash..."></textarea>
+                                <button type="button" class="btn-ia" onclick="checkWithIA('{{ d.id }}')">🤖 Analyser</button>
+                                <div id="result_ia_{{ d.id }}" class="ia-result"></div>
+                            </div>
+                        </td>
+                        <td align="right">
+                            <form action="{{ url_for('admin.transaction_action') }}" method="POST">
+                                <input type="hidden" name="tx_id" value="{{ d.id }}" />
+                                
+                                <div class="actions-group">
+                                    <button type="submit" name="action" value="valider" class="btn-icon btn-validate" onclick="return confirm('Confirmer cette transaction ?');">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                                        Valider
+                                    </button>
+                                    
+                                    <button type="button" class="btn-icon btn-reject" onclick="toggleReject('{{ d.id }}')">
+                                        Refuser
+                                    </button>
+                                </div>
+
+                                <div id="reject_area_{{ d.id }}" class="reject-form" style="text-align: right;">
+                                    <input type="text" name="raison" class="reject-input" placeholder="Raison du refus" required disabled>
+                                    <button type="submit" name="action" value="refuser" class="btn-confirm-reject">Confirmer</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-only">
+            {% for d in demandes %}
+            <div class="tx-card">
+                <div class="tx-card-header">
+                    <div>
+                        <div class="tx-user">{{ d.username }}</div>
+                        <div class="text-muted">{{ d.prenom }} {{ d.nom }}</div>
+                    </div>
+                    <div class="tx-date">{{ d.created_at }}</div>
+                </div>
+
+                <div class="tx-row">
+                    <span class="tx-label">Type</span>
+                    {% if d.type == 'depot' %}
+                        <span class="badge badge-depot">DÉPÔT</span>
+                    {% else %}
+                        <span class="badge badge-retrait">RETRAIT</span>
+                    {% endif %}
+                </div>
+
+                <div class="tx-row">
+                    <span class="tx-label">Détails Paiement</span>
+                    <div class="mobile-payment-details">
+                        <div class="mp-id">ID: {{ d.moncash_id if d.moncash_id else 'N/A' }}</div>
+                        <div class="mp-phone">📞 {{ d.telephone }}</div>
+                    </div>
+                </div>
+
+                <div class="tx-row">
+                    <span class="tx-label">Montant</span>
+                    <div style="text-align: right;">
+                        {% if d.type == 'depot' %}
+                            <span class="text-success" style="font-weight: 700; font-size: 1.2rem;">+ {{ format_money(d.montant) }} HTG</span>
+                        {% else %}
+                            <div class="text-muted">Débit: {{ format_money(d.montant) }}</div>
+                            <div class="amount-final">À envoyer: {{ format_money(d.montant_net) }} HTG</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="tx-actions">
+                    <div class="ia-box">
+                        <textarea id="sms_input_mob_{{ d.id }}" class="ia-input" placeholder="SMS MonCash..."></textarea>
+                        <button type="button" class="btn-ia" onclick="checkWithIA('{{ d.id }}', true)">🤖 Vérifier (IA)</button>
+                        <div id="result_ia_mob_{{ d.id }}" class="ia-result"></div>
+                    </div>
+
+                    <form action="{{ url_for('admin.transaction_action') }}" method="POST" style="width: 100%;">
+                        <input type="hidden" name="tx_id" value="{{ d.id }}" />
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <button type="submit" name="action" value="valider" class="btn-icon btn-validate" style="justify-content: center;">
+                                ✓ Valider
+                            </button>
+                            <button type="button" class="btn-icon btn-reject" onclick="toggleReject('mob_{{ d.id }}')" style="justify-content: center;">
+                                X Refuser
+                            </button>
+                        </div>
+                        
+                        <div id="reject_area_mob_{{ d.id }}" class="reject-form" style="margin-top: 10px;">
+                            <div style="display: flex; gap: 5px;">
+                                <input type="text" name="raison" class="reject-input" style="flex:1;" placeholder="Motif du refus..." required disabled>
+                                <button type="submit" name="action" value="refuser" class="btn-confirm-reject">OK</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">✅</div>
+            <h3 style="color: var(--admin-text);">Tout est à jour !</h3>
+            <p class="text-muted">Aucune transaction en attente de validation.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="tab-history" class="tab-content">
+        {% if historique %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Parieur</th>
+                        <th>Type</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th>Admin</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in historique %}
+                    <tr>
+                        <td class="text-muted" style="font-size: 0.85rem;">{{ h.processed_at }}</td>
+                        <td><strong>{{ h.username }}</strong></td>
+                        <td>
+                            <span style="font-weight: bold; color: {{ 'var(--admin-success)' if h.type == 'depot' else 'var(--admin-danger)' }}">
+                                {{ h.type|upper }}
+                            </span>
+                        </td>
+                        <td>{{ format_money(h.montant) }} HTG</td>
+                        <td>
+                            {% if h.statut == 'valide' %}
+                                <span class="badge badge-success">Validé</span>
+                            {% else %}
+                                <span class="badge badge-danger">Refusé</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.9rem;">
+                            👮 {{ h.admin_prenom }}
+                        </td>
+                        <td class="text-muted">{{ h.raison_refus if h.raison_refus else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px;">
+            <p class="text-muted">L'historique est vide pour le moment.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Gestion des onglets
+    function switchTab(tabName, evt) {
+        document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+        document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+        document.getElementById("tab-" + tabName).classList.add("active");
+        if (evt && evt.currentTarget) evt.currentTarget.classList.add("active");
+    }
+
+    // Gestion de l'affichage du champ Refus
+    function toggleReject(id) {
+        const area = document.getElementById("reject_area_" + id);
+        const input = area.querySelector('input');
+        
+        if (area.style.display === "block") {
+            area.style.display = "none";
+            input.disabled = true; // Empêche l'envoi si caché
+        } else {
+            area.style.display = "block";
+            input.disabled = false;
+            input.focus();
+        }
+    }
+
+    // IA Check (Compatible Desktop et Mobile)
+    function checkWithIA(txId, isMobile = false) {
+        const prefix = isMobile ? "mob_" : "";
+        const smsInputId = "sms_input_" + prefix + txId;
+        const resultId = "result_ia_" + prefix + txId;
+
+        const sms = document.getElementById(smsInputId).value;
+        const resultDiv = document.getElementById(resultId);
+
+        if (!sms.trim()) {
+            alert("Veuillez coller le SMS d'abord.");
+            return;
+        }
+
+        resultDiv.innerHTML = "<span style='color:blue'>⌛ Analyse...</span>";
+        
+        fetch("/admin/ia-check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sms: sms, tx_id: txId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.verdict === "VALIDE") {
+                resultDiv.innerHTML = `<div style='color:green; margin-top:5px;'>✅ ${data.commentaire} <br><small>Confiance: ${data.confiance}%</small></div>`;
+            } else {
+                resultDiv.innerHTML = `<div style='color:red; margin-top:5px;'>❌ ${data.commentaire}</div>`;
+            }
+        })
+        .catch(err => {
+            resultDiv.innerHTML = "⚠️ Erreur réseau";
+            console.error(err);
+        });
+    }
+</script>
+{% endblock %}

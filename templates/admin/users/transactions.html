@@ -1,0 +1,74 @@
+{% extends 'admin/base.html' %} 
+
+{% block head %}
+<title>Transactions de {{ user.prenom }}</title>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <a href="{{ url_for('users.users') }}" class="btn-secondary" style="padding: 5px 10px;">
+            ← Retour
+        </a>
+        <h2 style="margin:0;">Historique : {{ user.prenom }} {{ user.nom }}</h2>
+    </div>
+    <div style="margin-top: 5px; color: #64748b;">
+        Solde actuel : <strong style="color: var(--admin-primary);">{{ format_money(user.solde) }} HTG</strong>
+    </div>
+</div>
+
+<div class="table-responsive" style="margin-top: 20px;">
+    {% if transactions %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Montant</th>
+                <th>Détails</th>
+                <th>Statut</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transactions %}
+            <tr>
+                <td>#{{ t.id }}</td>
+                <td>
+                    {% if t.type == 'depot' %}
+                        <span style="color: green; font-weight: bold;">DÉPÔT</span>
+                    {% else %}
+                        <span style="color: red; font-weight: bold;">RETRAIT</span>
+                    {% endif %}
+                </td>
+                <td style="font-weight: 600;">
+                    {{ format_money(t.montant) }} HTG
+                </td>
+                <td style="font-size: 0.9em;">
+                    {% if t.telephone %}MonCash: {{ t.telephone }}<br>{% endif %}
+                    {% if t.moncash_id %}ID: {{ t.moncash_id }}{% endif %}
+                    {% if t.raison_refus %}<br><span style="color:red; font-size:0.8em">Raison: {{ t.raison_refus }}</span>{% endif %}
+                </td>
+                <td>
+                    {% if t.statut == 'valide' %}
+                        <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:10px; font-size:0.8em;">Validé</span>
+                    {% elif t.statut == 'refuse' %}
+                        <span style="background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:10px; font-size:0.8em;">Refusé</span>
+                    {% else %}
+                        <span style="background:#ffedd5; color:#9a3412; padding:2px 8px; border-radius:10px; font-size:0.8em;">En attente</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.85em; color: #64748b;">
+                    {{ t.created_at }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: #64748b;">
+        Aucune transaction enregistrée pour cet utilisateur.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
