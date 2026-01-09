@@ -20,8 +20,8 @@ def test_register_validation_errors(client):
             "email": "j@cif.com",
             "age": "18",
             "classe": "Philo",
-            "mdp": "password123",
-            "mdpConfirm": "password123",
+            "mdp_inscription": "password123",
+            "mdp_confirm": "password123",
             "rules": "on",
         },
         follow_redirects=True,
@@ -41,8 +41,8 @@ def test_register_validation_errors(client):
             "email": "j@cif.com",
             "age": "18",
             "classe": "Philo",
-            "mdp": "password123",
-            "mdpConfirm": "password123",
+            "mdp_inscription": "password123",
+            "mdp_confirm": "password123",
             "rules": "on",
         },
         follow_redirects=True,
@@ -58,21 +58,26 @@ from unittest.mock import patch
 
 
 def test_valider_ticket_match_ferme(client):
-    # 1. On simule un ticket dans la session
+    # 1. On simule un ticket ET un token de sécurité en session
     with client.session_transaction() as sess:
         sess["username"] = "testuser"
-        sess["ticket"] = {"1": 100}  # Match 1, Option 100
+        sess["ticket"] = {"1": 100}
+        sess["token_pari"] = "test-token-123"  # Ajout du token en session
 
-    # 2. On simule que 'verifier_matchs_ouverts' renvoie False (le match vient de fermer)
+    # 2. Mocking et envoi du token dans le POST
     with (
         patch("routes.get_user_by_username"),
         patch("routes.verifier_matchs_ouverts", return_value=False),
     ):
         response = client.post(
-            "/valider_ticket", data={"mise": "50"}, follow_redirects=True
+            "/valider_ticket",
+            data={
+                "mise": "50",
+                "token": "test-token-123",  # Envoi du token correspondant
+            },
+            follow_redirects=True,
         )
 
-        # On vérifie que l'utilisateur est bloqué avec le message d'erreur
         assert (
             b"Certains matchs de votre ticket ne sont plus disponibles" in response.data
         )

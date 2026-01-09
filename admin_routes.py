@@ -640,7 +640,7 @@ def mailbox():
     users_list = get_users(key, result)
     for u in users_list:
         if titre:
-            success, msg = envoyer_notification_generale(
+            success, msg = envoyer_notification_email(
                 u["prenom"], u["email"], titre, message, lien, text_button
             )
             if success:
