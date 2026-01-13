@@ -21,6 +21,7 @@ import json
 
 from admin_routes import admin_bp, users_bp, matchs_bp
 
+from database.setup import initialiser_bdd
 from models.match import *
 from models.user import *
 from models.bet import *
@@ -29,6 +30,9 @@ from models.transaction import *
 from models.config import get_config, mouvement_caisse
 
 app = Flask(__name__)
+
+initialiser_bdd()
+
 app.register_blueprint(admin_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(matchs_bp)
@@ -697,7 +701,7 @@ def valider_ticket():
         mise_dec = Decimal(mise_str).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     except:
         mise_dec = Decimal("0.00")
-        
+
     if user["solde"] < mise_dec:
         flash("Solde insuffisant.", "error")
         return redirect(url_for("mon_ticket"))
@@ -709,7 +713,6 @@ def valider_ticket():
             "error",
         )
         return redirect(url_for("mon_ticket"))
-
 
     # Recalculer la cote totale côté serveur (sécurité)
     options_ids = list(ticket.values())
