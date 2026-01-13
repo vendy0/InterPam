@@ -67,6 +67,43 @@
                 <p class="stat-sub danger">Bannis: <strong>{{ stats.joueurs_bannis }}</strong></p>
             </div>
         </div>
+		
+		<div class="stat-card">
+		            <div class="stat-icon bg-purple" style="background: #2c3e50;">
+		                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+		            </div>
+		            <div class="stat-info">
+		                <h3>Caisse (Trésorerie)</h3>
+		                <p class="stat-value">{{ format_money(config.caisse_solde_htg) }} G</p>
+		                <small>Dispo pour payer les gains</small>
+		            </div>
+		        </div>
+		
+		<button onclick="document.getElementById('configModal').showModal()" class="btn-action">⚙️ Paramètres</button>
+		
+		<dialog id="configModal" style="padding: 20px; border-radius: 8px; border: 1px solid #ccc;">
+		    <form method="POST" action="{{ url_for('admin.update_settings') }}">
+		        <h3>Configuration du Système</h3>
+		        
+		        <label>Solde Caisse (HTG)</label>
+		        <input type="number" name="caisse" value="{{ config.caisse_solde_htg }}" step="0.01">
+		        <p style="font-size: 0.8em; color: red;">⚠️ Modifier ceci réinitialise la caisse.</p>
+		
+		        <label>Mise Minimum (HTG)</label>
+		        <input type="number" name="min_bet" value="{{ config.mise_min_htg }}" step="1">
+		
+		        <label>Mise Maximum (HTG)</label>
+		        <input type="number" name="max_bet" value="{{ config.mise_max_htg }}" step="1">
+		
+		        <label>Frais Retrait (%)</label>
+		        <input type="number" name="frais" value="{{ (config.frais_retrait * 100)|int }}" step="0.1">
+		
+		        <div style="margin-top: 15px; display: flex; gap: 10px;">
+		            <button type="submit" style="background: #27ae60; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Sauvegarder</button>
+		            <button type="button" onclick="document.getElementById('configModal').close()" style="background: #95a5a6; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Fermer</button>
+		        </div>
+		    </form>
+		</dialog>
 
     </section>
 </div>

@@ -11,14 +11,14 @@ DB_NAME = "interpam.db"
 
 
 def initialiser_bdd():
-    """Initialise les tables de la base de données."""
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            cur = conn.cursor()
-            cur.execute("PRAGMA foreign_keys = ON")
+	"""Initialise les tables de la base de données."""
+	try:
+		with sqlite3.connect(DB_NAME) as conn:
+			cur = conn.cursor()
+			cur.execute("PRAGMA foreign_keys = ON")
 
-            # Table parieurs
-            cur.execute("""CREATE TABLE IF NOT EXISTS parieurs (
+			# Table parieurs
+			cur.execute("""CREATE TABLE IF NOT EXISTS parieurs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     prenom TEXT NOT NULL,
                     nom TEXT NOT NULL,
@@ -34,8 +34,8 @@ def initialiser_bdd():
                     actif INTEGER DEFAULT 1
                 )""")
 
-            # Table Paris
-            cur.execute("""CREATE TABLE IF NOT EXISTS paris (
+			# Table Paris
+			cur.execute("""CREATE TABLE IF NOT EXISTS paris (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     mise INTEGER NOT NULL,
                     gain_potentiel INTEGER NOT NULL,
@@ -45,8 +45,8 @@ def initialiser_bdd():
                     FOREIGN KEY (parieur_id) REFERENCES parieurs(id) ON DELETE CASCADE
                 )""")
 
-            # Table Matchs
-            cur.execute("""CREATE TABLE IF NOT EXISTS matchs (
+			# Table Matchs
+			cur.execute("""CREATE TABLE IF NOT EXISTS matchs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     equipe_a TEXT NOT NULL,
                     equipe_b TEXT NOT NULL,
@@ -57,8 +57,8 @@ def initialiser_bdd():
                     FOREIGN KEY (admin_id) REFERENCES parieurs(id) ON DELETE SET NULL
                 )""")
 
-            # Table Options
-            cur.execute("""CREATE TABLE IF NOT EXISTS options (
+			# Table Options
+			cur.execute("""CREATE TABLE IF NOT EXISTS options (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     libelle TEXT NOT NULL,
                     cote REAL NOT NULL,
@@ -68,8 +68,8 @@ def initialiser_bdd():
                     FOREIGN KEY (match_id) REFERENCES matchs(id) ON DELETE CASCADE
                 )""")
 
-            # Table matchs_paris
-            cur.execute("""CREATE TABLE IF NOT EXISTS matchs_paris(
+			# Table matchs_paris
+			cur.execute("""CREATE TABLE IF NOT EXISTS matchs_paris(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 matchs_id INTEGER NOT NULL,
                 paris_id INTEGER NOT NULL,
@@ -79,8 +79,8 @@ def initialiser_bdd():
                 FOREIGN KEY (option_id) REFERENCES options(id)
             )""")
 
-            # Table Invitations
-            cur.execute("""CREATE TABLE IF NOT EXISTS invitations (
+			# Table Invitations
+			cur.execute("""CREATE TABLE IF NOT EXISTS invitations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     email TEXT NOT NULL,
                     role TEXT NOT NULL,
@@ -88,16 +88,16 @@ def initialiser_bdd():
                     expiration TEXT NOT NULL
                 )""")
 
-            # Table Recupération_mdp
-            cur.execute("""CREATE TABLE IF NOT EXISTS recuperations (
+			# Table Recupération_mdp
+			cur.execute("""CREATE TABLE IF NOT EXISTS recuperations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     email TEXT NOT NULL,
                     token TEXT NOT NULL,
                     expiration TEXT NOT NULL
                     )""")
 
-            # Table Messagerie
-            cur.execute("""CREATE TABLE IF NOT EXISTS messagerie (
+			# Table Messagerie
+			cur.execute("""CREATE TABLE IF NOT EXISTS messagerie (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     message TEXT NOT NULL,
                     read INTEGER NOT NULL DEFAULT 1,
@@ -106,10 +106,10 @@ def initialiser_bdd():
                     FOREIGN KEY (parieur_id) REFERENCES parieurs(id) ON DELETE SET NULL
                     )""")
 
-            # Table Transactions (Dépôts et Retraits)
-            # setup.py (Version améliorée)
+			# Table Transactions (Dépôts et Retraits)
+			# setup.py (Version améliorée)
 
-            cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
+			cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     user_id INTEGER NOT NULL,
                     admin_id INTEGER, 
@@ -127,8 +127,8 @@ def initialiser_bdd():
                     FOREIGN KEY (admin_id) REFERENCES parieurs(id)
                 )""")
 
-            # Table des inscriptions avant confirmation
-            cur.execute("""CREATE TABLE IF NOT EXISTS pending_registrations (
+			# Table des inscriptions avant confirmation
+			cur.execute("""CREATE TABLE IF NOT EXISTS pending_registrations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     prenom TEXT NOT NULL,
                     nom TEXT NOT NULL,
@@ -142,8 +142,8 @@ def initialiser_bdd():
                     created_at TEXT NOT NULL
                 )""")
 
-            # Table des interventions manuelles (Crédit/Débit par admin)
-            cur.execute("""CREATE TABLE IF NOT EXISTS admin_transactions (
+			# Table des interventions manuelles (Crédit/Débit par admin)
+			cur.execute("""CREATE TABLE IF NOT EXISTS admin_transactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     admin_id INTEGER NOT NULL,
                     user_id INTEGER NOT NULL,
@@ -154,5 +154,18 @@ def initialiser_bdd():
                     FOREIGN KEY (user_id) REFERENCES parieurs(id)
                 )""")
 
-    except sqlite3.Error as e:
-        print(f"Erreur lors de l'initialisation : {e}")
+			# Table Configuration (Caisse, Limites, Frais)
+			cur.execute("""CREATE TABLE IF NOT EXISTS config (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    caisse_solde INTEGER DEFAULT 200000,  -- En centimes (ex: 2,000 HTG)
+                    mise_min INTEGER DEFAULT 1000,         -- En centimes (ex: 10 HTG)
+                    mise_max INTEGER DEFAULT 100000,       -- En centimes (ex: 1,000 HTG)
+                    frais_retrait REAL DEFAULT 0.03        -- 3%
+                )""")
+
+			cur.execute(
+				"INSERT OR IGNORE INTO config (id, caisse_solde, mise_min, mise_max, frais_retrait) VALUES (1, 200000, 1000, 100000, 0.03)"
+			)
+
+	except sqlite3.Error as e:
+		print(f"Erreur lors de l'initialisation : {e}")

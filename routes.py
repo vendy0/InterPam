@@ -26,8 +26,7 @@ from models.user import *
 from models.bet import *
 from models.emails import *
 from models.transaction import *
-
-WITHDRAWAL_FEE_RATE = 0.03
+from models.config import get_config, mouvement_caisse
 
 app = Flask(__name__)
 app.register_blueprint(admin_bp)
@@ -115,12 +114,15 @@ def inject_globals():
 		except (ValueError, TypeError):
 			return "0"
 
+	conf = get_config()
+
 	# On injecte tout dans le dictionnaire
 	return dict(
 		current_user=user,
 		set_date=set_date,
 		format_money=format_money,
-		frais_retrait=WITHDRAWAL_FEE_RATE,
+		frais_retrait=conf["frais_retrait"],
+		config_global=conf,
 	)
 
 
@@ -675,6 +677,11 @@ def valider_ticket():
 		return redirect(url_for("mon_ticket"))
 	# -----------------------------------------
 
+	# 1. Récupérer Config
+	config = get_config()
+	mise_min = depuis_centimes(config["mise_min"])
+	mise_max = depuis_centimes(config["mise_max"])
+
 	user = get_user_by_username(session["username"])
 	mise_str = request.form.get("mise", "0").replace(",", ".")
 
@@ -683,8 +690,9 @@ def valider_ticket():
 	except:
 		mise_dec = Decimal("0.00")
 
-	if mise_dec < Decimal("10.00"):
-		flash("Mise minimum : 10 HTG", "error")
+		# 2. Vérification Min/Max
+	if mise_dec < Decimal(str(mise_min)) or mise_dec > Decimal(str(mise_max)):
+		flash(f"La mise doit être comprise entre {mise_min} et {mise_max} HTG.", "error")
 		return redirect(url_for("mon_ticket"))
 
 	if user["solde"] < mise_dec:
@@ -705,6 +713,14 @@ def valider_ticket():
 
 	gain_dec = (mise_dec * cote_totale).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
+	# 3. Vérification Solvabilité Caisse
+	gain_potentiel_centimes = int(gain_dec * 100)
+	if config["caisse_solde"] < gain_potentiel_centimes:
+		flash(
+			"Impossible de placer ce pari : Plafond de trésorerie atteint pour ce gain potentiel. Essayez une mise plus petite.",
+			"error",
+		)
+		return redirect(url_for("mon_ticket"))
 	# Enregistrement en BDD
 	# On prend le premier match_id de la liste comme référence "principale"
 	# ou on adapte placer_pari pour gérer le NULL si tu préfères,
@@ -722,6 +738,7 @@ def valider_ticket():
 	)
 
 	if success:
+		mouvement_caisse(gain_potentiel_centimes, "sub")
 		session.pop("ticket", None)  # On vide le panier après succès
 		flash(f"Pari validé ! Gain potentiel : {gain_dec} HTG", "success")
 		return redirect(url_for("fiches"))
