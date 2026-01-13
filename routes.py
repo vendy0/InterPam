@@ -324,7 +324,7 @@ def traitementRegister():
             print(e)
             flash("Erreur lors de l'envoi de l'email.", "error")
 
-        return "Inscription enregistrée ! Un email de confirmation vous a été envoyé."
+        return "Inscription enregistrée ! Un email de confirmation vous sera envoyé dans quelques minutes."
     # On reste sur la page de login avec le message
     else:
         return render_template(
@@ -404,7 +404,7 @@ def forget_password_route():
         )
     lien = url_for("reset_password_route", token=token, _external=True)
     success_mail, message = password_reset_email(user["prenom"], email, lien)
-    return "Veuillez vérifier vos emails !"
+    return "Un email de confirmation vous sera envoyé dans quelques minutes."
 
 
 @app.route("/Conditions")
