@@ -95,7 +95,7 @@
             {% endif %}
             <p class="title">Ravie de vous revoir</p>
             <form class="form" action="{{ url_for('traitementLogin') }}" method="POST" id="loginForm">
-                <input type="text" name="email_username" class="email_input" placeholder="Email (Tout en minuscule) ou Nom d'utilisateur" required="required" value="{{ request.form.email_username }}" />
+                <input type="text" name="email_username" class="email_input" placeholder="Email ou Nom d'utilisateur" required="required" value="{{ request.form.email_username }}" />
                 <div class="password-wrapper">
                     <input type="password" class="mdp_input" id="mdp_log" name="mdp" placeholder="Mot de passe" required="required" autocomplete="current-password" value="{{ request.form.mdp }}" />
                     <span class="toggle-password-icon">

@@ -11,6 +11,8 @@ from flask import (
     flash,
     send_from_directory,
 )
+from dotenv import load_dotenv
+load_dotenv() 
 from re import match as re_match
 import uuid
 from functools import wraps
@@ -187,7 +189,7 @@ def traitementLogin():
     # 	if not email_username or not mdp:
     # 		return render_template("auth.html", loginError="Tous les champs doivent être remplis !")
 
-    utilisateur = get_user_by_email(email_username) or get_user_by_username(
+    utilisateur = get_user_by_email(email_username.lower()) or get_user_by_username(
         email_username
     )
     if utilisateur and check_password_hash(utilisateur["mdp"], mdp):
@@ -330,11 +332,6 @@ def traitementRegister():
         )
 
 
-# Dans routes.py
-
-from models.user import get_pending_by_token, delete_pending, ajouter_parieur
-
-
 @app.route("/confirm-email/<token>")
 def confirm_email(token):
     # 1. Récupérer les données temporaires
@@ -388,7 +385,7 @@ def confirm_email(token):
 
 @app.route("/forget_password", methods=["GET", "POST"])
 def forget_password_route():
-    email = clean_input(request.form.get("forget_email"))
+    email = clean_input(request.form.get("forget_email").lower())
     if not email:
         forgetError = "Veuillez rentrer un email valide !"
         return render_template("auth.html", forgetError=forgetError)
