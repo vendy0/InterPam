@@ -1,110 +1,1 @@
-{% extends "admin/base.html" %}
-
-{% block head %}
-<title>Dashboard - InterPam Admin</title>
-{% endblock %}
-
-{% block content %}
-<div class="dashboard-container">
-    
-    <header class="dashboard-header">
-        <h1>Vue d'ensemble</h1>
-        <div class="header-view">
-            <a href="{{ url_for('home') }}" class="btn-action btn-secondary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-                App User
-            </a>
-            <a href="{{ url_for('logout') }}" class="btn-action btn-danger">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-                Déconnexion
-            </a>
-        </div>
-    </header>
-
-    <section class="stats-grid">
-        
-        <div class="stat-card">
-            <div class="stat-icon bg-blue">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-            </div>
-            <div class="stat-info">
-                <h3>Mises Totales</h3>
-                <p class="stat-value">{{ format_money(stats.mises_totales) }} G</p>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon bg-orange">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </div>
-            <div class="stat-info">
-                <h3>Gains Payés</h3>
-                <p class="stat-value">{{ format_money(stats.gains_distribues) }} G</p>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon bg-green">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <div class="stat-info">
-                <h3>Bénéfice Net</h3>
-                <p class="stat-value">{{ format_money(stats.benefice) }} G</p>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-icon bg-purple">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-            </div>
-            <div class="stat-info">
-                <h3>Joueurs</h3>
-                <p class="stat-sub">Inscrits: <strong>{{ stats.total_joueurs }}</strong></p>
-                <p class="stat-sub danger">Bannis: <strong>{{ stats.joueurs_bannis }}</strong></p>
-            </div>
-        </div>
-		
-		<div class="stat-card">
-		            <div class="stat-icon bg-purple" style="background: #2c3e50;">
-		                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
-		            </div>
-		            <div class="stat-info">
-		                <h3>Caisse (Trésorerie)</h3>
-		                <p class="stat-value">{{ format_money(config.caisse_solde_htg) }} G</p>
-		                <small>Dispo pour payer les gains</small>
-		            </div>
-		        </div>
-		
-		<button onclick="document.getElementById('configModal').showModal()" class="btn-action">⚙️ Paramètres</button>
-		
-		<dialog id="configModal" style="padding: 20px; border-radius: 8px; border: 1px solid #ccc;">
-		    <form method="POST" action="{{ url_for('admin.update_settings') }}">
-		        <h3>Configuration du Système</h3>
-		        
-		        <label>Solde Caisse (HTG)</label>
-		        <input type="number" name="caisse" value="{{ config.caisse_solde_htg }}" step="0.01">
-		        <p style="font-size: 0.8em; color: red;">⚠️ Modifier ceci réinitialise la caisse.</p>
-		
-		        <label>Mise Minimum (HTG)</label>
-		        <input type="number" name="min_bet" value="{{ config.mise_min_htg }}" step="1">
-		
-		        <label>Mise Maximum (HTG)</label>
-		        <input type="number" name="max_bet" value="{{ config.mise_max_htg }}" step="1">
-		
-		        <label>Frais Retrait (%)</label>
-		        <input type="number" name="frais" value="{{ (config.frais_retrait * 100)|int }}" step="0.1">
-		
-		        <div style="margin-top: 15px; display: flex; gap: 10px;">
-		            <button type="submit" style="background: #27ae60; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Sauvegarder</button>
-		            <button type="button" onclick="document.getElementById('configModal').close()" style="background: #95a5a6; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Fermer</button>
-		        </div>
-		    </form>
-		</dialog>
-
-    </section>
-</div>
-{% endblock %}
+{% extends "admin/base.html" %} {% block head %}<title>Dashboard - InterPam Admin</title>{% endblock %} {% block content %}<div class="dashboard-container">    <header class="dashboard-header">        <h1>Vue d'ensemble</h1>        <div class="header-view">            <a href="{{ url_for('home') }}" class="btn-action btn-secondary">                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />                </svg>                App User            </a>            <a href="{{ url_for('logout') }}" class="btn-action btn-danger">                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">                    <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />                </svg>                Déconnexion            </a>        </div>    </header>    <section class="stats-grid">        <div class="stat-card">            <div class="stat-icon bg-blue">                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>            </div>            <div class="stat-info">                <h3>Mises Totales</h3>                <p class="stat-value">{{ format_money(stats.mises_totales) }} G</p>            </div>        </div>        <div class="stat-card">            <div class="stat-icon bg-orange">                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>            </div>            <div class="stat-info">                <h3>Gains Payés</h3>                <p class="stat-value">{{ format_money(stats.gains_distribues) }} G</p>            </div>        </div>        <div class="stat-card">            <div class="stat-icon bg-green">                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>            </div>            <div class="stat-info">                <h3>Bénéfice Net</h3>                <p class="stat-value">{{ format_money(stats.benefice) }} G</p>            </div>        </div>        <div class="stat-card">            <div class="stat-icon bg-purple">                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />                    <circle cx="9" cy="7" r="4" />                    <path d="M23 21v-2a4 4 0 00-3-3.87" />                    <path d="M16 3.13a4 4 0 010 7.75" />                </svg>            </div>            <div class="stat-info">                <h3>Joueurs</h3>                <p class="stat-sub">                    Inscrits:                    <strong>{{ stats.total_joueurs }}</strong>                </p>                <p class="stat-sub danger">                    Bannis:                    <strong>{{ stats.joueurs_bannis }}</strong>                </p>            </div>        </div>        <div class="stat-card">            <div class="stat-icon bg-dark">                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">                    <path d="M12 2v20M2 12h20" />                </svg>            </div>            <div class="stat-info">                <h3>Caisse (Trésorerie)</h3>                <p class="stat-value">{{ format_money(config.caisse_solde) }} G</p>                <small class="stat-sub">Dispo pour payer les gains</small>            </div>        </div>        <button onclick="document.getElementById('configModal').showModal()" class="btn-action">⚙️ Paramètres</button>        <dialog id="configModal" class="config-modal" style="position: fixed; inset: 0; margin: auto;">            <form method="POST" action="{{ url_for('admin.update_settings') }}">                <div class="modal-header">                    <h3>Configuration du Système</h3>                    <span onclick="document.getElementById('configModal').close()" style="cursor: pointer; font-size: 1.2rem">&times;</span>                </div>                <div class="modal-body">                                <label>Mise Minimum (HTG)</label>                                <input type="number" name="min_bet" value="{{ config.mise_min | int }}" step="1" required />                                                                <label>Mise Maximum (HTG)</label>                                <input type="number" name="max_bet" value="{{ config.mise_max | int }}" step="1" required />                                                                <label>Frais de retrait (%)</label>                                <input type="number" name="frais" value="{{ (config.frais_retrait * 100) | round(2) }}" step="0.1" required />                                                    <hr> <label>Solde Caisse Actuel (HTG)</label>                            <input type="number" name="caisse" value="{{ config.caisse_solde | int }}" step="0.01" required />                                                        <div class="warning-text">                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>                                    <line x1="12" y1="9" x2="12" y2="13"></line>                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>                                </svg>                                <span>Attention : Modifier ceci réinitialise manuellement la trésorerie.</span>                            </div>                        </div>                <div class="modal-footer">                    <button type="button" class="btn-close" onclick="document.getElementById('configModal').close()">Annuler</button>                    <button type="submit" class="btn-save">Sauvegarder</button>                </div>            </form>        </dialog>    </section></div>{% endblock %}{% block js %}    <script>        var modal = document.getElementById('configModal');                modal.addEventListener('click', function(event) {            var rect = modal.getBoundingClientRect();            var isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height &&              rect.left <= event.clientX && event.clientX <= rect.left + rect.width);                        if (!isInDialog) {                modal.close();            }        });    </script>{% endblock %}

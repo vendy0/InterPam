@@ -14,9 +14,9 @@ def main():
 
     prenom = "Andy V."
     nom = "Descartes"
-    username = "Black_Hole"
+    username = "Vendy"
     email = "andyvenson99@gmail.com"
-    mdp = "naruto"
+    mdp = "genetique"
 
     try:
         with sqlite3.connect("interpam.db") as conn:
