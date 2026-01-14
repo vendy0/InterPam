@@ -12,7 +12,8 @@ from flask import (
     send_from_directory,
 )
 from dotenv import load_dotenv
-load_dotenv() 
+
+load_dotenv()
 from re import match as re_match
 import uuid
 from functools import wraps
@@ -288,12 +289,6 @@ def traitementRegister():
         rulesError = "Vous n'avez pas accepté les règles d'utilisation."
         return render_template("auth.html", error=rulesError)
 
-    if check_pending_duplicates(username, email):
-        return render_template(
-            "auth.html",
-            error="Ce compte est en attente de validation. Vérifiez vos emails.",
-        )
-
     hashed_password = generate_password_hash(mdp)
 
     # 1. Générer le token
@@ -324,7 +319,11 @@ def traitementRegister():
             print(e)
             flash("Erreur lors de l'envoi de l'email.", "error")
 
-        return "Inscription enregistrée ! Un email de confirmation vous sera envoyé dans quelques minutes."
+        flash(
+            "Inscription enregistrée ! Un email de confirmation vous sera envoyé dans quelques minutes.",
+            "success",
+        )
+        return render_template("auth.html", register=True)
     # On reste sur la page de login avec le message
     else:
         return render_template(
@@ -404,7 +403,8 @@ def forget_password_route():
         )
     lien = url_for("reset_password_route", token=token, _external=True)
     success_mail, message = password_reset_email(user["prenom"], email, lien)
-    return "Un email de confirmation vous sera envoyé dans quelques minutes."
+    flash("Un email de confirmation vous sera envoyé dans quelques minutes.", "success")
+    return render_template("auth.html")
 
 
 @app.route("/Conditions")
@@ -459,7 +459,11 @@ def reset_password_route(token):
         session["username"] = user["username"]
         return redirect(url_for("home"))
     else:
-        return "<h1>Il y a eu une erreur lors de la réinitialisation du mot de passe !</h1>"
+        flash(
+            "Il y a eu une erreur lors de la réinitialisation du mot de passe !",
+            "error",
+        )
+        return render_template("auth.htmn", forgetError=True)
 
 
 @app.route("/about")

@@ -764,7 +764,7 @@ def transaction_action():
             
             # --- CORRECTION ICI ---
             # Idem : suppression de vers_centimes()
-            mouvement_caisse(float(tx["montant_net"]), 'sub')
+            mouvement_caisse(depuis_centimes(float(tx["montant_net"])), 'sub')
             # ----------------------
 
             update_transaction_status(tx_id, "valide", admin_id)

@@ -8,6 +8,20 @@
         <title>InterPam - Connexion</title>
     </head>
     <body>
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
+        <div id="flash-container">
+            {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+                <div class="flash-icon">
+                    <span class="icon-warning">&#x1F5E8;</span>
+                </div>
+                <div class="flash-text">{{ message }}</div>
+                <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+                <div class="progress-bar"></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %} {% endwith %}        
         <div id="register-section" class="hidden sections">
             {% if error%}
             <div class="erreur-msg">{{error}}</div>
