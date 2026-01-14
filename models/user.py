@@ -55,7 +55,7 @@ def check_pending_duplicates(username, email):
 			if pend >= 3:
 				return (
 					"error",
-					"Plusieurs confirmations ont déjà été envoyées sur ce compte. Vérifiez vos emails !",
+					"Plusieurs confirmations ont déjà été envoyées sur cet adresse mail. Vérifiez vos emails !",
 				)
 			else:
 				return "success", None

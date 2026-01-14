@@ -85,7 +85,7 @@
                 <th>Utilisateur</th>
                 <th>Solde</th>
                 <th>Classe</th>
-                {% if current_user.role == "super_admin" %}<th>Email</th>{% endif %}
+                {% if current_user.role == "super admin" %}<th>Email</th>{% endif %}
                 <th>Statut</th>
                 <th>Actions</th>
             </tr>
@@ -99,7 +99,7 @@
                 </td>
                 <td style="font-weight:bold; color: var(--admin-primary);">{{ format_money(user['solde']) }} HTG</td>
                 <td>{{ user['classe'] }}</td>
-                {% if current_user.role == "super_admin" %}<td>{{ user["email"] }}</td>{% endif %}
+                {% if current_user.role == "super admin" %}<td>{{ user["email"] }}</td>{% endif %}
                 <td>
                     {% if user['actif'] == 1 %}
                     <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:10px; font-size:0.8em;">Actif</span>
@@ -108,7 +108,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if user['username'] != current_user['username'] or current_user['role'] == "super_admin" %}
+                    {% if user['username'] != current_user['username'] or current_user['role'] == "super admin" %}
                     <div class="action-btn-group">
                         <button type="button" onclick="openMoneyModal('{{ user.username }}')" class="btn-icon money" title="Gérer Solde">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

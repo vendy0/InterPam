@@ -214,7 +214,7 @@ def debit_user():
 @admin_required
 def ban_user_route(action, username):
 	user = get_user_by_username(session["username"])
-	if not user or user["role"] != "super_admin":
+	if not user or user["role"] != "super admin":
 		flash("Accès refusé", "error")
 		return redirect(url_for("admin.dashboard"))
 
@@ -489,7 +489,7 @@ ROUTES DES ADMIN
 @admin_required
 def staff():
 	user = get_user_by_username(session["username"])
-	if user["role"] != "super_admin":
+	if user["role"] != "super admin":
 		flash("Accès refusé", "error")
 		return redirect(request.referrer)
 
@@ -729,60 +729,59 @@ def transactions():
 @admin_bp.route("/transaction/action", methods=["POST"])
 @admin_required
 def transaction_action():
-    action = request.form.get("action")
-    tx_id = request.form.get("tx_id")
-    raison = request.form.get("raison")
+	action = request.form.get("action")
+	tx_id = request.form.get("tx_id")
+	raison = request.form.get("raison")
 
-    # On récupère l'ID de l'admin actuel via son username en session
-    admin_user = get_user_by_username(session["username"])
-    admin_id = admin_user["id"]
+	# On récupère l'ID de l'admin actuel via son username en session
+	admin_user = get_user_by_username(session["username"])
+	admin_id = admin_user["id"]
 
-    tx = get_transaction_by_id(tx_id)
-    if not tx or tx["statut"] != "en_attente":
-        flash("Transaction déjà traitée.", "error")
-        return redirect(url_for("admin.transactions"))
+	tx = get_transaction_by_id(tx_id)
+	if not tx or tx["statut"] != "en_attente":
+		flash("Transaction déjà traitée.", "error")
+		return redirect(url_for("admin.transactions"))
 
-    user = get_user_by_id(tx["user_id"])
+	user = get_user_by_id(tx["user_id"])
 
-    if action == "valider":
-        if tx["type"] == "depot":
-            # Crédit User + Ajout Caisse
-            success, msg = credit(user["username"], float(tx["montant_dec"]), message=True)
-            if success:
-                # --- CORRECTION ICI ---
-                # On passe le montant décimal directement, car mouvement_caisse fait sa propre conversion
-                mouvement_caisse(float(tx["montant_dec"]), "add") 
-                # ----------------------
-                
-                update_transaction_status(tx_id, "valide", admin_id)
-                flash(f"Dépôt de {user['username']} validé par vous.", "success")
-            else:
-                flash(msg, "error")
-                
-        elif tx["type"] == "retrait":
-            # Le User a déjà été débité à la demande. Ici on confirme juste la sortie de Caisse.
-            
-            # --- CORRECTION ICI ---
-            # Idem : suppression de vers_centimes()
-            mouvement_caisse(depuis_centimes(float(tx["montant_net"])), 'sub')
-            # ----------------------
+	if action == "valider":
+		if tx["type"] == "depot":
+			# Crédit User + Ajout Caisse
+			success, msg = credit(user["username"], float(tx["montant_dec"]), message=True)
+			if success:
+				# --- CORRECTION ICI ---
+				# On passe le montant décimal directement, car mouvement_caisse fait sa propre conversion
+				mouvement_caisse(float(tx["montant_dec"]), "add")
+				# ----------------------
 
-            update_transaction_status(tx_id, "valide", admin_id)
-            flash(f"Retrait validé.", "success")
-            if user["push_subscription"]:
-                envoyer_push_notification(
-                    user["push_subscription"],
-                    "Retrait validé",
-                    f"Votre retrait de {float(tx['montant_dec'])} HTG a été validé !",
-                )
+				update_transaction_status(tx_id, "valide", admin_id)
+				flash(f"Dépôt de {user['username']} validé par vous.", "success")
+			else:
+				flash(msg, "error")
 
-    elif action == "refuser":
-        # ... (le reste du code "refuser" est correct et ne touche pas à la caisse)
-        pass 
-        # (J'ai abrégé pour la clarté, gardez votre code existant ici)
+		elif tx["type"] == "retrait":
+			# Le User a déjà été débité à la demande. Ici on confirme juste la sortie de Caisse.
 
-    return redirect(url_for("admin.transactions"))
+			# --- CORRECTION ICI ---
+			# Idem : suppression de vers_centimes()
+			mouvement_caisse(depuis_centimes(float(tx["montant_net"])), "sub")
+			# ----------------------
 
+			update_transaction_status(tx_id, "valide", admin_id)
+			flash(f"Retrait validé.", "success")
+			if user["push_subscription"]:
+				envoyer_push_notification(
+					user["push_subscription"],
+					"Retrait validé",
+					f"Votre retrait de {float(tx['montant_dec'])} HTG a été validé !",
+				)
+
+	elif action == "refuser":
+		# ... (le reste du code "refuser" est correct et ne touche pas à la caisse)
+		pass
+		# (J'ai abrégé pour la clarté, gardez votre code existant ici)
+
+	return redirect(url_for("admin.transactions"))
 
 
 from utils.ia_validator import analyser_et_comparer

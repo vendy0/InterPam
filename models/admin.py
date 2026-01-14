@@ -41,7 +41,7 @@ def get_dashboard_stats():
                     COUNT(*) as total,
                     SUM(CASE WHEN actif = 0 THEN 1 ELSE 0 END) as bannis
                 FROM parieurs
-                WHERE role != 'admin' AND role != 'super_admin'
+                WHERE classe !=  'Direction'
             """
             cur = conn.execute(query_users)
             res_users = cur.fetchone()
