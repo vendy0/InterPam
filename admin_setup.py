@@ -34,10 +34,11 @@ def main():
             cur.execute(
                 """
                 INSERT INTO parieurs
-                (prenom, nom, username, email, age, classe, mdp, created_at, role, solde)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, prenom, nom, username, email, age, classe, mdp, created_at, role, solde)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
+                    1,
                     prenom,
                     nom,
                     username,
@@ -46,7 +47,7 @@ def main():
                     "Direction",
                     hash_mdp,
                     created_at,
-                    "super_admin",
+                    "super admin",
                     200000,
                 ),
             )

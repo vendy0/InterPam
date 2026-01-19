@@ -97,7 +97,7 @@
                     <strong>{{ user['prenom'] }} {{ user['nom'] }}</strong><br>
                     <span style="color:#64748b; font-size:0.85em;">@{{ user['username'] }}</span>
                 </td>
-                <td style="font-weight:bold; color: var(--admin-primary);">{{ format_money(user['solde']) }} HTG</td>
+                <td style="font-weight:bold; color: var(--admin-primary);">{{ format_money(user['solde']) }} PMC</td>
                 <td>{{ user['classe'] }}</td>
                 {% if current_user.role == "super admin" %}<td>{{ user["email"] }}</td>{% endif %}
                 <td>
@@ -186,7 +186,7 @@
         <form id="formCredit" action="{{ url_for('users.credit_user') }}" method="POST">
             <input type="hidden" name="username_credit" id="inputUserCredit">
             <div style="margin-bottom:15px;">
-                <label style="font-size:0.9em; font-weight:bold;">Montant à AJOUTER (HTG)</label>
+                <label style="font-size:0.9em; font-weight:bold;">Montant à AJOUTER (PMC)</label>
                 <input type="number" name="solde_credit" step="any" placeholder="Ex: 500" required style="margin-top:5px;">
             </div>
             <button type="submit" class="btn-success" style="width:100%">Valider le Crédit</button>
@@ -195,7 +195,7 @@
         <form id="formDebit" action="{{ url_for('users.debit_user') }}" method="POST" style="display:none;">
             <input type="hidden" name="username_debit" id="inputUserDebit">
             <div style="margin-bottom:15px;">
-                <label style="font-size:0.9em; font-weight:bold; color:#ef4444;">Montant à RETIRER (HTG)</label>
+                <label style="font-size:0.9em; font-weight:bold; color:#ef4444;">Montant à RETIRER (PMC)</label>
                 <input type="number" name="solde_debit" step="any" placeholder="Ex: 500" required style="margin-top:5px;">
             </div>
             <button type="submit" class="btn-danger" style="width:100%">Valider le Débit</button>

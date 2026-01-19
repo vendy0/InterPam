@@ -748,7 +748,7 @@ def valider_ticket():
     # 3. Vérification Solvabilité Caisse
     if config["caisse_solde"] < gain_dec:
         flash(
-            "Impossible de placer ce pari : Plafond de trésorerie atteint pour ce gain potentiel. Essayez une mise plus petite.",
+            "Impossible de poursuivre cet engagment : Plafond de trésorerie atteint pour ces jetons potentiels. Essayez un engagment plus faible.",
             "error",
         )
         return redirect(url_for("mon_ticket"))
@@ -771,7 +771,7 @@ def valider_ticket():
     if success:
         mouvement_caisse(gain_dec, "sub")
         session.pop("ticket", None)  # On vide le panier après succès
-        flash(f"Pari validé ! Gain potentiel : {gain_dec} HTG", "success")
+        flash(f"Pronostic enregistré ! Jetons potentiel : {gain_dec} PMC", "success")
         return redirect(url_for("fiches"))
     else:
         flash(msg, "error")
@@ -982,7 +982,7 @@ def classement_route():
     #     .limit(50)
     #     .all()
     # )
-    
+
     users = get_classement()
 
     # Trouver le rang de l'utilisateur actuel (si pas dans le top 50 chargé)
