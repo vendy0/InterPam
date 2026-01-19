@@ -222,7 +222,7 @@ input:focus {
 
 .name_container_inscription .first_name_input,
 .name_container_inscription .last_name_input {
-  width: auto;
+  width: 100%;
 }
 
 #age_inscription_input {
