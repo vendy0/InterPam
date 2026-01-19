@@ -18,11 +18,9 @@
         border: 1px solid transparent;
         transition: all 0.2s;
         cursor: pointer;
-        /* --- CORRECTIFS --- */
-        padding: 0;           /* Indispensable pour éviter que le SVG soit écrasé */
-        background-color: #fff; /* Assure un fond blanc par défaut */
-        appearance: none;     /* Supprime le style natif du système d'exploitation */
-        /* ------------------ */
+        padding: 0;           
+        background-color: #fff; 
+        appearance: none;     
         color: #555;
         border-color: #e2e8f0;
     }
@@ -30,12 +28,12 @@
     
     .btn-icon.money:hover { background: #dcfce7; color: #166534; border-color: #86efac; }
     .btn-icon.history:hover { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+    .btn-icon.history-handly:hover { background: #fff7ed; color: #c2410c; border-color: #fdba74; } /* Style ajouté pour history-handly */
     .btn-icon.list:hover { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
     .btn-icon.ban:hover { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
 
     .btn-icon svg { width: 18px; height: 18px; }
 
-    /* Style de la modale de transaction */
     .money-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; }
     .money-tab { 
         padding: 10px 15px; cursor: pointer; font-weight: 600; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; 
@@ -117,23 +115,21 @@
                             </svg>
                         </button>
                     
-                        <a href="{{ url_for('users.user_transactions', user_id=user.id) }}" class="btn-icon history" title="Historique Transactions" style="display: none;">
+                        <a href="{{ url_for('users.user_transactions', user_id=user.id) }}" class="btn-icon history" title="Historique Global">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
                         </a>
                         
-                        <a href="{{ url_for('users.user_details', user_id=user.id) }}" class="btn-icon history-handly" title="Historique Transactions Manuelles" style="display: none;">
+                        <a href="{{ url_for('users.user_details', user_id=user.id) }}" class="btn-icon history-handly" title="Historique Interventions Manuelles">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="8" r="5"></circle>
                                 <line x1="12" y1="5" x2="12" y2="11"></line>
                                 <path d="M14 6h-3a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3h-3"></path>
-                                
                                 <path d="M17 21H7a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2z"></path>
                                 <path d="M12 14v-2"></path>
                             </svg>
-
                         </a>
                     
                         <a href="{{ url_for('users.fiches', user_id=user.id) }}" class="btn-icon list" title="Voir les engagements">
@@ -177,12 +173,10 @@
 <div id="moneyModal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
     <div style="background: white; padding: 25px; border-radius: 12px; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
         <h3 id="moneyModalTitle" style="text-align:center; margin-bottom:15px;">Gestion Solde</h3>
-        
         <div class="money-tabs">
             <div class="money-tab active" onclick="switchMoneyTab('credit')">Créditer</div>
             <div class="money-tab" onclick="switchMoneyTab('debit')">Débiter</div>
         </div>
-
         <form id="formCredit" action="{{ url_for('users.credit_user') }}" method="POST">
             <input type="hidden" name="username_credit" id="inputUserCredit">
             <div style="margin-bottom:15px;">
@@ -191,7 +185,6 @@
             </div>
             <button type="submit" class="btn-success" style="width:100%">Valider le Crédit</button>
         </form>
-
         <form id="formDebit" action="{{ url_for('users.debit_user') }}" method="POST" style="display:none;">
             <input type="hidden" name="username_debit" id="inputUserDebit">
             <div style="margin-bottom:15px;">
@@ -200,7 +193,6 @@
             </div>
             <button type="submit" class="btn-danger" style="width:100%">Valider le Débit</button>
         </form>
-
         <button onclick="closeMoneyModal()" style="margin-top:15px; background:none; border:none; color:#64748b; width:100%; cursor:pointer;">Annuler</button>
     </div>
 </div>
@@ -221,26 +213,20 @@
 </div>
 
 <script>
-    // --- GESTION MODALE ARGENT ---
     const moneyModal = document.getElementById('moneyModal');
     const inputUserCredit = document.getElementById('inputUserCredit');
     const inputUserDebit = document.getElementById('inputUserDebit');
     const modalTitle = document.getElementById('moneyModalTitle');
 
     function openMoneyModal(username) {
-        // On remplit les inputs cachés avec le username
         inputUserCredit.value = username;
         inputUserDebit.value = username;
         modalTitle.innerText = "Gérer le solde de " + username;
-        
-        // Reset sur l'onglet crédit par défaut
         switchMoneyTab('credit');
         moneyModal.style.display = 'flex';
     }
 
-    function closeMoneyModal() {
-        moneyModal.style.display = 'none';
-    }
+    function closeMoneyModal() { moneyModal.style.display = 'none'; }
 
     function switchMoneyTab(tab) {
         const tabs = document.querySelectorAll('.money-tab');
@@ -260,7 +246,6 @@
         }
     }
 
-    // --- GESTION MODALE BAN ---
     const deleteModal = document.getElementById('deleteModal');
     const deleteForm = document.getElementById('deleteForm');
 
@@ -274,7 +259,6 @@
     }
     function closeDeleteModal() { deleteModal.style.display = 'none'; deleteForm.reset(); }
 
-    // Fermeture des modales si on clique en dehors
     window.onclick = function(event) {
         if (event.target == moneyModal) closeMoneyModal();
         if (event.target == deleteModal) closeDeleteModal();

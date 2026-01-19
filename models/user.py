@@ -271,24 +271,24 @@ def get_user_by_grade(classe):
 
 
 # Ajoute cette nouvelle fonction pour lire l'historique
-# def get_admin_transactions_by_user(user_id):
-#     try:
-#         with get_db_connection() as conn:
-#             query = """
-#                 SELECT at.*, admin.username as admin_name, admin.prenom as admin_prenom
-#                 FROM admin_transactions at
-#                 JOIN parieurs admin ON at.admin_id = admin.id
-#                 WHERE at.user_id = ?
-#                 ORDER BY at.created_at DESC
-#             """
-#             cur = conn.execute(query, (user_id,))
-#             rows = cur.fetchall()
-#             return [
-#                 dict(row) for row in rows
-#             ]  # Pas besoin de convertir le montant ici si tu le fais dans le template
-#     except sqlite3.Error as e:
-#         print(f"Erreur historique admin: {e}")
-#         return []
+def get_admin_transactions_by_user(user_id):
+    try:
+        with get_db_connection() as conn:
+            query = """
+                SELECT at.*, admin.username as admin_name, admin.prenom as admin_prenom
+                FROM admin_transactions at
+                JOIN parieurs admin ON at.admin_id = admin.id
+                WHERE at.user_id = ?
+                ORDER BY at.created_at DESC
+            """
+            cur = conn.execute(query, (user_id,))
+            rows = cur.fetchall()
+            return [
+                dict(row) for row in rows
+            ]  # Pas besoin de convertir le montant ici si tu le fais dans le template
+    except sqlite3.Error as e:
+        print(f"Erreur historique admin: {e}")
+        return []
 
 
 # Modifie la fonction credit existante

@@ -392,11 +392,8 @@ def annuler_match_et_rembourser(match_id):
                     envoyer_push_notification(
                         user["sub"],
                         "Match annulé",
-                        f"Le match {match['equipe_a']} VS {match['equipe_b']} vient d'être annulé.",
+                        f"Le match {match['equipe_a']} VS {match['equipe_b']} a été annulé.",
                     )
-
-            # 5. Envoyer une notif aux joueurs concernés (Optionnel mais sympa)
-            # ... (code notification ici si tu veux)
 
             return True
 
