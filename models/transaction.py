@@ -357,7 +357,7 @@ def get_user_transactions(user_id):
 
             for r in rows_admin:
                 item = dict(r)
-                item["source"] = "admin"
+                item["source"] = r["admin_prenom"]
                 item["display_montant"] = depuis_centimes(item["montant"])
                 item["sort_date"] = item["created_at"]
 

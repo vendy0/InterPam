@@ -507,7 +507,7 @@ def send_message_route():
     created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if send_message(user["id"], message_sent, created_at):
         flash("Message envoyé !", "success")
-        sup = get_users("role", "super_admin")[0]
+        sup = get_users("role", "super admin")[0]
         if sup["push_subscription"]:
             envoyer_push_notification(
                 sup["push_subscription"],
