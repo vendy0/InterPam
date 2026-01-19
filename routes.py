@@ -528,6 +528,7 @@ def save_subscription_route():
     user_id = user["id"]
     # C'est le JSON envoyé par le JS
     (save_subscription(json.dumps(subscription_data), user_id))
+    return {"status": "success", "message": "Abonnement enregistré"}, 200
 
 
 # Dans ton app.py
@@ -914,12 +915,17 @@ def portefeuille():
 def transfert_route():
     if "username" not in session:
         return redirect(url_for("login"))
+
     receveur_username = clean_input(request.form.get("recipient_username").strip())
-    if not get_user_by_username(receveur_username):
-        flash("Utilisateur non trouvé !", "error")
+    if session["username"] == receveur_username:
+        flash("Il n'est pas possible de se transférer à soi-même !", "error")
         return redirect(request.referrer)
 
-    montant = request.form.get("montant")
+    if not get_user_by_username(receveur_username):
+        flash("Destinataire introuvable !", "error")
+        return redirect(request.referrer)
+
+    montant = request.form.get("montant").replace(",", ".")
 
     try:
         montant_cent = int(vers_centimes(montant))
@@ -927,10 +933,15 @@ def transfert_route():
         flash("Format de montant incorrect !", "error")
         return redirect(request.referrer)
 
-    conf = get_config()
-    frais_dec = conf["frais_retrait"]
+    user = get_user_by_username(session["username"])
+    if int(vers_centimes(user["solde"])) < montant_cent:
+        flash("Solde insuffisant !", "error")
+        return redirect(request.referrer)
 
-    frais_cent = vers_centimes(montant) * frais_dec
+    conf = get_config()
+    tx_frais = conf["frais_retrait"]
+
+    frais_cent = vers_centimes(montant) * tx_frais
     net_cent = vers_centimes(montant) - frais_cent
 
     if transfert(

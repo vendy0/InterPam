@@ -126,7 +126,8 @@ def initialiser_bdd():
             #         FOREIGN KEY (user_id) REFERENCES parieurs(id) ON DELETE CASCADE,
             #         FOREIGN KEY (admin_id) REFERENCES parieurs(id)
             #     )""")
-
+            
+            # Table des transactions
 			cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     montant INTEGER NOT NULL, 
