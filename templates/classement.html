@@ -1,222 +1,1 @@
-{% extends "base.html" %} 
-
-{% block head %}
-<title>InterPam - Classement</title>
-<style>
-    .leaderboard-container {
-        padding: 20px 10px;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .top-three {
-        display: flex;
-        justify-content: center;
-        align-items: flex-end;
-        margin-bottom: 40px;
-        gap: 15px;
-    }
-
-    .podium-card {
-        background: white;
-        border-radius: 15px;
-        padding: 15px 10px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        position: relative;
-        width: 30%;
-    }
-
-    /* Le premier est plus grand */
-    .podium-card.rank-1 {
-        transform: scale(1.15);
-        z-index: 2;
-        border-top: 5px solid #ffd700; /* Or */
-    }
-    .podium-card.rank-2 {
-        border-top: 5px solid #c0c0c0; /* Argent */
-        order: 1; /* A gauche */
-    }
-    .podium-card.rank-3 {
-        border-top: 5px solid #cd7f32; /* Bronze */
-        order: 3; /* A droite */
-    }
-
-    .medal {
-        font-size: 2rem;
-        margin-bottom: 5px;
-    }
-
-    .podium-avatar {
-        width: 50px;
-        height: 50px;
-        background: #2c3e50;
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 1.2rem;
-        margin-bottom: 10px;
-    }
-    
-    .rank-1 .podium-avatar { background: #ffd700; color: #333; }
-    .rank-2 .podium-avatar { background: #c0c0c0; color: #333; }
-    .rank-3 .podium-avatar { background: #cd7f32; color: white; }
-
-    .podium-username {
-        font-weight: bold;
-        color: #333;
-        font-size: 0.9rem;
-        margin-bottom: 2px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 100%;
-    }
-
-    .podium-classe {
-        font-size: 0.75rem;
-        color: #777;
-        margin-bottom: 5px;
-    }
-
-    .podium-score {
-        font-weight: 800;
-        color: #009e60;
-        font-size: 0.95rem;
-    }
-
-    /* Liste des suivants */
-    .ranking-list {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    .rank-row {
-        display: flex;
-        align-items: center;
-        padding: 15px;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .rank-row:last-child {
-        border-bottom: none;
-    }
-
-    /* Mise en valeur de l'utilisateur connecté */
-    .rank-row.is-me {
-        background-color: #e8f5e9;
-        border-left: 4px solid #009e60;
-    }
-
-    .rank-num {
-        width: 30px;
-        font-weight: bold;
-        color: #888;
-        font-size: 1.1rem;
-    }
-
-    .rank-info {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .rank-user {
-        font-weight: 600;
-        color: #2c3e50;
-    }
-
-    .rank-classe {
-        font-size: 0.8rem;
-        color: #999;
-    }
-
-    .rank-score {
-        font-weight: bold;
-        color: #009e60;
-    }
-
-    @media (max-width: 400px) {
-        .top-three { gap: 5px; }
-        .podium-card { padding: 10px 5px; }
-        .podium-username { font-size: 0.8rem; }
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="leaderboard-container">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <h2>🏆 Top Pronostiqueurs</h2>
-        <p style="color: #666; font-size: 0.9rem;">Les maîtres du PaMCoin au CIF</p>
-    </div>
-
-    {% if users|length > 0 %}
-    <div class="top-three">
-        {% if users|length >= 2 %}
-        <div class="podium-card rank-2">
-            <div class="medal">🥈</div>
-            <div class="podium-avatar">{{ users[1].username[0]|upper }}</div>
-            <div class="podium-username">@{{ users[1].username }}</div>
-            <div class="podium-classe">{{ users[1].classe }}</div>
-            <div class="podium-score">{{ format_money(users[1].solde) }}</div>
-        </div>
-        {% endif %}
-
-        {% if users|length >= 1 %}
-        <div class="podium-card rank-1">
-            <div class="medal">👑</div>
-            <div class="podium-avatar">{{ users[0].username[0]|upper }}</div>
-            <div class="podium-username">@{{ users[0].username }}</div>
-            <div class="podium-classe">{{ users[0].classe }}</div>
-            <div class="podium-score">{{ format_money(users[0].solde) }}</div>
-        </div>
-        {% endif %}
-
-        {% if users|length >= 3 %}
-        <div class="podium-card rank-3">
-            <div class="medal">🥉</div>
-            <div class="podium-avatar">{{ users[2].username[0]|upper }}</div>
-            <div class="podium-username">@{{ users[2].username }}</div>
-            <div class="podium-classe">{{ users[2].classe }}</div>
-            <div class="podium-score">{{ format_money(users[2].solde) }}</div>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    <div class="ranking-list">
-        {% for user in users[3:] %}
-        <div class="rank-row {{ 'is-me' if user.id == current_user.id }}">
-            <div class="rank-num">#{{ loop.index + 3 }}</div>
-            <div class="rank-info">
-                <span class="rank-user">@{{ user.username }}</span>
-                <span class="rank-classe">{{ user.classe }}</span>
-            </div>
-            <div class="rank-score">{{ format_money(user.solde) }} PMC</div>
-        </div>
-        {% endfor %}
-    </div>
-
-    {% if current_user not in users[:10] %} <div style="margin-top: 20px; text-align: center; font-style: italic; color: #777;">
-        ...
-        <div class="rank-row is-me" style="border-radius: 8px; margin-top: 10px; background: #e8f5e9;">
-            <div class="rank-num">#{{ my_rank }}</div>
-            <div class="rank-info">
-                <span class="rank-user">Vous (@{{ current_user.username }})</span>
-            </div>
-            <div class="rank-score">{{ format_money(current_user.solde) }} PMC</div>
-        </div>
-    </div>
-    {% endif %}
-
-</div>
-{% endblock %}
+{% extends "base.html" %} {% block head %}<title>InterPam - Classement</title><style>    .leaderboard-container {        padding: 20px 10px;        max-width: 800px;        margin: 0 auto;    }    .top-three {        display: flex;        justify-content: center;        align-items: flex-end;        margin-bottom: 40px;        gap: 15px;    }    .podium-card {        background: white;        border-radius: 15px;        padding: 15px 10px;        text-align: center;        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);        display: flex;        flex-direction: column;        align-items: center;        position: relative;        width: 30%;    }    /* Le premier est plus grand */    .podium-card.rank-1 {        transform: scale(1.15);        z-index: 2;        border-top: 5px solid #ffd700; /* Or */    }    .podium-card.rank-2 {        border-top: 5px solid #c0c0c0; /* Argent */        order: 1; /* A gauche */    }    .podium-card.rank-3 {        border-top: 5px solid #cd7f32; /* Bronze */        order: 3; /* A droite */    }    .medal {        font-size: 2rem;        margin-bottom: 5px;    }    .podium-avatar {        width: 50px;        height: 50px;        background: #2c3e50;        color: white;        border-radius: 50%;        display: flex;        align-items: center;        justify-content: center;        font-weight: bold;        font-size: 1.2rem;        margin-bottom: 10px;    }    .rank-1 .podium-avatar {        background: #ffd700;        color: #333;    }    .rank-2 .podium-avatar {        background: #c0c0c0;        color: #333;    }    .rank-3 .podium-avatar {        background: #cd7f32;        color: white;    }    .podium-username {        font-weight: bold;        color: #333;        font-size: 0.9rem;        margin-bottom: 2px;        overflow: hidden;        text-overflow: ellipsis;        white-space: nowrap;        max-width: 100%;    }    .podium-classe {        font-size: 0.75rem;        color: #777;        margin-bottom: 5px;    }    .podium-score {        font-weight: 800;        color: #009e60;        font-size: 0.95rem;    }    /* Liste des suivants */    .ranking-list {        background: white;        border-radius: 12px;        overflow: hidden;        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);    }    .rank-row {        display: flex;        align-items: center;        padding: 15px;        border-bottom: 1px solid #f0f0f0;    }    .rank-row:last-child {        border-bottom: none;    }    /* Mise en valeur de l'utilisateur connecté */    .rank-row.is-me {        background-color: #e8f5e9;        border-left: 4px solid #009e60;    }    .rank-num {        width: 30px;        font-weight: bold;        color: #888;        font-size: 1.1rem;    }    .rank-info {        flex: 1;        display: flex;        flex-direction: column;    }    .rank-user {        font-weight: 600;        color: #2c3e50;    }    .rank-classe {        font-size: 0.8rem;        color: #999;    }    .rank-score {        font-weight: bold;        color: #009e60;    }    @media (max-width: 400px) {        .top-three {            gap: 5px;        }        .podium-card {            padding: 10px 5px;        }        .podium-username {            font-size: 0.8rem;        }    }</style>{% endblock %} {% block content %} {% if not users %}<h3>Aucun utilisateur...</h3>{% else %}<div class="leaderboard-container">    <div style="text-align: center; margin-bottom: 30px">        <h2>🏆 Top Pronostiqueurs</h2>        <p style="color: #666; font-size: 0.9rem">Les maîtres du PaMCoin au CIF</p>    </div>    {% if users|length > 0 %}    <div class="top-three">        {% if users|length >= 2 %}        <div class="podium-card rank-2">            <div class="medal">🥈</div>            <div class="podium-avatar">{{ users[1].username[0]|upper }}</div>            <div class="podium-username">@{{ users[1].username }}</div>            <div class="podium-classe">{{ users[1].classe }}</div>            <div class="podium-score">{{ format_money(users[1].solde) }}</div>        </div>        {% endif %} {% if users|length >= 1 %}        <div class="podium-card rank-1">            <div class="medal">👑</div>            <div class="podium-avatar">{{ users[0].username[0]|upper }}</div>            <div class="podium-username">@{{ users[0].username }}</div>            <div class="podium-classe">{{ users[0].classe }}</div>            <div class="podium-score">{{ format_money(users[0].solde) }}</div>        </div>        {% endif %} {% if users|length >= 3 %}        <div class="podium-card rank-3">            <div class="medal">🥉</div>            <div class="podium-avatar">{{ users[2].username[0]|upper }}</div>            <div class="podium-username">@{{ users[2].username }}</div>            <div class="podium-classe">{{ users[2].classe }}</div>            <div class="podium-score">{{ format_money(users[2].solde) }}</div>        </div>        {% endif %}    </div>    {% endif %}    <div class="ranking-list">        {% for user in users[3:] %}        <div class="rank-row {{ 'is-me' if user.id == current_user.id }}">            <div class="rank-num">#{{ loop.index + 3 }}</div>            <div class="rank-info">                <span class="rank-user">@{{ user.username }}</span>                <span class="rank-classe">{{ user.classe }}</span>            </div>            <div class="rank-score">{{ format_money(user.solde) }} PMC</div>        </div>        {% endfor %}    </div>    {% if current_user not in users[:10] %}    <div style="margin-top: 20px; text-align: center; font-style: italic; color: #777">        ...        <div class="rank-row is-me" style="border-radius: 8px; margin-top: 10px; background: #e8f5e9">            <div class="rank-num">#{{ my_rank }}</div>            <div class="rank-info">                <span class="rank-user">Vous (@{{ current_user.username }})</span>            </div>            <div class="rank-score">{{ format_money(current_user.solde) }} PMC</div>        </div>    </div>    {% endif %}{% endif %}</div>{% endblock %}

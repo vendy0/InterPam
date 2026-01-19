@@ -472,3 +472,48 @@ def send_message(parieur_id, message, created_at):
     except sqlite3.Error as e:
         print(f"Erreur lors de l'envoie : {e}")
         return False
+
+
+def get_classement(limit=50):
+    try:
+        with get_db_connection() as conn:
+            # Ta requête est excellente : elle exclut la Direction et les inactifs
+            query = """
+                SELECT prenom, nom, username, solde, classe 
+                FROM parieurs 
+                WHERE actif <> 0 AND classe <> 'Direction' 
+                ORDER BY solde DESC 
+                LIMIT ?
+            """
+            cur = conn.execute(query, (limit,))
+            rows = cur.fetchall()
+
+            # On transforme en liste de dictionnaires pour pouvoir modifier 'solde'
+            users = []
+            for row in rows:
+                user_dict = dict(row)
+                user_dict["solde"] = depuis_centimes(user_dict["solde"])
+                users.append(user_dict)
+
+            return users
+    except sqlite3.Error as e:
+        print(f"Erreur récupération classement : {e}")
+        return []  # Retourner une liste vide est plus sûr pour le template HTML que None
+
+
+def get_user_rank(user_id):
+    try:
+        with get_db_connection() as conn:
+            # On compte tous les parieurs qui ont plus d'argent que l'utilisateur actuel
+            # Le rang est (Nombre de personnes devant) + 1
+            query = """
+                SELECT COUNT(*) + 1 as rank 
+                FROM parieurs 
+                WHERE solde > (SELECT solde FROM parieurs WHERE id = ? AND classe <> 'Direction')
+                AND role = 'parieur'
+            """
+            res = conn.execute(query, (user_id,)).fetchone()
+            return res["rank"] if res else "N/A"
+    except Exception as e:
+        print(f"Erreur calcul rang : {e}")
+        return "?"

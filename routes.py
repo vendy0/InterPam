@@ -971,21 +971,25 @@ def profil():
 
 @app.route("/classement")
 @active_required
-def classement():
+def classement_route():
     if "username" not in session:
         return redirect(url_for("login"))
     # Récupérer tous les utilisateurs triés par solde décroissant
     # Exclure les admins/direction si nécessaire pour ne pas fausser le jeu
-    users = (
-        User.query.filter(User.role != "admin")
-        .order_by(User.solde.desc())
-        .limit(50)
-        .all()
-    )
+    # users = (
+    #     User.query.filter(User.role != "admin")
+    #     .order_by(User.solde.desc())
+    #     .limit(50)
+    #     .all()
+    # )
+    
+    users = get_classement()
 
     # Trouver le rang de l'utilisateur actuel (si pas dans le top 50 chargé)
     # (Logique simplifiée ici)
-    my_rank = 0
+    # my_rank = 0
+    user = get_user_by_username(session["username"])
+    my_rank = get_user_rank(user["id"])
     # ... logique pour calculer my_rank ...
 
     return render_template("classement.html", users=users, my_rank=my_rank)
