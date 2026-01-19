@@ -282,7 +282,7 @@ def get_admin_transactions_by_user(user_id):
 		print(f"Erreur historique admin: {e}")
 		return []
 
-def tranfert(username_sender, username_getter, montant_dec, frais_dec, montant_net_dec):
+def transfert(username_sender, username_getter, montant_dec, frais_dec, montant_net_dec):
 	try:
 		montant_cent = vers_centimes(montant_dec)
 		frais_cent = vers_centimes(frais_dec)
