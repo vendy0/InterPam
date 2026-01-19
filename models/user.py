@@ -282,6 +282,27 @@ def get_admin_transactions_by_user(user_id):
 		print(f"Erreur historique admin: {e}")
 		return []
 
+def tranfert(username_sender, username_getter, montant_dec, frais_dec, montant_net_dec):
+	try:
+		montant_cent = vers_centimes(montant_dec)
+		frais_cent = vers_centimes(frais_dec)
+		montant_net_cent = vers_centimes(montant_net_dec)
+		created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+		with get_db_connection() as conn:
+			sender_id = conn.execute("SELECT id FROM parieurs WHERE username = ?", (username_sender,)).fetchone()
+			getter_id = conn.execute("SELECT id FROM parieurs WHERE username = ?", (username_getter,)).fetchone()
+			if not sender_id or not getter_id:
+				print("Utilisateur non trouvé !")
+				return False
+			cur = conn.execute("""INSERT INTO transactions(montant, frais, montant_net, processed_at, envoyeur_id, receveur_id) VALUES(?, ?, ?, created_at, sender_id, getter_id)""", (montant_cent, frais_cent, montant_net_cent,))
+			conn.commit()
+			return True
+	except Exception as e:
+		print(f"Il y a eu une erreur lors du transfert : {e}")
+		return False
+
+
 
 # Modifie la fonction credit existante
 def credit(username, montant_decimal, message=False, admin_id=None):  # <--- Ajout de admin_id

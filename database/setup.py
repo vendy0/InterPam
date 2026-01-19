@@ -109,22 +109,34 @@ def initialiser_bdd():
 			# Table Transactions (Dépôts et Retraits)
 			# setup.py (Version améliorée)
 
+			# cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
+            #         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            #         user_id INTEGER NOT NULL,
+            #         admin_id INTEGER, 
+            #         type TEXT NOT NULL, 
+            #         montant INTEGER NOT NULL, 
+            #         frais INTEGER DEFAULT 0,  
+            #         montant_net INTEGER DEFAULT 0,
+            #         telephone TEXT NOT NULL,
+            #         moncash_id TEXT UNIQUE,
+            #         statut TEXT DEFAULT 'en_attente', 
+            #         created_at TEXT NOT NULL,
+            #         processed_at TEXT,
+            #         raison_refus TEXT, 
+            #         FOREIGN KEY (user_id) REFERENCES parieurs(id) ON DELETE CASCADE,
+            #         FOREIGN KEY (admin_id) REFERENCES parieurs(id)
+            #     )""")
+
 			cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                    user_id INTEGER NOT NULL,
-                    admin_id INTEGER, 
-                    type TEXT NOT NULL, 
-                    montant INTEGER NOT NULL,      -- Montant Brut (en centimes)
-                    frais INTEGER DEFAULT 0,       -- Frais appliqués (en centimes)
-                    montant_net INTEGER DEFAULT 0, -- Montant à envoyer réellement (en centimes)
-                    telephone TEXT NOT NULL,
-                    moncash_id TEXT UNIQUE,
-                    statut TEXT DEFAULT 'en_attente', 
-                    created_at TEXT NOT NULL,
+                    montant INTEGER NOT NULL, 
+                    frais INTEGER DEFAULT 0,
+                    montant_net INTEGER DEFAULT 0,
                     processed_at TEXT,
-                    raison_refus TEXT, 
-                    FOREIGN KEY (user_id) REFERENCES parieurs(id) ON DELETE CASCADE,
-                    FOREIGN KEY (admin_id) REFERENCES parieurs(id)
+                    envoyeur_id INTEGER,
+                    receveur_id INTEGER,
+                    FOREIGN KEY (envoyeur_id) REFERENCES parieurs(id) ON DELETE SET NULL,
+                    FOREIGN KEY (receveur_id) REFERENCES parieurs(id) ON DELETE SET NULL
                 )""")
 
 			# Table des inscriptions avant confirmation
@@ -166,6 +178,10 @@ def initialiser_bdd():
 			cur.execute(
 				"INSERT OR IGNORE INTO config (id, caisse_solde, mise_min, mise_max, frais_retrait) VALUES (1, 200000, 1000, 100000, 0.03)"
 			)
+
+            # cur.execute("""CREATE TABLE IF NOT EXISTS 
+            
+            # )""")
 
 	except sqlite3.Error as e:
 		print(f"Erreur lors de l'initialisation : {e}")

@@ -807,96 +807,126 @@ def portefeuille():
 	return render_template("wallet.html", transactions=historique)
 
 
-@app.route("/demande-depot", methods=["POST"])
+# @app.route("/demande-depot", methods=["POST"])
+# @active_required
+# def demande_depot():
+# 	if "username" not in session:
+# 		return redirect(url_for("login"))
+
+# 	user = get_user_by_username(session["username"])
+# 	try:
+# 		montant = float(request.form.get("montant", "0").replace(",", "."))
+# 		telephone = request.form.get("telephone").strip()
+# 		moncash_id = request.form.get("moncash_id").strip()
+
+# 		if montant <= 0:
+# 			flash("Le montant doit être positif.", "error")
+# 			return redirect(url_for("portefeuille"))
+
+# 		if not telephone or not moncash_id:
+# 			flash("Veuillez remplir tous les champs MonCash.", "error")
+# 			return redirect(url_for("portefeuille"))
+
+# 		# On crée juste la demande, pas de mouvement d'argent immédiat
+# 		success, msg = create_transaction(user["id"], "depot", montant, telephone, moncash_id)
+
+# 		if success:
+# 			flash("Demande de dépôt envoyée ! En attente de validation.", "success")
+# 		else:
+# 			flash(msg, "error")
+
+# 	except ValueError:
+# 		flash("Montant invalide.", "error")
+
+# 	return redirect(url_for("portefeuille"))
+
+
+# # 2. Mise à jour de la route demande_retrait pour calculer les frais
+# @app.route("/demande-retrait", methods=["POST"])
+# @active_required
+# def demande_retrait():
+# 	if "username" not in session:
+# 		return redirect(url_for("login"))
+
+# 	user = get_user_by_username(session["username"])
+# 	try:
+# 		montant_brut = float(request.form.get("montant", "0").replace(",", "."))
+# 		telephone = request.form.get("telephone").strip()
+
+# 		if montant_brut <= 0:
+# 			flash("Le montant doit être positif.", "error")
+# 			return redirect(url_for("portefeuille"))
+
+# 		if user["solde"] < montant_brut:
+# 			flash("Solde insuffisant.", "error")
+# 			return redirect(url_for("portefeuille"))
+
+# 		# --- CALCUL DES FRAIS ---
+# 		# On arrondit à 2 décimales
+# 		config = get_config()
+# 		montant_frais = round(montant_brut * config["frais_retrait"], 2)
+# 		montant_net = montant_brut - montant_frais
+
+# 		# 1. On débite le montant TOTAL (Brut) du solde de l'utilisateur
+# 		success_debit, msg_debit = debit(user["username"], montant_brut)
+
+# 		if success_debit:
+# 			# 2. On enregistre la transaction avec les détails (Frais et Net)
+# 			success_trans, msg_trans = create_transaction(
+# 				user_id=user["id"],
+# 				type_trans="retrait",
+# 				montant_dec=montant_brut,  # Montant débité du compte
+# 				telephone=telephone,
+# 				frais_dec=montant_frais,  # <--- NOUVEAU
+# 				net_dec=montant_net,  # <--- NOUVEAU
+# 			)
+
+# 			if success_trans:
+# 				flash(
+# 					f"Retrait enregistré. Frais: {montant_frais} HTG. Vous recevrez : {montant_net} HTG.",
+# 					"success",
+# 				)
+# 			else:
+# 				# Rollback si erreur DB
+# 				credit(user["username"], montant_brut)
+# 				flash("Erreur technique. Remboursé.", "error")
+# 		else:
+# 			flash(msg_debit, "error")
+
+# 	except ValueError:
+# 		flash("Montant invalide.", "error")
+
+# 	return redirect(url_for("portefeuille"))
+
+
+@app.route("/transfert", methods=["POST"])
 @active_required
-def demande_depot():
+def transfert():
 	if "username" not in session:
 		return redirect(url_for("login"))
+	receveur_username = clean_input(request.form.get("recipient_username").strip())
+	if not get_user_by_username(receveur_username):
+		flash("Utilisateur non trouvé !", "error")
+		return redirect(request.referrer)
 
-	user = get_user_by_username(session["username"])
+	montant = request.form.get("montant")
+
 	try:
-		montant = float(request.form.get("montant", "0").replace(",", "."))
-		telephone = request.form.get("telephone").strip()
-		moncash_id = request.form.get("moncash_id").strip()
+		montant_cent = int(vers_centimes(montant))
+	except:
+		flash("Format de montant incorrect !", "error")
+		return redirect(request.referrer)
 
-		if montant <= 0:
-			flash("Le montant doit être positif.", "error")
-			return redirect(url_for("portefeuille"))
+	frais_cent = vers_centimes(montant) * frais_retrait
+	net_cent = vers_centimes(montant) - frais_cent
 
-		if not telephone or not moncash_id:
-			flash("Veuillez remplir tous les champs MonCash.", "error")
-			return redirect(url_for("portefeuille"))
+	if transfert(session["username"], receveur_username, montant, depuis_centimes(frais), depuis_centimes(net)):
+		flash("Votre transfert a été effectué avec succès !", "success")
+		return redirect(url_for("home"))
+	else:
+		flash("Il y a eu une erreur lors du transfert !", "error")
+		return redirect(request.referrer)
 
-		# On crée juste la demande, pas de mouvement d'argent immédiat
-		success, msg = create_transaction(user["id"], "depot", montant, telephone, moncash_id)
-
-		if success:
-			flash("Demande de dépôt envoyée ! En attente de validation.", "success")
-		else:
-			flash(msg, "error")
-
-	except ValueError:
-		flash("Montant invalide.", "error")
-
-	return redirect(url_for("portefeuille"))
-
-
-# 2. Mise à jour de la route demande_retrait pour calculer les frais
-@app.route("/demande-retrait", methods=["POST"])
-@active_required
-def demande_retrait():
-	if "username" not in session:
-		return redirect(url_for("login"))
-
-	user = get_user_by_username(session["username"])
-	try:
-		montant_brut = float(request.form.get("montant", "0").replace(",", "."))
-		telephone = request.form.get("telephone").strip()
-
-		if montant_brut <= 0:
-			flash("Le montant doit être positif.", "error")
-			return redirect(url_for("portefeuille"))
-
-		if user["solde"] < montant_brut:
-			flash("Solde insuffisant.", "error")
-			return redirect(url_for("portefeuille"))
-
-		# --- CALCUL DES FRAIS ---
-		# On arrondit à 2 décimales
-		config = get_config()
-		montant_frais = round(montant_brut * config["frais_retrait"], 2)
-		montant_net = montant_brut - montant_frais
-
-		# 1. On débite le montant TOTAL (Brut) du solde de l'utilisateur
-		success_debit, msg_debit = debit(user["username"], montant_brut)
-
-		if success_debit:
-			# 2. On enregistre la transaction avec les détails (Frais et Net)
-			success_trans, msg_trans = create_transaction(
-				user_id=user["id"],
-				type_trans="retrait",
-				montant_dec=montant_brut,  # Montant débité du compte
-				telephone=telephone,
-				frais_dec=montant_frais,  # <--- NOUVEAU
-				net_dec=montant_net,  # <--- NOUVEAU
-			)
-
-			if success_trans:
-				flash(
-					f"Retrait enregistré. Frais: {montant_frais} HTG. Vous recevrez : {montant_net} HTG.",
-					"success",
-				)
-			else:
-				# Rollback si erreur DB
-				credit(user["username"], montant_brut)
-				flash("Erreur technique. Remboursé.", "error")
-		else:
-			flash(msg_debit, "error")
-
-	except ValueError:
-		flash("Montant invalide.", "error")
-
-	return redirect(url_for("portefeuille"))
 
 
 # === Route pour le Profil ===
