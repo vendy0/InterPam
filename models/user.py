@@ -82,11 +82,24 @@ def get_pending_by_token(token):
         return None
 
 
-def delete_pending(token):
+def delete_pending(token, email=None, username=None):
     """Supprime l'inscription temporaire après validation."""
     try:
         with get_db_connection() as conn:
-            conn.execute("DELETE FROM pending_registrations WHERE token = ?", (token,))
+            if email and username:
+                conn.execute(
+                    "DELETE FROM pending_registrations WHERE token = ? OR email = ? OR username = ?",
+                    (
+                        token,
+                        email,
+                        username,
+                    ),
+                )
+            else:
+                conn.execute(
+                    "DELETE FROM pending_registrations WHERE token = ?",
+                    (token,))
+                
             conn.commit()
     except sqlite3.Error as e:
         print(f"Erreur delete_pending : {e}")

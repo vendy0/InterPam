@@ -377,7 +377,7 @@ def confirm_email(token):
     ajouter_parieur(final_user_data)
 
     # 4. Supprimer de la table temporaire
-    delete_pending(token)
+    delete_pending(token, pending_user["email"], pending_user["username"])
 
     # 5. Connecter l'utilisateur (Optionnel, ou juste rediriger vers login)
     session["username"] = final_user_data["username"]
