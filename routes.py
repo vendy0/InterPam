@@ -307,7 +307,7 @@ def traitementRegister():
     # 1. Générer le token
     token = secrets.token_urlsafe(32)
     expiration = datetime.now() + timedelta(hours=24)
-    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    created_at = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
     # 2. Préparer les données
     user_data = {
@@ -504,7 +504,7 @@ def send_message_route():
     if len(message_sent) >= 410:
         flash("Message trop long !", "error")
         return redirect(request.referrer)
-    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    created_at = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     if send_message(user["id"], message_sent, created_at):
         flash("Message envoyé !", "success")
         sup = get_users("role", "super admin")[0]
@@ -764,7 +764,7 @@ def valider_ticket():
         match_id=first_match_id,  # Technique: on lie au moins à un match
         mise_dec=mise_dec,
         gain_dec=gain_dec,
-        date_pari=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        date_pari=datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
         options_ids=options_ids,
     )
 

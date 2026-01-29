@@ -13,7 +13,7 @@ def transfert(
         montant_cent = vers_centimes(montant_dec)
         frais_cent = vers_centimes(frais_dec)
         montant_net_cent = vers_centimes(montant_net_dec)
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        created_at = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
         with get_db_connection() as conn:
             sender = conn.execute(

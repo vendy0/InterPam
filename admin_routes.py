@@ -618,7 +618,7 @@ def setup_staff(token):
         "mdp": generate_password_hash(mdp),
         "role": role,
         "solde": 0,
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "created_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
     }
     ajouter_parieur(user_data)
     supprimer_invitation(email)

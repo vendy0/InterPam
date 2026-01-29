@@ -310,7 +310,7 @@ def credit(
 ):  # <--- Ajout de admin_id
     try:
         solde_centimes = int(montant_decimal * 100)  # Assure-toi que c'est un int
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        created_at = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
         with get_db_connection() as conn:
             user = get_user_by_username(username)
@@ -360,7 +360,7 @@ def debit(
 ):  # <--- Ajout de admin_id
     try:
         solde_centimes = int(montant_decimal * 100)
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        created_at = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
         with get_db_connection() as conn:
             user = get_user_by_username(username)
