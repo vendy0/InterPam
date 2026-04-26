@@ -4,7 +4,7 @@ interpam.db
 gcom_ai.sh
 commit.sh
 test_key.py
-
+.nomedia
 
 # Gestion des versions
 # .git

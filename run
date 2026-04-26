@@ -25,3 +25,12 @@ if __name__ == "__main__":
         # On affiche le chemin pour aider au débug
         print(f"DEBUG: Python Executable: {sys.executable}")
         sys.exit(1)
+
+"""
+Lancement : SERVER_PORT=5000 python main.py
+
+Dépendances :
+pkg update && pkg upgrade
+pkg install python
+pip install gunicorn flask  # Ajoute les autres dépendances de ton projet ici
+"""

@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+from datetime import datetime
 
 # # 1. Charger le fichier CSV
 # # Note : 'sep' peut être ',' ou ';' selon votre source de données
@@ -17,31 +18,36 @@ from pathlib import Path
 # df = pd.read_csv("parieurs.csv", sep=";", encoding="utf-8")
 # print(df)
 
-dossier = Path("./")
-for file in dossier.iterdir():
-    if not file.is_file():
-        continue
-    if not file.name.endswith(".csv"):
-        continue
-    if file.name == "android_metadata.csv":
-        continue
-    df = pd.read_csv(file.name, sep=";", encoding="utf-8")
-    # 2. Exporter vers Excel
-    excel_name = file.name.replace(".csv", ".xlsx")
-    pres = False
-    for verif in dossier.iterdir():
-        if verif.name == excel_name:
-            pres = True
-            break
-    if pres == False:
-        df.to_excel(excel_name, index=False)
-        print(f"📦 Exportation réussie pour {excel_name} !")
-    else:
-        print(
-            f"Fichier {file.name} déjà exporté ! Supprimez ou déplacez d'abord le fichier puis réésayez."
-        )
+
+def main_to_excel(dossier, path_csv, date_export):
+	if not path_csv.exists() or not dossier.exists():
+		print("Dossier introuvable !")
+		return
+	chemin_excel = dossier.joinpath("EXCEL")
+	chemin_excel.mkdir(parents=True, exist_ok=True)
+
+	for file in path_csv.glob("*.csv"):
+		if file.name == "android_metadata.csv":
+			continue
+		try:
+			df = pd.read_csv(file, sep=";", encoding="utf-8")
+			# 2. Exporter vers Excel
+			excel_name = f"{file.stem}_{date_export}.xlsx"
+			chemin_final = chemin_excel / excel_name
+			if not chemin_final.exists():
+				df.to_excel(chemin_final, index=False)
+				print(f"📦 Conversion réussie pour {excel_name} !")
+			else:
+				print(
+					f"Fichier {file.name} déjà exporté ! Supprimez ou déplacez d'abord le fichier puis réésayez."
+				)
+		except Exception as e:
+			print(f"Erreur sur : {file.name} !   {e}")
+	print("FIN DE LA CONVERSION".center(50, "_"), "\n")
+
+
 # #
 # print(dir(str))
 # for file in dossier.iterdir():
 #     print(file)
-# 
+#
