@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+interpam.db-journal
 interpam.db
 gcom_ai.sh
 commit.sh
