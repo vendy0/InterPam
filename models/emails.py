@@ -210,7 +210,7 @@ def envoyer_invitation_admin(nom, email, lien):
     template_html = _load_template("new_adm.html")
 
     if template_html:
-        html = Template(template_html).render(nom=nom, lien=lien)
+        html = Template(template_html).render(nom=nom, lien=lien, email=email)
     else:
         html = f"<p>Bonjour {nom}, <br>Devenez Admin ici : <a href='{lien}'>{lien}</a></p>"
 
@@ -257,7 +257,7 @@ def welcome_email(nom, email, lien):
     template_html = _load_template("welcome.html")
 
     if template_html:
-        html = Template(template_html).render(nom=nom, lien=lien, url_for=url_for)
+        html = Template(template_html).render(nom=nom, lien=lien, url_for=url_for, email=email)
     else:
         html = f"<h1>Bienvenue {nom} !</h1><p>Accédez à votre espace : <a href='{lien}'>Connexion</a></p>"
 
@@ -284,7 +284,7 @@ def ban_notification(nom, email):
     template_html = _load_template("ban_notification.html")
 
     if template_html:
-        html = Template(template_html).render(nom=nom, url_for=url_for)
+        html = Template(template_html).render(nom=nom, url_for=url_for, email=email)
     else:
         html = f"<p>Bonjour {nom}, votre compte a été suspendu.</p>"
 
@@ -334,6 +334,7 @@ def envoyer_notification_generale(nom, email, titre, message, lien=None, texte_b
             message_principal=Markup(message),  # Utilisation de Markup pour valider le HTML
             lien_action=url_finale,
             texte_bouton=texte_bouton if texte_bouton else "Accéder à InterPam",
+            email=email
         )
     else:
         html = f"<h2>{titre}</h2><div>{message}</div><br><a href='{url_finale}'>Voir</a>"
