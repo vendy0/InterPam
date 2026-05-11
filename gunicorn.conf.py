@@ -3,7 +3,7 @@ import multiprocessing
 
 # 1. Adresse et Port
 # '0.0.0.0' permet d'écouter sur toutes les interfaces (utile pour Docker/Twilight Paradox)
-bind = "0.0.0.0:2037"
+bind = "0.0.0.0:2034"
 
 # 2. Performance & Workers
 # Formule standard : (2 x nombre de coeurs CPU) + 1

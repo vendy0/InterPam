@@ -10,6 +10,7 @@ from jinja2 import Template
 from flask import url_for
 from pywebpush import webpush, WebPushException
 from markupsafe import Markup  # Indispensable pour injecter du HTML sûr
+from models.user import email_active
 
 # --- CONFIGURATION ---
 EMAIL_ADRESSE = os.getenv("EMAIL_ADRESSE")
@@ -27,19 +28,69 @@ VAPID_PRIVATE_KEY = PRIVATE_KEY
 # 1. MOTEUR D'ENVOI EMAIL (ASYNC)
 # ==========================================
 
+# def _thread_send_email(destinataire, sujet, contenu_html, contenu_texte):
+#     msg = EmailMessage()
+#     msg["Subject"] = sujet
+#     msg["From"] = EMAIL_ADRESSE
+#     msg["To"] = destinataire
 
-def _thread_send_email(destinataire, sujet, contenu_html, contenu_texte):
-    """
-    Fonction exécutée en arrière-plan (Thread).
-    """
+#     # Ajout de l'en-tête de désinscription
+#     # Remplace l'URL par une route de ton app ou un mail de contact
+#     unsubscribe_url = "http://interpam.mooo.com/unsubscribe"
+#     msg["List-Unsubscribe"] = f"<{unsubscribe_url}>"
+
+#     # ... reste du code
+
+# def _thread_send_email(destinataire, sujet, contenu_html, contenu_texte):
+#     """
+#     Fonction exécutée en arrière-plan (Thread).
+#     """
+#     msg = EmailMessage()
+#     msg["Subject"] = sujet
+#     msg["From"] = EMAIL_ADRESSE
+#     msg["To"] = destinataire
+
+#     # Définir le contenu texte brut (fallback)
+#     msg.set_content(contenu_texte)
+#     # Définir le contenu HTML
+#     msg.add_alternative(contenu_html, subtype="html")
+
+#     try:
+#         # Connexion SMTP sécurisée (SSL)
+#         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+#             smtp.login(EMAIL_ADRESSE, EMAIL_MOT_DE_PASSE)
+#             smtp.send_message(msg)
+
+#         # Log discret
+#         safe_email = (
+#             f"{destinataire[:3]}***{destinataire[destinataire.find('@') :]}"
+#             if "@" in destinataire
+#             else "***"
+#         )
+#         print(f"✅ Email envoyé (Thread) à : {safe_email}")
+
+#     except Exception as e:
+#         print(f"❌ Erreur envoi email (Thread) : {str(e)}")
+
+
+def _thread_send_email(destinataire, sujet, contenu_html, contenu_texte, est_essentiel=False):
+    # 1. Vérification en BDD si l'utilisateur veut encore des mails
+    # (Sauf si c'est un mail essentiel comme un Reset Password)
+    if not est_essentiel and not email_active(destinataire):
+        return
+
     msg = EmailMessage()
     msg["Subject"] = sujet
     msg["From"] = EMAIL_ADRESSE
     msg["To"] = destinataire
 
-    # Définir le contenu texte brut (fallback)
+    # 2. Ajout des Headers de désinscription SEULEMENT si non-essentiel
+    if not est_essentiel:
+        unsub_url = f"https://interpam.mooo.com/unsubscribe?email={destinataire}"
+        msg["List-Unsubscribe"] = f"<{unsub_url}>"
+        msg["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
+
     msg.set_content(contenu_texte)
-    # Définir le contenu HTML
     msg.add_alternative(contenu_html, subtype="html")
 
     try:
@@ -48,12 +99,7 @@ def _thread_send_email(destinataire, sujet, contenu_html, contenu_texte):
             smtp.login(EMAIL_ADRESSE, EMAIL_MOT_DE_PASSE)
             smtp.send_message(msg)
 
-        # Log discret
-        safe_email = (
-            f"{destinataire[:3]}***{destinataire[destinataire.find('@') :]}"
-            if "@" in destinataire
-            else "***"
-        )
+        safe_email = f"{destinataire[:3]}***{destinataire[destinataire.find('@') :]}" if "@" in destinataire else "***"
         print(f"✅ Email envoyé (Thread) à : {safe_email}")
 
     except Exception as e:
@@ -67,6 +113,10 @@ def envoyer_email_generique(destinataire, sujet, contenu_html, contenu_texte):
     if not EMAIL_ADRESSE or not EMAIL_MOT_DE_PASSE:
         print("⚠️ Configuration email manquante (env vars).")
         return False, "Configuration serveur incomplète."
+
+    # Forcer le HTTPS dans le contenu si nécessaire
+    contenu_html = contenu_html.replace("http://interpam.mooo.com", "https://interpam.mooo.com")
+    contenu_texte = contenu_texte.replace("http://interpam.mooo.com", "https://interpam.mooo.com")
 
     try:
         thread = threading.Thread(
@@ -127,9 +177,7 @@ def envoyer_push_notification(subscription_json, title, message, url="/home"):
         data = json.dumps({"title": title, "body": message, "url": url})
 
         # Lancement du thread
-        thread = threading.Thread(
-            target=_thread_send_push, args=(subscription_info, data)
-        )
+        thread = threading.Thread(target=_thread_send_push, args=(subscription_info, data))
         thread.start()
 
         return True, "Push lancé"
@@ -164,30 +212,20 @@ def envoyer_invitation_admin(nom, email, lien):
     if template_html:
         html = Template(template_html).render(nom=nom, lien=lien)
     else:
-        html = (
-            f"<p>Bonjour {nom}, <br>Devenez Admin ici : <a href='{lien}'>{lien}</a></p>"
-        )
+        html = f"<p>Bonjour {nom}, <br>Devenez Admin ici : <a href='{lien}'>{lien}</a></p>"
 
-    corps_texte = (
-        f"Bonjour {nom}, bienvenue dans l'équipe. Activez votre compte : {lien}"
-    )
+    corps_texte = f"Bonjour {nom}, bienvenue dans l'équipe. Activez votre compte : {lien}"
     return envoyer_email_generique(email, sujet, html, corps_texte)
 
 
-def envoyer_notification_email(
-    nom, email, titre, message, url_action, texte_bouton="Voir détails"
-):
+def envoyer_notification_email(nom, email, titre, message, url_action, texte_bouton="Voir détails"):
     sujet = f"Notification - {titre}"
     template_html = _load_template("notif.html")
 
     if template_html:
-        html = Template(template_html).render(
-            titre=titre, message=message, url=url_action, bouton=texte_bouton
-        )
+        html = Template(template_html).render(titre=titre, message=message, url=url_action, bouton=texte_bouton)
     else:
-        html = (
-            f"<h1>{titre}</h1><p>{message}</p><a href='{url_action}'>{texte_bouton}</a>"
-        )
+        html = f"<h1>{titre}</h1><p>{message}</p><a href='{url_action}'>{texte_bouton}</a>"
 
     # Nettoyage HTML pour le texte brut
     message_clean = re.sub("<[^<]+?>", "", message)
@@ -208,9 +246,7 @@ def envoyer_mail_verification(nom, email, lien):
     if template_html:
         html = Template(template_html).render(nom=nom, lien=lien)
     else:
-        html = (
-            f"<p>Bonjour {nom}, merci de valider : <a href='{lien}'>Cliquez ici</a></p>"
-        )
+        html = f"<p>Bonjour {nom}, merci de valider : <a href='{lien}'>Cliquez ici</a></p>"
 
     corps_texte = f"Bonjour {nom},\nValidez votre compte : {lien}\n(Valable 24h)"
     return envoyer_email_generique(email, sujet, html, corps_texte)
@@ -225,9 +261,7 @@ def welcome_email(nom, email, lien):
     else:
         html = f"<h1>Bienvenue {nom} !</h1><p>Accédez à votre espace : <a href='{lien}'>Connexion</a></p>"
 
-    corps_texte = (
-        f"Bonjour {nom}, bienvenue sur InterPam ! Accédez à votre espace ici : {lien}"
-    )
+    corps_texte = f"Bonjour {nom}, bienvenue sur InterPam ! Accédez à votre espace ici : {lien}"
     return envoyer_email_generique(email, sujet, html, corps_texte)
 
 
@@ -263,7 +297,7 @@ def ret_notification(nom, email):
     template_html = _load_template("account_restored.html")
 
     if template_html:
-        html = Template(template_html).render(nom=nom, url_for=url_for)
+        html = Template(template_html).render(nom=nom, url_for=url_for, email=email)
     else:
         html = f"<p>Bonjour {nom}, votre compte est rétabli.</p>"
 
@@ -276,9 +310,7 @@ def refus_notification(nom, email, message, lien=None, texte_bouton=None):
     template_html = _load_template("refusal_notification.html")
 
     if template_html:
-        html = Template(template_html).render(
-            nom=nom, url_for=url_for, message=message, titre=sujet
-        )
+        html = Template(template_html).render(nom=nom, url_for=url_for, message=message, titre=sujet)
     else:
         html = f"<h3>Refus de transaction</h3><p>{message}</p>"
 
@@ -286,9 +318,7 @@ def refus_notification(nom, email, message, lien=None, texte_bouton=None):
     return envoyer_email_generique(email, sujet, html, corps_texte)
 
 
-def envoyer_notification_generale(
-    nom, email, titre, message, lien=None, texte_bouton=None
-):
+def envoyer_notification_generale(nom, email, titre, message, lien=None, texte_bouton=None):
     """
     Envoie un email flexible. Le message peut contenir du HTML.
     """
@@ -301,16 +331,12 @@ def envoyer_notification_generale(
         html = Template(template_html).render(
             nom=nom,
             titre_entete=titre,
-            message_principal=Markup(
-                message
-            ),  # Utilisation de Markup pour valider le HTML
+            message_principal=Markup(message),  # Utilisation de Markup pour valider le HTML
             lien_action=url_finale,
             texte_bouton=texte_bouton if texte_bouton else "Accéder à InterPam",
         )
     else:
-        html = (
-            f"<h2>{titre}</h2><div>{message}</div><br><a href='{url_finale}'>Voir</a>"
-        )
+        html = f"<h2>{titre}</h2><div>{message}</div><br><a href='{url_finale}'>Voir</a>"
 
     # Nettoyage pour le format texte
     message_clean = message.replace("<br>", "\n").replace("<br/>", "\n")

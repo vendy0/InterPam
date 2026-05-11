@@ -31,7 +31,8 @@ def initialiser_bdd():
                     solde INTEGER DEFAULT 0,
                     role TEXT DEFAULT 'parieur',
                     push_subscription TEXT,
-                    actif INTEGER DEFAULT 1
+                    actif INTEGER DEFAULT 1,
+                    accepte_emails INTEGER DEFAULT 1  -- 1 = Oui, 0 = Non
                 )""")
 
 			# Table Paris
