@@ -106,7 +106,7 @@ def _thread_send_email(destinataire, sujet, contenu_html, contenu_texte, est_ess
         print(f"❌ Erreur envoi email (Thread) : {str(e)}")
 
 
-def envoyer_email_generique(destinataire, sujet, contenu_html, contenu_texte):
+def envoyer_email_generique(destinataire, sujet, contenu_html, contenu_texte, est_essentiel):
     """
     Point d'entrée principal. Lance le thread et rend la main immédiatement.
     """
@@ -121,7 +121,7 @@ def envoyer_email_generique(destinataire, sujet, contenu_html, contenu_texte):
     try:
         thread = threading.Thread(
             target=_thread_send_email,
-            args=(destinataire, sujet, contenu_html, contenu_texte),
+            args=(destinataire, sujet, contenu_html, contenu_texte, est_essentiel),
         )
         thread.start()
         return True, "Envoi lancé en arrière-plan"
@@ -215,7 +215,7 @@ def envoyer_invitation_admin(nom, email, lien):
         html = f"<p>Bonjour {nom}, <br>Devenez Admin ici : <a href='{lien}'>{lien}</a></p>"
 
     corps_texte = f"Bonjour {nom}, bienvenue dans l'équipe. Activez votre compte : {lien}"
-    return envoyer_email_generique(email, sujet, html, corps_texte)
+    return envoyer_email_generique(email, sujet, html, corps_texte, est_essentiel=True)
 
 
 def envoyer_notification_email(nom, email, titre, message, url_action, texte_bouton="Voir détails"):
@@ -249,7 +249,7 @@ def envoyer_mail_verification(nom, email, lien):
         html = f"<p>Bonjour {nom}, merci de valider : <a href='{lien}'>Cliquez ici</a></p>"
 
     corps_texte = f"Bonjour {nom},\nValidez votre compte : {lien}\n(Valable 24h)"
-    return envoyer_email_generique(email, sujet, html, corps_texte)
+    return envoyer_email_generique(email, sujet, html, corps_texte, est_essentiel=True)
 
 
 def welcome_email(nom, email, lien):
@@ -276,7 +276,7 @@ def password_reset_email(nom, email, lien):
         html = f"<p>Bonjour {nom}, réinitialisez votre mot de passe : <a href='{lien}'>Cliquez ici</a></p>"
 
     corps_texte = f"Bonjour {nom}, réinitialisez votre mot de passe ici : {lien}"
-    return envoyer_email_generique(email, sujet, html, corps_texte)
+    return envoyer_email_generique(email, sujet, html, corps_texte, est_essentiel=True)
 
 
 def ban_notification(nom, email):
