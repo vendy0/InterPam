@@ -24,10 +24,11 @@ def get_dashboard_stats():
             # On somme toutes les mises, et on somme les gains seulement si le pari est 'Gagné'
             query_finance = """
                 SELECT 
-                    SUM(mise) as total_mises,
+                    SUM(CASE WHEN statut != 'Annulé' THEN mise ELSE 0 END) as total_mises,
                     SUM(CASE WHEN statut = 'Gagné' THEN gain_potentiel ELSE 0 END) as total_gains
                 FROM paris
             """
+
             cur = conn.execute(query_finance)
             res_finance = cur.fetchone()
 
@@ -133,7 +134,7 @@ def get_bilan_financier_match(match_id):
                 SELECT SUM(p.mise) as total_mises
                 FROM paris p
                 JOIN matchs_paris mp ON p.id = mp.paris_id
-                WHERE mp.matchs_id = ?
+                WHERE mp.matchs_id = ? AND p.statut != "Annulé
             """,
                 (match_id,),
             )
@@ -443,12 +444,19 @@ def executer_settlement_match(match_id):
 
                 stats["perdants"] += 1
 
+            # # CAS 2 : Ticket ANNULÉ (Remboursement total)
+            # elif annules == total:
+            #     cur.execute("UPDATE paris SET statut = 'Annulé' WHERE id = ?", (p_id,))
+
+            #     # 1. Rembourser le joueur
+            #     cur.execute("UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id))
+
             # CAS 2 : Ticket ANNULÉ (Remboursement total)
             elif annules == total:
                 cur.execute("UPDATE paris SET statut = 'Annulé' WHERE id = ?", (p_id,))
 
-                # 1. Rembourser le joueur
-                cur.execute("UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id))
+                # 1. Rembourser le joueur (CORRECTION : On rembourse la mise, pas le gain potentiel)
+                cur.execute("UPDATE parieurs SET solde = solde + ? WHERE id = ?", (mise_c, u_id))
 
                 # CORRECTION : On ne touche PAS à la caisse.
                 # L'argent était "en suspens" (débité du user, mais pas crédité caisse),
