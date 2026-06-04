@@ -24,15 +24,14 @@ def placer_pari(parieur_id, match_id, mise_dec, gain_dec, date_pari, options_ids
             if not row:
                 return False, "Parieur introuvable"
 
-            solde_c = row[0]
-            if solde_c < mise_c:
-                return False, "Solde insuffisant"
-
-            # --- Débit du solde ---
-            conn.execute(
-                "UPDATE parieurs SET solde = solde - ? WHERE id = ?",
-                (mise_c, parieur_id),
+            # Remplace le SELECT + UPDATE séparés par ceci :
+            cur = conn.execute(
+                "UPDATE parieurs SET solde = solde - ? WHERE id = ? AND solde >= ?",
+                (mise_c, parieur_id, mise_c),
             )
+            if cur.rowcount == 0:
+                conn.rollback()
+                return False, "Solde insuffisant (ou race condition détectée)"
 
             # --- Création du pari ---
             cur = conn.execute(

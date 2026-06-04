@@ -49,9 +49,7 @@ def get_dashboard_stats():
             # Formatage des données
             stats["mises_totales"] = depuis_centimes(mises)
             stats["gains_distribues"] = depuis_centimes(gains)
-            stats["benefice"] = depuis_centimes(
-                mises - gains
-            )  # Bénéfice net pour InterPam
+            stats["benefice"] = depuis_centimes(mises - gains)  # Bénéfice net pour InterPam
             stats["total_joueurs"] = res_users["total"]
             stats["joueurs_bannis"] = res_users["bannis"] if res_users["bannis"] else 0
 
@@ -69,9 +67,7 @@ def valider_option_gagnante(option_id, match_id):
     """
     try:
         with get_db_connection() as conn:
-            cur = conn.execute(
-                "SELECT categorie FROM options WHERE id = ?", (option_id,)
-            )
+            cur = conn.execute("SELECT categorie FROM options WHERE id = ?", (option_id,))
             res = cur.fetchone()
             if not res:
                 return False
@@ -108,9 +104,7 @@ def fermer_match_officiellement(match_id, admin_id):
                     match_id,
                 ),
             )
-            cur = conn.execute(
-                "SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL"
-            )
+            cur = conn.execute("SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL")
             users = cur.fetchall()
             cur = conn.execute("SELECT * FROM matchs WHERE id = ?", (match_id,))
             match = cur.fetchone()
@@ -172,16 +166,12 @@ def get_bilan_financier_match(match_id):
 
 def envoi_notification_gain(cursor, user_id, gain_c):
     """Sous-fonction pour gérer les notifications sans casser la boucle principale"""
-    cursor.execute(
-        "SELECT push_subscription, solde FROM parieurs WHERE id = ?", (user_id,)
-    )
+    cursor.execute("SELECT push_subscription, solde FROM parieurs WHERE id = ?", (user_id,))
     user = cursor.fetchone()
     if user and user["push_subscription"]:
         try:
             message = f"Félicitations ! Gain de {depuis_centimes(gain_c)} HTG reçu."
-            envoyer_push_notification(
-                user["push_subscription"], "Pari Gagné !", message
-            )
+            envoyer_push_notification(user["push_subscription"], "Pari Gagné !", message)
         except:
             pass  # Ne pas bloquer le paiement si la notification échoue
 
@@ -196,14 +186,10 @@ def ajouter_match(equipe_a, equipe_b, date_match, type_match):
                 (equipe_a, equipe_b, date_match, type_match),
             )
             id_match = cur.lastrowid
-            print(
-                f"Match ajouté avec succès : {equipe_a} VS {equipe_b}, id : {id_match}"
-            )
+            print(f"Match ajouté avec succès : {equipe_a} VS {equipe_b}, id : {id_match}")
 
             try:
-                cur = conn.execute(
-                    "SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL"
-                )
+                cur = conn.execute("SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL")
                 users = cur.fetchall()
                 if users:
                     for user in users:
@@ -228,9 +214,7 @@ def ajouter_option(libelle, cote, categorie, match_id):
                 "INSERT INTO options(libelle, cote, categorie, match_id) VALUES (?, ?, ?, ?)",
                 (libelle, cote, categorie, match_id),
             )
-            print(
-                f"Option {libelle} x {cote} de la catégorie {categorie} créé avec succès."
-            )
+            print(f"Option {libelle} x {cote} de la catégorie {categorie} créé avec succès.")
     except sqlite3.Error as e:
         print(f"Erreur lors de l'ajout : {e}")
 
@@ -256,9 +240,7 @@ def update_match_info(match_id, equipe_a, equipe_b, date_match, statut, type_mat
                 (equipe_a, equipe_b, date_match, statut, type_match, match_id),
             )
             conn.commit()
-            cur = conn.execute(
-                "SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL"
-            )
+            cur = conn.execute("SELECT push_subscription AS sub FROM parieurs WHERE push_subscription IS NOT NULL")
             users = cur.fetchall()
             if users:
                 for user in users:
@@ -312,20 +294,14 @@ def annuler_match_et_rembourser(match_id):
     try:
         with get_db_connection() as conn:
             # 1. Update Match Statut
-            conn.execute(
-                "UPDATE matchs SET statut = 'annulé' WHERE id = ?", (match_id,)
-            )
+            conn.execute("UPDATE matchs SET statut = 'annulé' WHERE id = ?", (match_id,))
 
             # 2. Récupérer les options avant de les modifier pour avoir les cotes
-            cur = conn.execute(
-                "SELECT id, cote FROM options WHERE match_id = ?", (match_id,)
-            )
+            cur = conn.execute("SELECT id, cote FROM options WHERE match_id = ?", (match_id,))
             options_du_match = cur.fetchall()
 
             # 3. Mettre les options à winner = 3 (Annulé)
-            conn.execute(
-                "UPDATE options SET winner = 3 WHERE match_id = ?", (match_id,)
-            )
+            conn.execute("UPDATE options SET winner = 3 WHERE match_id = ?", (match_id,))
 
             # 4. RECALCUL DES PARIS (La partie importante)
             print(f"--- Début traitement annulation match {match_id} ---")
@@ -372,15 +348,11 @@ def annuler_match_et_rembourser(match_id):
                         "UPDATE config SET caisse_solde = caisse_solde + ? WHERE id = 1",
                         (difference,),
                     )
-                    print(
-                        f"Ajustement Caisse pour pari #{pari_id}: +{difference} centimes"
-                    )
+                    print(f"Ajustement Caisse pour pari #{pari_id}: +{difference} centimes")
             # ----------------------
 
             conn.commit()
-            cur = conn.execute(
-                "SELECT push_subscription as sub FROM parieurs WHERE push_subscription IS NOT NULL"
-            )
+            cur = conn.execute("SELECT push_subscription as sub FROM parieurs WHERE push_subscription IS NOT NULL")
             users = cur.fetchall()
             if users:
                 for user in users:
@@ -476,9 +448,7 @@ def executer_settlement_match(match_id):
                 cur.execute("UPDATE paris SET statut = 'Annulé' WHERE id = ?", (p_id,))
 
                 # 1. Rembourser le joueur
-                cur.execute(
-                    "UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id)
-                )
+                cur.execute("UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id))
 
                 # CORRECTION : On ne touche PAS à la caisse.
                 # L'argent était "en suspens" (débité du user, mais pas crédité caisse),
@@ -493,9 +463,7 @@ def executer_settlement_match(match_id):
                 cur.execute("UPDATE paris SET statut = 'Gagné' WHERE id = ?", (p_id,))
 
                 # Paiement du joueur
-                cur.execute(
-                    "UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id)
-                )
+                cur.execute("UPDATE parieurs SET solde = solde + ? WHERE id = ?", (gain_c, u_id))
 
                 # CORRECTION : La Caisse doit payer ce gain (sortie d'argent)
                 # mouvement_caisse(depuis_centimes(gain_c), "sub")
@@ -584,9 +552,7 @@ def ban_ret_user(username, message, ban=False, ret=False):
                 return False
 
             if ban == True:
-                conn.execute(
-                    "UPDATE parieurs SET actif = 0 WHERE username = ?", (username,)
-                )
+                conn.execute("UPDATE parieurs SET actif = 0 WHERE username = ?", (username,))
                 conn.commit()
 
                 # Notifications
@@ -604,16 +570,12 @@ def ban_ret_user(username, message, ban=False, ret=False):
                 ban_notification(user["prenom"], user["email"])
                 return True
             elif ret == True:
-                conn.execute(
-                    "UPDATE parieurs SET actif = 1 WHERE username = ?", (username,)
-                )
+                conn.execute("UPDATE parieurs SET actif = 1 WHERE username = ?", (username,))
                 conn.commit()
                 if user["sub"]:
                     message_else = "Félicitations, votre compte InterPam a été restauré. Vous pouvez désormais vous connecter !"
                     message_ret = message if message else message_else
-                    envoyer_push_notification(
-                        user["sub"], "Compte rétabli", message_ret
-                    )
+                    envoyer_push_notification(user["sub"], "Compte rétabli", message_ret)
                 ret_notification(user["prenom"], user["email"])
                 return True
             else:
@@ -644,20 +606,14 @@ def get_messages():
 def mark_as_read(message_id):
     try:
         with get_db_connection() as conn:
-            cur = conn.execute(
-                "SELECT read FROM messagerie WHERE id = ?", (message_id,)
-            )
+            cur = conn.execute("SELECT read FROM messagerie WHERE id = ?", (message_id,))
             message = cur.fetchone()
             if not message:
                 return False
             if message["read"] == 0:
-                cur = conn.execute(
-                    "UPDATE messagerie SET read = 1 WHERE id = ?", (message_id,)
-                )
+                cur = conn.execute("UPDATE messagerie SET read = 1 WHERE id = ?", (message_id,))
             else:
-                cur = conn.execute(
-                    "UPDATE messagerie SET read = 0 WHERE id = ?", (message_id,)
-                )
+                cur = conn.execute("UPDATE messagerie SET read = 0 WHERE id = ?", (message_id,))
             conn.commit()
             return True
     except sqlite3.Error as e:

@@ -10,7 +10,7 @@ from jinja2 import Template
 from flask import url_for
 from pywebpush import webpush, WebPushException
 from markupsafe import Markup  # Indispensable pour injecter du HTML sûr
-from models.user import email_active
+# from models.user import email_active
 
 # --- CONFIGURATION ---
 EMAIL_ADRESSE = os.getenv("EMAIL_ADRESSE")
@@ -37,6 +37,8 @@ def _thread_send_email(destinataire, sujet, contenu_html, contenu_texte, est_ess
     """
     # 1. Vérification en BDD si l'utilisateur veut encore des mails
     #    (Sauf si c'est un mail essentiel comme Reset Password, vérification email, etc.)
+    from models.user import email_active  # Import local = pas de circulaire
+
     if not est_essentiel and not email_active(destinataire):
         return
 
@@ -60,11 +62,7 @@ def _thread_send_email(destinataire, sujet, contenu_html, contenu_texte, est_ess
             smtp.login(EMAIL_ADRESSE, EMAIL_MOT_DE_PASSE)
             smtp.send_message(msg)
 
-        safe_email = (
-            f"{destinataire[:3]}***{destinataire[destinataire.find('@'):]}"
-            if "@" in destinataire
-            else "***"
-        )
+        safe_email = f"{destinataire[:3]}***{destinataire[destinataire.find('@') :]}" if "@" in destinataire else "***"
         print(f"✅ Email envoyé (Thread) à : {safe_email}")
 
     except Exception as e:
@@ -250,10 +248,7 @@ def refus_notification(nom, email, message, lien=None, texte_bouton=None):
     template_html = _load_template("refusal_notification.html")
 
     if template_html:
-        html = Template(template_html).render(
-            nom=nom, url_for=url_for, message=message, titre=sujet,
-            lien=lien, texte_bouton=texte_bouton, email=email
-        )
+        html = Template(template_html).render(nom=nom, url_for=url_for, message=message, titre=sujet, lien=lien, texte_bouton=texte_bouton, email=email)
     else:
         html = f"<h3>Refus de transaction</h3><p>{message}</p>"
 
@@ -296,4 +291,3 @@ def envoyer_notification_generale(nom, email, titre, message, lien=None, texte_b
     """)
 
     return envoyer_email_generique(email, sujet, html, corps_texte)
-

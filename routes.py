@@ -393,7 +393,7 @@ def confirm_email(token):
 
 @app.route("/forget_password", methods=["GET", "POST"])
 def forget_password_route():
-    email = clean_input(request.form.get("forget_email").lower())
+    email = clean_input(request.form.get("forget_email", "").lower())
     if not email:
         forgetError = "Veuillez rentrer un email valide !"
         return render_template("auth.html", forgetError=forgetError)
@@ -516,11 +516,11 @@ def unsubscribe_route():
     if not email:
         return "Lien invalide.", 400
 
-    success, message = unsubscribe()
-    
+    success, message = unsubscribe(email)
+
     if not success:
         return f"Erreur : {str(message)}", 500
-        
+
     return """
     <div style="text-align:center; margin-top:50px; font-family:sans-serif;">
         <h1>Désinscription confirmée</h1>
@@ -528,7 +528,6 @@ def unsubscribe_route():
         <a href="https://interpam.mooo.com">Retour au site</a>
     </div>
     """
-
 
 
 @app.route("/about")

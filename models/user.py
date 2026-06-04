@@ -135,7 +135,7 @@ def unsubscribe(email):
             cur.execute("UPDATE parieurs SET accepte_emails = 0 WHERE email = ?", (email,))
             conn.commit()
             return True, "success"
-    except exxeption as e:
+    except Exception as e:
         return False, e
 
 
