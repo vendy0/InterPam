@@ -150,6 +150,15 @@ def format_devise(valeur_centimes):
     return "{:,.2f} HTG".format(valeur_centimes / 100)
 
 
+@app.template_filter("format_cote")
+def format_cote(valeur):
+    try:
+        # Force l'affichage en float avec exactement 2 chiffres après la virgule
+        return "{:.2f}".format(float(valeur))
+    except (ValueError, TypeError):
+        return valeur
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -317,27 +326,42 @@ def traitementRegister():
         "classe": classe,
         "mdp": hashed_password,
         "created_at": created_at,
+        "role": "parieur",  # Par défaut
     }
 
-    # 3. Sauvegarder dans pending_registrations
-    if save_pending_registration(user_data, token, expiration):
-        # 4. Envoyer l'email
-        lien = url_for("confirm_email", token=token, _external=True)
-        # Assurez-vous d'importer envoyer_mail_verification depuis vos modèles
-        try:
-            envoyer_mail_verification(prenom, email, lien)
-        except Exception as e:
-            print(e)
-            flash("Erreur lors de l'envoi de l'email.", "error")
+    ajouter_parieur(user_data)
+    # 5. Connecter l'utilisateur (Optionnel, ou juste rediriger vers login)
+    session["username"] = username
+    session.permanent = False
 
-        flash(
-            "Inscription enregistrée ! Un email de confirmation vous sera envoyé dans quelques minutes.",
-            "success",
-        )
-        return render_template("auth.html", register=True)
-    # On reste sur la page de login avec le message
-    else:
-        return render_template("auth.html", error="Erreur technique lors de l'inscription.")
+    flash("Votre compte a été activé avec succès ! Bienvenue.", "success")
+    # welcome_email(
+    #     prenom,
+    #     email,
+    #     url_for("home", _external=True),
+    # )
+
+    return redirect(url_for("home"))
+
+    # # 3. Sauvegarder dans pending_registrations
+    # if save_pending_registration(user_data, token, expiration):
+    #     # 4. Envoyer l'email
+    #     lien = url_for("confirm_email", token=token, _external=True)
+    #     # Assurez-vous d'importer envoyer_mail_verification depuis vos modèles
+    #     try:
+    #         envoyer_mail_verification(prenom, email, lien)
+    #     except Exception as e:
+    #         print(e)
+    #         flash("Erreur lors de l'envoi de l'email.", "error")
+
+    #     flash(
+    #         "Inscription enregistrée ! Un email de confirmation vous sera envoyé dans quelques minutes.",
+    #         "success",
+    #     )
+    #     return render_template("auth.html", register=True)
+    # # On reste sur la page de login avec le message
+    # else:
+    #     return render_template("auth.html", error="Erreur technique lors de l'inscription.")
 
 
 @app.route("/confirm-email/<token>")

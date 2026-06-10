@@ -768,6 +768,17 @@ def transaction_action():
                     f"Votre demande a été refusée. Raison : {raison or 'Non précisée'}",
                 )
             flash("Transaction refusée.", "success")
+
+        elif tx["type"] == "depot":
+            update_transaction_status(tx_id, "refuse", admin_id, raison=raison)
+            flash(f"Retrait validé.", "success")
+            if user.get("push_subscription"):
+                envoyer_push_notification(
+                    user["push_subscription"],
+                    "Transaction refusée",
+                    f"Votre demande a été refusée. Raison : {raison or 'Non précisée'}",
+                )
+
     return redirect(url_for("admin.transactions"))
 
 
