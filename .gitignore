@@ -27,3 +27,4 @@ docs/
 
 # Secrets
 .env
+.nomedia

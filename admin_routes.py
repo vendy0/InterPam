@@ -15,6 +15,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from re import match as re_match
 from functools import wraps
+import json
 
 from models.user import *
 from models.match import *
@@ -91,6 +92,10 @@ def dashboard():
 @admin_bp.route("/settings", methods=["POST"])
 @admin_required
 def update_settings():
+    user = get_user_by_username(session["username"])
+    if user["role"] not in ["super adm", "banquier"]:
+        flash("Action non autorisée", "error")
+        return redirect(url_for("admin.dashboard"))
     try:
         caisse = float(request.form.get("caisse", 0))
         min_bet = float(request.form.get("min_bet", 10))
@@ -257,7 +262,12 @@ def fiches(user_id):
         flash("Erreur de conversion id !", "error")
         return redirect(request.referrer)
 
-    user = get_users("id", user_id)[0]
+    user = get_users("id", user_id)
+    if user:
+        user = user[0]
+    else:
+        flash("Utilisateur bloqué ou introuvable.error")
+        return redirect(request.referrer)
 
     # On utilise la nouvelle fonction de regroupement
     fiches = get_fiches_detaillees(user_id)
@@ -321,7 +331,28 @@ def matchs():
 @admin_required
 def nouveau_match():
     if request.method == "GET":
-        return render_template("admin/matchs/nouveau_match.html")
+        clone_from = request.args.get("clone_from", type=int)
+        match_clone = None
+        options_json = "[]"
+
+        if clone_from:
+            try:
+                with get_db_connection() as conn:
+                    # Récupération des infos du match à cloner
+                    cur_m = conn.execute("SELECT equipe_a, equipe_b, type_match FROM matchs WHERE id = ?", (clone_from,))
+                    row_m = cur_m.fetchone()
+                    if row_m:
+                        match_clone = dict(row_m)
+
+                        # Récupération de ses options
+                        cur_o = conn.execute("SELECT categorie, libelle, " + "cote FROM options WHERE match_id = ?", (clone_from,))
+                        # On convertit les lignes en dictionnaires simples pour le JS
+                        options_liste = [dict(row) for row in cur_o.fetchall()]
+                        options_json = json.dumps(options_liste)
+            except Exception as e:
+                print(f"Erreur lors de la préparation du clone : {e}")
+
+        return render_template("admin/matchs/nouveau_match.html", match_clone=match_clone, options_json=options_json)
 
     equipe_a = request.form.get("equipe_a").strip()
     equipe_b = request.form.get("equipe_b").strip()
@@ -350,6 +381,116 @@ def nouveau_match():
 
     flash("Match ajouté avec succès !", "success")
     return redirect(url_for("matchs.matchs"))
+
+
+@matchs_bp.route("/cloner/<int:match_id>", methods=["GET", "POST"])
+@admin_required
+def cloner_match(match_id):
+    if request.method == "GET":
+        match_data = get_match_by_id(match_id)
+        options = get_options_by_match_id(match_id)
+
+        if not match_data:
+            flash("Match introuvable !", "error")
+            return redirect(url_for("matchs.show_edit_matchs"))
+
+        # On convertit en dictionnaire pour manipuler facilement
+        match_dict = dict(match_data)
+
+        # On vide volontairement la date pour forcer l'admin à définir
+        # la date de la nouvelle rencontre.
+        match_dict["date_match_local"] = ""
+
+        return render_template("admin/matchs/cloner_match.html", match=match_dict, options=options)
+
+    # Logique POST : identique à la création d'un nouveau match
+    equipe_a = request.form.get("equipe_a").strip()
+    equipe_b = request.form.get("equipe_b").strip()
+    date_match = request.form.get("date_match")
+    type_match = request.form.get("type_match")
+
+    if not all([equipe_a, equipe_b, date_match, type_match]):
+        flash("Certains champs obligatoires n'ont pas été remplis !", "error")
+        return redirect(request.referrer)
+
+    nouveau_match_id = ajouter_match(equipe_a, equipe_b, date_match.replace("T", " "), type_match=type_match)
+
+    if nouveau_match_id:
+        libelles = request.form.getlist("libelle[]")
+        cotes = request.form.getlist("cote[]")
+        categories = request.form.getlist("categorie[]")
+
+        for i in range(len(libelles)):
+            if libelles[i].strip() and cotes[i]:
+                ajouter_option(
+                    libelles[i].strip(),
+                    float(cotes[i].replace(",", ".")),
+                    categories[i].strip(),
+                    nouveau_match_id,
+                )
+
+    flash("Le match et ses options ont été clonés avec succès !", "success")
+    return redirect(url_for("matchs.show_edit_matchs"))
+
+
+@matchs_bp.route("/choisir-clone", methods=["GET"])
+@admin_required
+def choisir_clone():
+    # Récupération de tous les matchs du plus récent au plus ancien
+    try:
+        with get_db_connection() as conn:
+            cur = conn.execute("SELECT id, equipe_a, equipe_b, date_match, statut, type_match FROM matchs ORDER BY id DESC")
+            matchs = cur.fetchall()
+    except Exception as e:
+        print(f"Erreur lors de la récupération des matchs à cloner : {e}")
+        matchs = []
+
+    return render_template("admin/matchs/choisir_clone.html", matchs=matchs)
+
+
+@matchs_bp.route("/executer-clone/<int:match_id>", methods=["GET"])
+@admin_required
+def executer_clone(match_id):
+    try:
+        with get_db_connection() as conn:
+            # 1. Récupérer les informations du match d'origine
+            cur_match = conn.execute("SELECT equipe_a, equipe_b, type_match, date_match FROM matchs WHERE id = ?", (match_id,))
+            original = cur_match.fetchone()
+
+            if not original:
+                flash("Match d'origine introuvable !", "error")
+                return redirect(url_for("matchs.choisir_clone"))
+
+            # 2. Insérer le nouveau match cloné (en statut 'ouvert' par défaut)
+            cur_ins = conn.execute(
+                """INSERT INTO matchs (equipe_a, equipe_b, type_match, date_match, statut) 
+                   VALUES (?, ?, ?, ?, 'ouvert')""",
+                (original["equipe_a"], original["equipe_b"], original["type_match"], original["date_match"]),
+            )
+            nouveau_match_id = cur_ins.lastrowid
+
+            # 3. Récupérer toutes les options/cotes de l'ancien match
+            cur_opts = conn.execute("SELECT libelle, cote, categorie FROM options WHERE match_id = ?", (match_id,))
+            options_originales = cur_opts.fetchall()
+
+            # 4. Dupliquer les options pour le nouveau match
+            for opt in options_originales:
+                conn.execute(
+                    """INSERT INTO options (libelle, cote, categorie, match_id) 
+                       VALUES (?, ?, ?, ?)""",
+                    (opt["libelle"], opt["cote"], opt["categorie"], nouveau_match_id),
+                )
+
+            conn.commit()
+
+        flash("Match cloné avec succès ! Ajustez les détails ci-dessous.", "success")
+        # Redirection directe vers ta page de modification existante
+        return redirect(url_for("matchs.edit_matchs", match_id=nouveau_match_id))
+
+    except Exception as e:
+        print(f"Erreur lors de l'exécution du clonage : {e}")
+        flash("Une erreur technique est survenue lors du clonage du match.", "error")
+        return redirect(url_for("matchs.choisir_clone"))
 
 
 @matchs_bp.route("/modifier", methods=["GET"])

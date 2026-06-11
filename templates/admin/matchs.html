@@ -21,6 +21,11 @@
         <h3 style="margin:0; color: var(--admin-primary);">Gérer les Matchs</h3>
         <p style="color: #64748b; font-size: 0.9rem;">Modifier, clôturer ou supprimer</p>
     </a>
-
+    
+    <a href="{{ url_for('matchs.choisir_clone') }}" class="matchs-section no-col-back">
+        <div style="font-size: 2rem; margin-bottom: 10px;">🔄</div>
+        <h3 style="margin:0; color: var(--admin-primary);">Cloner un Match</h3>
+        <p style="color: #64748b; font-size: 0.9rem;">Sélectionner un match existant pour dupliquer ses options</p>
+    </a>
 </div>
 {% endblock %}
