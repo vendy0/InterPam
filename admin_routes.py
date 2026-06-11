@@ -93,7 +93,7 @@ def dashboard():
 @admin_required
 def update_settings():
     user = get_user_by_username(session["username"])
-    if user["role"] not in ["super adm", "banquier"]:
+    if user["role"] not in ["super admin", "banquier"]:
         flash("Action non autorisée", "error")
         return redirect(url_for("admin.dashboard"))
     try:
@@ -575,6 +575,7 @@ def edit_matchs(match_id):
 
 #     flash("Résultats enregistrés et match clôturé !", "success")
 #     return redirect(url_for("matchs.show_edit_matchs"))
+
 
 @matchs_bp.route("/cloturer/<int:match_id>", methods=["GET", "POST"])
 @admin_required
