@@ -92,6 +92,38 @@ def valider_option_gagnante(option_id, match_id):
         print(f"Erreur validation : {e}")
         return False
 
+def enregistrer_resultats_match(match_id, options_gagnantes_ids):
+    """
+    Définit les options gagnantes d'un match en un seul passage.
+    Permet d'avoir plusieurs gagnants dans la même catégorie.
+    """
+    try:
+        with get_db_connection() as conn:
+            # 1. Par défaut, on met TOUTES les options du match en 'Perdu' (Code 2)
+            conn.execute(
+                "UPDATE options SET winner = 2 WHERE match_id = ?", 
+                (match_id,)
+            )
+            
+            # 2. S'il y a des options cochées, on les passe en 'Gagné' (Code 1)
+            if options_gagnantes_ids:
+                # Sécurisation : on s'assure que ce sont bien des entiers
+                ids_propres = [str(int(opt_id)) for opt_id in options_gagnantes_ids]
+                placeholders = ",".join(["?"] * len(ids_propres))
+                
+                query = f"UPDATE options SET winner = 1 WHERE match_id = ? AND id IN ({placeholders})"
+                
+                # On assemble les paramètres (match_id suivi des IDs des options)
+                params = [match_id] + ids_propres
+                conn.execute(query, params)
+            
+            conn.commit()
+            return True
+            
+    except sqlite3.Error as e:
+        print(f"Erreur enregistrement résultats : {e}")
+        return False
+
 
 def fermer_match_officiellement(match_id, admin_id):
     """Change le statut du match pour qu'il ne soit plus modifiable."""

@@ -266,7 +266,7 @@ def fiches(user_id):
     if user:
         user = user[0]
     else:
-        flash("Utilisateur bloqué ou introuvable.error")
+        flash("Utilisateur bloqué ou introuvable.", "error")
         return redirect(request.referrer)
 
     # On utilise la nouvelle fonction de regroupement
@@ -555,6 +555,27 @@ def edit_matchs(match_id):
     return redirect(url_for("matchs.show_edit_matchs"))
 
 
+# @matchs_bp.route("/cloturer/<int:match_id>", methods=["GET", "POST"])
+# @admin_required
+# def cloturer_match(match_id):
+#     match_data = get_match_by_id(match_id)
+#     options = get_options_by_match_id(match_id)
+
+#     if request.method == "GET":
+#         return render_template("admin/matchs/cloturer_match.html", match=match_data, options=options)
+
+#     options_gagnantes = request.form.getlist("options_gagnantes")
+
+#     for opt_id in options_gagnantes:
+#         valider_option_gagnante(opt_id, match_id)
+
+#     admin_id = get_user_by_username(session["username"])["id"]
+#     fermer_match_officiellement(match_id, admin_id)
+#     executer_settlement_match(match_id)
+
+#     flash("Résultats enregistrés et match clôturé !", "success")
+#     return redirect(url_for("matchs.show_edit_matchs"))
+
 @matchs_bp.route("/cloturer/<int:match_id>", methods=["GET", "POST"])
 @admin_required
 def cloturer_match(match_id):
@@ -564,10 +585,13 @@ def cloturer_match(match_id):
     if request.method == "GET":
         return render_template("admin/matchs/cloturer_match.html", match=match_data, options=options)
 
+    # Récupère la liste de tous les IDs cochés (fonctionne nativement grâce aux checkbox)
     options_gagnantes = request.form.getlist("options_gagnantes")
 
-    for opt_id in options_gagnantes:
-        valider_option_gagnante(opt_id, match_id)
+    # --- CHANGEMENT ICI ---
+    # On remplace la boucle for par la nouvelle fonction globale
+    enregistrer_resultats_match(match_id, options_gagnantes)
+    # ----------------------
 
     admin_id = get_user_by_username(session["username"])["id"]
     fermer_match_officiellement(match_id, admin_id)
