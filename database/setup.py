@@ -104,7 +104,9 @@ def initialiser_bdd():
                     read INTEGER NOT NULL DEFAULT 1,
                     created_at TEXT NOT NULL,
                     parieur_id INTEGER,
-                    FOREIGN KEY (parieur_id) REFERENCES parieurs(id) ON DELETE SET NULL
+                    response_to INTEGER,
+                    FOREIGN KEY (parieur_id) REFERENCES parieurs(id) ON DELETE SET NULL,
+                    FOREIGN KEY (response_to) REFERENCES messagerie(id) ON DELETE CASCADE
                     )""")
 
 			# Table Transactions (Dépôts et Retraits)

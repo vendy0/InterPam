@@ -830,7 +830,26 @@ def mailbox():
 @admin_required
 def messagerie():
     messages = get_messages()
-    return render_template("admin/messagerie.html", messages=messages)
+    new_messages = []
+    for message in messages:
+        if message["response_to"]:
+            continue
+        new_messages.append(message)
+    return render_template("admin/messagerie.html", messages=new_messages)
+
+
+@admin_bp.route("/response/<int:message_id>", methods=["POST"])
+@admin_required
+def repondre_message(message_id):
+    response = clean_input(request.form.get("reponse", ""))
+    if response:
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        admin = get_user_by_username(session["username"])
+        if repondre(admin["id"], response, created_at, message_id):
+            flash("Réponse envoyé avec succès !", "success")
+        else:
+            flash("Réponse non envoyée !", "error")
+    return redirect(request.referrer)
 
 
 @admin_bp.route("/mark_as_read/<int:message_id>")

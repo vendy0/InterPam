@@ -1,5 +1,6 @@
 from database.connexion import get_db_connection
 from utils.finance import vers_centimes, depuis_centimes
+from models.config import mouvement_caisse
 import sqlite3
 
 
@@ -47,9 +48,7 @@ def placer_pari(parieur_id, match_id, mise_dec, gain_dec, date_pari, options_ids
             # Remplacez la boucle actuelle (ligne approximative 48-53) par :
             for opt_id in options_ids:
                 # récupérer le match réel lié à l'option
-                cur_opt = conn.execute(
-                    "SELECT match_id FROM options WHERE id = ?", (opt_id,)
-                )
+                cur_opt = conn.execute("SELECT match_id FROM options WHERE id = ?", (opt_id,))
                 row_opt = cur_opt.fetchone()
                 real_match_id = row_opt[0] if row_opt else None
 
@@ -57,7 +56,9 @@ def placer_pari(parieur_id, match_id, mise_dec, gain_dec, date_pari, options_ids
                     "INSERT INTO matchs_paris (paris_id, matchs_id, option_id) VALUES (?, ?, ?)",
                     (pari_id, real_match_id, opt_id),
                 )
+            # mouvement_caisse(gain_dec, "sub", conn)
             conn.commit()
+
             return True, "Pari placé avec succès"
 
     except Exception as e:

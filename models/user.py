@@ -479,3 +479,35 @@ def send_message(parieur_id, message, created_at):
     except sqlite3.Error as e:
         print(f"Erreur lors de l'envoie : {e}")
         return False
+
+
+def catch_response(username):
+    try:
+        with get_db_connection() as conn:
+            cur = conn.execute(
+                """SELECT id FROM parieurs WHERE username = ?""",
+                (username,),
+            )
+            user = cur.fetchone()
+            if not user:
+                return False, None
+            cur = conn.execute(
+                """SELECT m.id, m.message, m.created_at, m.parieur_id AS sender_id, parent.message AS sended
+                FROM messagerie m
+                JOIN messagerie parent
+                    ON m.response_to = parent.id
+                LEFT JOIN parieurs p
+                    ON m.parieur_id = p.id
+                WHERE parent.parieur_id = ?
+                    AND m.response_to IS NOT NULL
+                    AND m.read = 1
+                ORDER BY m.created_at DESC
+                """,
+                (user["id"],),
+            )
+
+            return True, cur.fetchall()
+
+    except Exception as e:
+        print(f"Erreur context processor: {e}")
+        return False, None

@@ -31,6 +31,7 @@ from models.bet import *
 from models.emails import *
 from models.transaction import *
 from models.config import get_config, mouvement_caisse
+from models.admin import mark_as_read
 
 app = Flask(__name__)
 
@@ -129,6 +130,35 @@ def inject_globals():
         frais_retrait=conf["frais_retrait"],
         config_global=conf,
     )
+
+
+# @app.context_processor
+# def inject_admin_reply():
+#     # On initialise toujours la variable pour éviter les NameError
+#     message = None
+
+#     if "username" in session:
+#         try:
+#             # On tente de récupérer la réponse
+#             success, result_message = catch_response(session["username"])
+#             if success:
+#                 message = result_message
+#         except Exception as e:
+#             # Sécurité : si la requête SQL crash (problème de binding),
+#             # l'application ne s'arrête pas complètement au niveau du template
+#             print(f"Erreur SQL dans inject_admin_reply: {e}")
+#             message = None
+
+#     # On renvoie TOUJOURS un dictionnaire, même si admin_reply est None
+#     return dict(admin_reply=message)
+
+
+# La petite route pour que le joueur confirme la lecture
+@app.route("/marquer_lu_joueur/<int:msg_id>")
+def marquer_lu_joueur(msg_id):
+    if "username" in session:
+        mark_as_read(msg_id)
+    return {"status": "ok"}
 
 
 def format_money(valeur):
@@ -563,9 +593,22 @@ def about():
 @active_required
 def home():
     if "username" in session:
+        # On initialise toujours la variable pour éviter les NameError
+        message = None
+        try:
+            # On tente de récupérer la réponse
+            success, result_messages = catch_response(session["username"])
+            if success:
+                messages = result_messages
+        except Exception as e:
+            # Sécurité : si la requête SQL crash (problème de binding),
+            # l'application ne s'arrête pas complètement au niveau du template
+            print(f"Erreur SQL dans inject_admin_reply: {e}")
+            messages = None
+
         user = get_user_by_username(session["username"])
         programmes = get_programmes()
-        return render_template("home.html", user=user, programmes=programmes)
+        return render_template("home.html", user=user, programmes=programmes, response=messages)
     return redirect(url_for("index"))
 
 

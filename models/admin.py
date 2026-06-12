@@ -92,6 +92,7 @@ def valider_option_gagnante(option_id, match_id):
         print(f"Erreur validation : {e}")
         return False
 
+
 def enregistrer_resultats_match(match_id, options_gagnantes_ids):
     """
     Définit les options gagnantes d'un match en un seul passage.
@@ -100,26 +101,23 @@ def enregistrer_resultats_match(match_id, options_gagnantes_ids):
     try:
         with get_db_connection() as conn:
             # 1. Par défaut, on met TOUTES les options du match en 'Perdu' (Code 2)
-            conn.execute(
-                "UPDATE options SET winner = 2 WHERE match_id = ?", 
-                (match_id,)
-            )
-            
+            conn.execute("UPDATE options SET winner = 2 WHERE match_id = ?", (match_id,))
+
             # 2. S'il y a des options cochées, on les passe en 'Gagné' (Code 1)
             if options_gagnantes_ids:
                 # Sécurisation : on s'assure que ce sont bien des entiers
                 ids_propres = [str(int(opt_id)) for opt_id in options_gagnantes_ids]
                 placeholders = ",".join(["?"] * len(ids_propres))
-                
+
                 query = f"UPDATE options SET winner = 1 WHERE match_id = ? AND id IN ({placeholders})"
-                
+
                 # On assemble les paramètres (match_id suivi des IDs des options)
                 params = [match_id] + ids_propres
                 conn.execute(query, params)
-            
+
             conn.commit()
             return True
-            
+
     except sqlite3.Error as e:
         print(f"Erreur enregistrement résultats : {e}")
         return False
@@ -471,7 +469,7 @@ def executer_settlement_match(match_id):
 
                 # CORRECTION : La Caisse gagne uniquement la mise du joueur
                 # (On ne touche pas au gain potentiel qui n'existe plus)
-                mouvement_caisse(depuis_centimes(mise_c), "add", conn)
+                # mouvement_caisse(depuis_centimes(mise_c), "add", conn)
                 mouvement_caisse(depuis_centimes(gain_c), "add", conn)
 
                 stats["perdants"] += 1
@@ -654,6 +652,20 @@ def mark_as_read(message_id):
                 cur = conn.execute("UPDATE messagerie SET read = 1 WHERE id = ?", (message_id,))
             else:
                 cur = conn.execute("UPDATE messagerie SET read = 0 WHERE id = ?", (message_id,))
+            conn.commit()
+            return True
+    except sqlite3.Error as e:
+        print(f"Erreur lors du marquage : {e}")
+        return False
+
+
+def repondre(admin_id, reponse, created_at, message_id):
+    try:
+        with get_db_connection() as conn:
+            cur = conn.execute(
+                "INSERT INTO messagerie (message, created_at, parieur_id, response_to) VALUES (?, ?, ?, ?)",
+                (reponse, created_at, admin_id, message_id),
+            )
             conn.commit()
             return True
     except sqlite3.Error as e:
